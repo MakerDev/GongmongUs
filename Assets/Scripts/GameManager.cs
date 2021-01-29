@@ -85,7 +85,7 @@ namespace Assets.Scripts
                 {
                     Resume();
                 }
-                else
+                else if (MiniGame.IsPlaying == false)
                 {
                     OpenMenu();
                 }

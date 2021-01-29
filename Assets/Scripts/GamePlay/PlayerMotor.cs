@@ -35,6 +35,8 @@ public class PlayerMotor : NetworkBehaviour
     private Vector3 _rotation;
     private float _cameraRotationX;
 
+    public bool IsDisabled { get; set; } = false;
+
     private void Start()
     {
         _controller = GetComponent<CharacterController>();

@@ -187,26 +187,6 @@ MonoBehaviour:
   m_FirstSelected: {fileID: 0}
   m_sendNavigationEvents: 1
   m_DragThreshold: 10
---- !u!1 &1071714875 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 4705204877372810471, guid: bb4096026670386409b3e0281a907304,
-    type: 3}
-  m_PrefabInstance: {fileID: 4705204878340028824}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1071714876
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1071714875}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fbf3575480402db40813e763382412fb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  color: 10
-  eraseRenderer: 0
 --- !u!1 &1132169754
 GameObject:
   m_ObjectHideFlags: 0
@@ -456,10 +436,25 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2068568552727476589, guid: bb4096026670386409b3e0281a907304,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4705204877115567134, guid: bb4096026670386409b3e0281a907304,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4705204878414546080, guid: bb4096026670386409b3e0281a907304,
         type: 3}
       propertyPath: m_Name
       value: TaskSubmissionGameTrigger
+      objectReference: {fileID: 0}
+    - target: {fileID: 4705204878414546080, guid: bb4096026670386409b3e0281a907304,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4705204878414546081, guid: bb4096026670386409b3e0281a907304,
         type: 3}
@@ -514,6 +509,11 @@ PrefabInstance:
     - target: {fileID: 4705204878414546081, guid: bb4096026670386409b3e0281a907304,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4705204878749949124, guid: bb4096026670386409b3e0281a907304,
+        type: 3}
+      propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []

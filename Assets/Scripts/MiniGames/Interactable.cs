@@ -17,11 +17,34 @@ namespace Assets.Scripts.MiniGames
         private Outline _outlineComponent;
         private MiniGame _miniGame;
         private int _localPlayerLayer;
+        public bool Highlighted
+        {
+            get
+            {
+                if (_highlight != null)
+                {
+                    return _highlight.activeSelf;
+                }
+
+                if (_outlineComponent != null)
+                {
+                    return _outlineComponent.enabled;
+                }
+
+                return false;
+            }
+        }
 
         private void Awake()
         {
             _localPlayerLayer = LayerMask.NameToLayer("LocalPlayer");
             _miniGame = _miniGameObject.GetComponent<MiniGame>();
+            _outlineComponent = _original.GetComponent<Outline>();
+
+            if (_outlineComponent != null)
+            {
+                _outlineComponent.enabled = false;
+            }
 
             _miniGame.OnLocalGameCompleted += (result) =>
             {
@@ -69,7 +92,7 @@ namespace Assets.Scripts.MiniGames
                 return;
             }
 
-            if (_highlight.activeSelf && Input.GetKeyDown(KeyCode.Space))
+            if (Highlighted && Input.GetKeyDown(KeyCode.Space))
             {
                 _miniGameObject.SetActive(true);
             }

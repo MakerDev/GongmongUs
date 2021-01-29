@@ -490,6 +490,7 @@ GameObject:
   - component: {fileID: 2774195178853581731}
   - component: {fileID: 2774195178853581730}
   - component: {fileID: 2540137283541538514}
+  - component: {fileID: 5812668955885761015}
   m_Layer: 8
   m_Name: Camera
   m_TagString: Untagged
@@ -578,6 +579,39 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   MouseSensitivity: 100
   PlayerBody: {fileID: 2774195178687364980}
+--- !u!114 &5812668955885761015
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2774195178853581756}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a78da3f00f3328541b4526c0b0b5ec5c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lineThickness: 1.7
+  lineIntensity: 0.83
+  fillAmount: 0.217
+  lineColor0: {r: 1, g: 0.8875982, b: 0, a: 1}
+  lineColor1: {r: 0, g: 1, b: 0, a: 1}
+  lineColor2: {r: 0, g: 0, b: 1, a: 1}
+  additiveRendering: 0
+  backfaceCulling: 1
+  fillColor: {r: 0, g: 0, b: 1, a: 1}
+  useFillColor: 0
+  cornerOutlines: 0
+  addLinesBetweenColors: 0
+  scaleWithScreenSize: 1
+  alphaCutoff: 0.5
+  flipY: 0
+  sourceCamera: {fileID: 0}
+  autoEnableOutlines: 0
+  outlineCamera: {fileID: 0}
+  outlineShaderMaterial: {fileID: 0}
+  renderTexture: {fileID: 0}
+  extraRenderTexture: {fileID: 0}
 --- !u!1 &3379613388495337934
 GameObject:
   m_ObjectHideFlags: 0
@@ -1238,15 +1272,15 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 5728149989653182634}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &4881642240430196219 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 18f32a984e8c7f24e9e2d473c2babe02,
-    type: 3}
-  m_PrefabInstance: {fileID: 5728149989653182634}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &7684147416652712660 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2728593470376473214, guid: 18f32a984e8c7f24e9e2d473c2babe02,
+    type: 3}
+  m_PrefabInstance: {fileID: 5728149989653182634}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &4881642240430196219 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 18f32a984e8c7f24e9e2d473c2babe02,
     type: 3}
   m_PrefabInstance: {fileID: 5728149989653182634}
   m_PrefabAsset: {fileID: 0}
