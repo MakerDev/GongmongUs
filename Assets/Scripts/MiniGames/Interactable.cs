@@ -35,7 +35,7 @@ namespace Assets.Scripts.MiniGames
             }
         }
 
-        private void Awake()
+        private void Start()
         {
             _localPlayerLayer = LayerMask.NameToLayer("LocalPlayer");
             _miniGame = _miniGameObject.GetComponent<MiniGame>();
@@ -60,6 +60,7 @@ namespace Assets.Scripts.MiniGames
         {
             if (_highlight != null)
             {
+                _outlineComponent.color = 3;
                 _highlight.SetActive(turnOn);
                 _original.SetActive(!turnOn);
             }
@@ -72,7 +73,7 @@ namespace Assets.Scripts.MiniGames
         private void OnTriggerEnter(Collider other)
         {
             if (other.gameObject.layer == _localPlayerLayer && _miniGame.IsCompleted == false)
-            {
+            {                
                 SetHighlight(true);
             }
         }
