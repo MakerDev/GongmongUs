@@ -38,10 +38,19 @@ namespace Assets.Scripts
 
         [SerializeField]
         private GameObject _minimapUI;
+        [SerializeField]
+        private GameObject _startGameUI;
+
+        [SerializeField]
+        private MiniMap _minimapOnTab;
+        [SerializeField]
+        private MiniMap _staticMinimap;
+
+        public bool GameStarted { get; private set; } = false;
 
         private static Dictionary<string, Player> _players = new Dictionary<string, Player>();
 
-        public static bool DisableControl { get; private set; }
+        public static bool DisableControl { get; private set; } = true;
 
         public bool IsMenuOpen { get; private set; } = false;
 
@@ -70,6 +79,10 @@ namespace Assets.Scripts
         private void Start()
         {
             _menuCanvas.SetActive(false);
+
+            //At first, mouse needs to be enabled to press start button.
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
         }
 
         public override void OnStartClient()
@@ -79,14 +92,14 @@ namespace Assets.Scripts
             _matchNameText.text = $"<{MatchManager.Instance.Match.Name}>";
         }
 
-        private void DisablePlayerControl()
+        public void DisablePlayerControl()
         {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             DisableControl = true;
         }
 
-        private void EnablePlayerControl()
+        public void EnablePlayerControl()
         {
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
@@ -95,7 +108,10 @@ namespace Assets.Scripts
 
         private void Update()
         {
-            //HandleCursor();
+            if (GameStarted == false)
+            {
+                return;
+            }
 
             HandleChat();
 
@@ -126,6 +142,29 @@ namespace Assets.Scripts
             }
         }
 
+        [Command(ignoreAuthority = true)]
+        public void CmdStartGame()
+        {
+            RpcStartGame();
+        }
+
+        [ClientRpc]
+        private void RpcStartGame()
+        {
+            _startGameUI.SetActive(false);
+            _minimapOnTab.ReigsterPlayerObjects(_players.Values);
+            _staticMinimap.ReigsterPlayerObjects(_players.Values);
+
+            GameStarted = true;
+            EnablePlayerControl();
+        }
+
+        public void NofityPlayerStateChanged(Player player)
+        {
+            _staticMinimap.NotifyStateChanged(player);
+            _minimapOnTab.NotifyStateChanged(player);
+        }
+
         public void OpenMenu()
         {
             if (_menuCanvas != null)
@@ -148,8 +187,6 @@ namespace Assets.Scripts
             if (_menuCanvas != null)
             {
                 _menuCanvas.SetActive(false);
-                //Cursor.lockState = CursorLockMode.Locked;
-                //Cursor.visible = false;
 
                 IsMenuOpen = false;
             }
@@ -160,22 +197,6 @@ namespace Assets.Scripts
             }
 
             EnablePlayerControl();
-        }
-
-
-        private void HandleCursor()
-        {
-            //TODO : find more intelligent way
-            if (_menuCanvas.activeSelf || MiniGame.IsPlaying || _minimapUI.activeSelf)
-            {
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
-            }
-            else
-            {
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
-            }
         }
 
         private void HandleChat()
