@@ -20,6 +20,11 @@ namespace Assets.Scripts
 
         void Update()
         {
+            if (GameManager.DisableControl)
+            {
+                return;
+            }
+
             if (GameManager.Instance.IsMenuOpen || MiniGame.IsPlaying)
             {
                 return;

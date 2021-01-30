@@ -36,7 +36,12 @@ namespace Assets.Scripts
         private GameObject _playerListItemPrefab;
         private List<GameObject> _playerListItems = new List<GameObject>();
 
+        [SerializeField]
+        private GameObject _minimapUI;
+
         private static Dictionary<string, Player> _players = new Dictionary<string, Player>();
+
+        public static bool DisableControl { get; private set; }
 
         public bool IsMenuOpen { get; private set; } = false;
 
@@ -48,6 +53,7 @@ namespace Assets.Scripts
 #else
         private const KeyCode MENU_KEY = KeyCode.Escape;
 #endif
+        private const KeyCode MINIMAP_KEY = KeyCode.Tab;
 
         private void Awake()
         {
@@ -73,9 +79,23 @@ namespace Assets.Scripts
             _matchNameText.text = $"<{MatchManager.Instance.Match.Name}>";
         }
 
+        private void DisablePlayerControl()
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            DisableControl = true;
+        }
+
+        private void EnablePlayerControl()
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+            DisableControl = false;
+        }
+
         private void Update()
         {
-            HandleCursor();
+            //HandleCursor();
 
             HandleChat();
 
@@ -89,13 +109,64 @@ namespace Assets.Scripts
                 {
                     OpenMenu();
                 }
+
+                return;
+            }
+
+            if (Input.GetKeyDown(MINIMAP_KEY))
+            {
+                if (_minimapUI.activeSelf)
+                {
+                    Resume();
+                }
+                else if (MiniGame.IsPlaying == false)
+                {
+                    OpenMiniMap();
+                }
             }
         }
+
+        public void OpenMenu()
+        {
+            if (_menuCanvas != null)
+            {
+                _menuCanvas.SetActive(true);
+
+                DisablePlayerControl();
+            }
+        }
+
+        private void OpenMiniMap()
+        {
+            _minimapUI.SetActive(true);
+
+            DisablePlayerControl();
+        }
+
+        public void Resume()
+        {
+            if (_menuCanvas != null)
+            {
+                _menuCanvas.SetActive(false);
+                //Cursor.lockState = CursorLockMode.Locked;
+                //Cursor.visible = false;
+
+                IsMenuOpen = false;
+            }
+
+            if (_minimapUI != null)
+            {
+                _minimapUI.SetActive(false);
+            }
+
+            EnablePlayerControl();
+        }
+
 
         private void HandleCursor()
         {
             //TODO : find more intelligent way
-            if (IsMenuOpen || MiniGame.IsPlaying)
+            if (_menuCanvas.activeSelf || MiniGame.IsPlaying || _minimapUI.activeSelf)
             {
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
@@ -189,30 +260,6 @@ namespace Assets.Scripts
             }
 
             _sceneCamera.SetActive(isActive);
-        }
-
-        public void OpenMenu()
-        {
-            if (_menuCanvas != null)
-            {
-                _menuCanvas.SetActive(true);
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
-
-                IsMenuOpen = true;
-            }
-        }
-
-        public void Resume()
-        {
-            if (_menuCanvas != null)
-            {
-                _menuCanvas.SetActive(false);
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
-
-                IsMenuOpen = false;
-            }
         }
 
         public void RenameLocalPlayer()

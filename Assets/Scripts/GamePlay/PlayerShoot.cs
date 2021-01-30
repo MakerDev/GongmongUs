@@ -33,6 +33,11 @@ namespace Assets.Scripts
 
         private void Update()
         {
+            if (GameManager.DisableControl)
+            {
+                return;
+            }
+
             if (!isLocalPlayer || GameManager.Instance.IsMenuOpen || MiniGame.IsPlaying)
             {
                 return;

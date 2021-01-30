@@ -1,4 +1,5 @@
-﻿using Mirror;
+﻿using Assets.Scripts;
+using Mirror;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -72,6 +73,11 @@ public class PlayerMotor : NetworkBehaviour
 
     private void FixedUpdate()
     {
+        if (GameManager.DisableControl)
+        {
+            return;
+        }
+
         PerformMovement();
     }
 
