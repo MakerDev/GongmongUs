@@ -287,7 +287,7 @@ MonoBehaviour:
   _speed: 9
   _lookSensitivity: 10
   _thrusterForce: 1100
-  _thrusterFuelBurnSpeed: 0.01
+  _thrusterFuelBurnSpeed: 0.5
   _thrusterFuelRegenSpeed: 0.9
 --- !u!114 &-3757069456253890867
 MonoBehaviour:
