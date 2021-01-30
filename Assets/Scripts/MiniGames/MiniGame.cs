@@ -1,4 +1,5 @@
-﻿using Cysharp.Threading.Tasks.Triggers;
+﻿using Assets.Scripts;
+using Cysharp.Threading.Tasks.Triggers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -28,12 +29,14 @@ public class MiniGame : MonoBehaviour
         OnStartMiniGame?.Invoke();
         MiniGameResult = new MiniGameResult();
         StartMiniGame();
+        GameManager.Instance.DisablePlayerControl();
     }
 
     public void OnDisable()
     {
         OnCompletedMiniGame?.Invoke(MiniGameResult);
         OnLocalGameCompleted?.Invoke(MiniGameResult);
+        GameManager.Instance.EnablePlayerControl();
     }
 
     public void StartMiniGame()
