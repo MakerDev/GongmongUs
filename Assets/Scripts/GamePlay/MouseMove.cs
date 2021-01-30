@@ -13,11 +13,6 @@ namespace Assets.Scripts
         private float _xRotation = 0f;
         private float _maxRotation = 50f;
 
-        void Start()
-        {
-            Cursor.lockState = CursorLockMode.Locked;
-        }
-
         void Update()
         {
             if (GameManager.DisableControl)

@@ -73,7 +73,7 @@ public class PlayerMotor : NetworkBehaviour
 
     private void FixedUpdate()
     {
-        if (GameManager.DisableControl)
+        if (GameManager.DisableControl || (!isLocalPlayer && !gameObject.activeSelf) || _isPlayingMiniGame)
         {
             return;
         }
@@ -83,11 +83,6 @@ public class PlayerMotor : NetworkBehaviour
 
     private void PerformMovement()
     {
-        if ((!isLocalPlayer && !gameObject.activeSelf) || _isPlayingMiniGame)
-        {
-            return;
-        }
-
         float x = Input.GetAxis("Horizontal");
         float z = Input.GetAxis("Vertical");
 
@@ -99,7 +94,8 @@ public class PlayerMotor : NetworkBehaviour
 
         if (!_isGrounded && gameObject.transform.position.y >= 1)
         {
-            var newPos = gameObject.transform.position - (Vector3.up * (5.3f) * Time.fixedDeltaTime);
+            var newPos = gameObject.transform.position - (Vector3.up * (5.3f) * Time.deltaTime);
+            
             if (newPos.y <= 1)
             {
                 newPos.y = 1;
@@ -110,7 +106,7 @@ public class PlayerMotor : NetworkBehaviour
 
         if (_thrusterForce != Vector3.zero)
         {
-            _controller.Move(Vector3.up * 4f * Time.fixedDeltaTime);
+            _controller.Move(Vector3.up * 4f * Time.deltaTime);
         }
     }
 }

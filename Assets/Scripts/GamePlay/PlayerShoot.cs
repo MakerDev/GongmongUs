@@ -107,12 +107,10 @@ namespace Assets.Scripts
 
             CmdOnShoot();
 
-            Debug.Log($"Shoot!");
-
             if (Physics.Raycast(_camera.transform.position, _camera.transform.forward, out RaycastHit hit, _currentWeapon.Range, _layerMask))
             {
                 //We hit something
-                Debug.Log($"Hit : {hit.collider.name}");
+                //Debug.Log($"Hit : {hit.collider.name}");
 
                 if (hit.collider.CompareTag(PLAYER_TAG))
                 {

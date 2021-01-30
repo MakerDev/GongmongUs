@@ -61,9 +61,6 @@ namespace Assets.Scripts
 
                 Debug.Log("PlayerSetUp: Called player setup on server? " + isServer);
             }
-
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
         }
 
         private void ConfigurePlayerUI()
