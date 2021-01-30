@@ -11,7 +11,7 @@ namespace Assets.Scripts
     [RequireComponent(typeof(PlayerSetup))]
     public class Player : NetworkBehaviour
     {
-        public static Player LocalPlayer { get; private set; }
+        public static Player LocalPlayer { get; private set; }       
 
         #region STATES
         [SyncVar]
@@ -56,11 +56,20 @@ namespace Assets.Scripts
         private string _playerName = "player";
         public string PlayerName { get { return _playerName; } }
 
+        [SyncVar(hook = nameof(NotifyStateChanged))]
+        private PlayerState _playerState = PlayerState.Normal;
+        public PlayerState State { get { return _playerState; } }
+
         [SerializeField]
         public GameObject _chatHubPrefab;
 
+        private void NotifyStateChanged(PlayerState _, PlayerState newState)
+        {
+            GameManager.Instance.NofityPlayerStateChanged(this);
+        }
+
         private void Start()
-        {            
+        {
             _playerInfo.SetPlayer(this);
         }
 
@@ -133,7 +142,7 @@ namespace Assets.Scripts
             matchChecker.matchId = matchGuid;
         }
 
-        public override async void OnStopClient()
+        public override void OnStopClient()
         {
             GameManager.Instance.PrintMessage($"{PlayerName} leaved", null, ChatType.Info);
 
@@ -246,7 +255,7 @@ namespace Assets.Scripts
             }
 
             _currentHealth = newHealth;
-            Debug.Log(transform.name + " now has " + _currentHealth + " health.");
+            //Debug.Log(transform.name + " now has " + _currentHealth + " health.");
 
             if (_currentHealth <= 0)
             {
