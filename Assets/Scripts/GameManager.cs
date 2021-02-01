@@ -179,7 +179,7 @@ namespace Assets.Scripts
         {
             _minimapUI.SetActive(true);
 
-            DisablePlayerControl();
+            //DisablePlayerControl();
         }
 
         public void Resume()

@@ -44,16 +44,7 @@ namespace Assets.Scripts.MiniGames
             if (_outlineComponent != null)
             {
                 _outlineComponent.enabled = false;
-            }
-
-            _miniGame.OnLocalGameCompleted += (result) =>
-            {
-                if (result.Passed)
-                {
-                    var rigidBody = GetComponent<Rigidbody>();
-                    rigidBody.isKinematic = true;
-                }
-            };
+            }            
         }
 
         private void SetHighlight(bool turnOn)

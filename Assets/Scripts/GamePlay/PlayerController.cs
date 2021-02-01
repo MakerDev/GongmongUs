@@ -63,7 +63,7 @@ namespace Assets.Scripts
             Vector3 thrusterForce = Vector3.zero;
             if (Input.GetButton("Jump") && _thrusterFuelAmount >= 0)
             {
-                _thrusterFuelAmount -= _thrusterFuelBurnSpeed * Time.deltaTime;
+                _thrusterFuelAmount -= _thrusterFuelBurnSpeed * Time.fixedDeltaTime;
 
                 if (_thrusterFuelAmount >= 0.01f)
                 {
@@ -72,7 +72,7 @@ namespace Assets.Scripts
             }
             else
             {
-                _thrusterFuelAmount += _thrusterFuelRegenSpeed * Time.deltaTime;
+                _thrusterFuelAmount += _thrusterFuelRegenSpeed * Time.fixedDeltaTime;
             }
 
             _thrusterFuelAmount = Mathf.Clamp(_thrusterFuelAmount, 0, 1);

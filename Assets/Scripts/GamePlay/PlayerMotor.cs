@@ -94,7 +94,7 @@ public class PlayerMotor : NetworkBehaviour
 
         if (!_isGrounded && gameObject.transform.position.y >= 1)
         {
-            var newPos = gameObject.transform.position - (Vector3.up * (5.3f) * Time.deltaTime);
+            var newPos = gameObject.transform.position - (Vector3.up * (5.3f) * Time.fixedDeltaTime);
             
             if (newPos.y <= 1)
             {
@@ -106,7 +106,7 @@ public class PlayerMotor : NetworkBehaviour
 
         if (_thrusterForce != Vector3.zero)
         {
-            _controller.Move(Vector3.up * 4f * Time.deltaTime);
+            _controller.Move(Vector3.up * 4f * Time.fixedDeltaTime);
         }
     }
 }
