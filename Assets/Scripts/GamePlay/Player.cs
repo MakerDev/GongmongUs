@@ -11,23 +11,23 @@ namespace Assets.Scripts
     [RequireComponent(typeof(PlayerSetup))]
     public class Player : NetworkBehaviour
     {
-        public static Player LocalPlayer { get; private set; }       
+        public static Player LocalPlayer { get; private set; }
 
         #region STATES
-        [SyncVar]
-        private bool _isDead = false;
-        public bool IsDead
-        {
-            get { return _isDead = false; }
-            protected set { _isDead = value; }
-        }
+        //[SyncVar]
+        //private bool _isDead = false;
+        //public bool IsDead
+        //{
+        //    get { return _isDead = false; }
+        //    protected set { _isDead = value; }
+        //}
 
-        [SerializeField]
-        private float _maxHealth = 100;
+        //[SerializeField]
+        //private float _maxHealth = 100;
 
-        [SyncVar]
-        private float _currentHealth = 100;
-        public float CurrentHealth { get { return _currentHealth; } set { _currentHealth = value; } }
+        //[SyncVar]
+        //private float _currentHealth = 100;
+        //public float CurrentHealth { get { return _currentHealth; } set { _currentHealth = value; } }
 
         //For lobby
         public bool IsReady { get; private set; } = false;
@@ -67,17 +67,18 @@ namespace Assets.Scripts
         {
             GameManager.Instance.NofityPlayerStateChanged(this);
         }
-
         private void Start()
         {
             _playerInfo.SetPlayer(this);
         }
 
+        #region CONNECTIONS
         public override void OnStartServer()
         {
             base.OnStartServer();
             //To avoid overriding synced value, only set this on server
-            _currentHealth = _maxHealth;
+            //TODO : set state here instead
+            //_currentHealth = _maxHealth;
         }
 
         public override void OnStartLocalPlayer()
@@ -86,6 +87,17 @@ namespace Assets.Scripts
 
             CmdGetConnectionID();
         }
+
+        public override void OnStopClient()
+        {
+            GameManager.Instance.PrintMessage($"{PlayerName} leaved", null, ChatType.Info);
+
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+
+            base.OnStopClient();
+        }
+        #endregion
 
         [Command]
         private void CmdGetConnectionID()
@@ -103,7 +115,7 @@ namespace Assets.Scripts
         {
             base.OnStartClient();
 
-            //If this is local player, set player name manually because this script being called 'Start' 
+            //If this is local player, set player name manually because this script being called 'Start'
             //means that this is joining the existing room and other players' name will be automatically synced.
             if (isLocalPlayer)
             {
@@ -142,16 +154,6 @@ namespace Assets.Scripts
             matchChecker.matchId = matchGuid;
         }
 
-        public override void OnStopClient()
-        {
-            GameManager.Instance.PrintMessage($"{PlayerName} leaved", null, ChatType.Info);
-
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-
-            base.OnStopClient();
-        }
-
         public void OnNameSet(string _, string newName)
         {
             if (isLocalPlayer)
@@ -184,7 +186,7 @@ namespace Assets.Scripts
             }
 
             //This is client side health regen
-            CurrentHealth = _maxHealth;
+            //CurrentHealth = _maxHealth;
             Debug.Log($"Player Setup is called on Player{netId}");
             CmdBroadCastNewPlayerSetUp();
         }
@@ -219,10 +221,6 @@ namespace Assets.Scripts
             string caller = isServer ? "Server" : "Client";
             Debug.Log($"{caller} called SetDefaults for {PlayerName}");
 
-            IsDead = false;
-
-            _currentHealth = _maxHealth;
-
             for (int i = 0; i < _disableOnDeath.Length; i++)
             {
                 _disableOnDeath[i].enabled = _wasEnabled[i];
@@ -246,35 +244,16 @@ namespace Assets.Scripts
             }
         }
 
+        //TODO : 잡거나 잡히는 액션을 당한 경우에 사용
         [ClientRpc]
         public void RpcTakeDamage(float newHealth, string shooterName)
         {
-            if (IsDead)
-            {
-                return;
-            }
-
-            _currentHealth = newHealth;
+            //_currentHealth = newHealth;
             //Debug.Log(transform.name + " now has " + _currentHealth + " health.");
 
-            if (_currentHealth <= 0)
-            {
-                Die();
-                GameManager.Instance.PrintMessage($"{PlayerName} is killed by {shooterName}", null);
-            }
+            Die();
+            GameManager.Instance.PrintMessage($"{PlayerName} is killed by {shooterName}", null);
         }
-
-        [Server]
-        public void TakeDamage(float damage)
-        {
-            _currentHealth -= damage;
-        }
-
-        public float GetCurrentHpRatio()
-        {
-            return _currentHealth / _maxHealth;
-        }
-
         private IEnumerator Respawn()
         {
             yield return new WaitForSeconds(GameManager.Instance.MatchSetting.RespawnTime);
@@ -304,8 +283,6 @@ namespace Assets.Scripts
 
         private void Die()
         {
-            IsDead = true;
-
             //Disable components
             for (int i = 0; i < _disableOnDeath.Length; i++)
             {

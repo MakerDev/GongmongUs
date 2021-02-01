@@ -126,16 +126,15 @@ namespace Assets.Scripts
         {
             //Debug.Log(playerId + " has been shot by damage " + damage + $" by {shooter}");
             Player player = GameManager.Instance.GetPlayer(playerId);
-            player.TakeDamage(damage);
 
-            player.RpcTakeDamage(player.CurrentHealth, shooter);
+            //player.RpcTakeDamage(player.CurrentHealth, shooter);
 
             //Does this increase too much server load..? Looks fine.
             //Server side respawn
-            if (player.CurrentHealth <= 0)
-            {
-                player.CurrentHealth = 100;
-            }
+            //if (player.CurrentHealth <= 0)
+            //{
+            //    player.CurrentHealth = 100;
+            //}
         }
     }
 }

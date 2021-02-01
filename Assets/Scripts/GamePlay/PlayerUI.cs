@@ -12,8 +12,6 @@ namespace Assets.Scripts
         private RectTransform _thrusterFuelFill;
 
         [SerializeField]
-        private RectTransform _hpBar;
-        [SerializeField]
         private Text _playerNameText;
 
         [SerializeField]
@@ -34,7 +32,6 @@ namespace Assets.Scripts
         private void Update()
         {
             SetFuelAmout(_controller.GetThrusterFuelAmount());
-            _hpBar.SetScale(new Vector3(_player.GetCurrentHpRatio(), 1, 1));
         }
 
         private bool _wasOnTarget = false;
