@@ -13,26 +13,6 @@ namespace Assets.Scripts
     {
         public static Player LocalPlayer { get; private set; }
 
-        #region STATES
-        //[SyncVar]
-        //private bool _isDead = false;
-        //public bool IsDead
-        //{
-        //    get { return _isDead = false; }
-        //    protected set { _isDead = value; }
-        //}
-
-        //[SerializeField]
-        //private float _maxHealth = 100;
-
-        //[SyncVar]
-        //private float _currentHealth = 100;
-        //public float CurrentHealth { get { return _currentHealth; } set { _currentHealth = value; } }
-
-        //For lobby
-        public bool IsReady { get; private set; } = false;
-        #endregion
-
         #region SETUP
         [SerializeField]
         private Behaviour[] _disableOnDeath;
@@ -52,21 +32,25 @@ namespace Assets.Scripts
         private bool _isFirstSetup = true;
         #endregion
 
+        public string PlayerId { get { return $"{GameManager.PLAYER_ID_PREFIX}{netId}"; } }
+
         [SyncVar(hook = nameof(OnNameSet))]
         private string _playerName = "player";
         public string PlayerName { get { return _playerName; } }
 
-        [SyncVar(hook = nameof(NotifyStateChanged))]
-        private PlayerState _playerState = PlayerState.Normal;
-        public PlayerState State { get { return _playerState; } }
+        private PlayerState _playerState = PlayerState.Student;
+        public PlayerState State { get { return _playerState; } private set { _playerState = value; } }
 
         [SerializeField]
         public GameObject _chatHubPrefab;
 
-        private void NotifyStateChanged(PlayerState _, PlayerState newState)
+        public bool IsReady { get; private set; } = false;
+
+        private void NotifyStateChanged(PlayerState oldState_, PlayerState newState)
         {
             GameManager.Instance.NofityPlayerStateChanged(this);
         }
+
         private void Start()
         {
             _playerInfo.SetPlayer(this);
@@ -97,7 +81,6 @@ namespace Assets.Scripts
 
             base.OnStopClient();
         }
-        #endregion
 
         [Command]
         private void CmdGetConnectionID()
@@ -110,6 +93,58 @@ namespace Assets.Scripts
         {
             BCNetworkManager.Instance.NotifyUserConnect(connectionID, UserManager.Instance.User);
         }
+
+        #endregion
+
+        public void GetReady()
+        {
+            CmdGetReady();
+        }
+
+        [Command]
+        private void CmdGetReady()
+        {
+            IsReady = true;
+            RpcGetReady();
+        }
+
+        [ClientRpc]
+        private void RpcGetReady()
+        {
+            IsReady = true;
+            Debug.Log("Im ready");
+        }
+
+        public void CaughtByProfessor()
+        {
+            //TODO : Display transformation effct and animation.
+            CmdSetState(PlayerState.Assistant);
+        }
+
+        public void SetState(PlayerState state)
+        {
+            CmdSetState(state);
+        }
+
+        [Command]
+        private void CmdSetState(PlayerState state)
+        {
+            State = state;
+            RpcSetState(state);
+        }
+
+        [ClientRpc]
+        private void RpcSetState(PlayerState state)
+        {
+            var oldState = State;
+            State = state;
+
+            if (isLocalPlayer)
+            {
+                NotifyStateChanged(oldState, state);
+            }
+        }
+
 
         public override void OnStartClient()
         {

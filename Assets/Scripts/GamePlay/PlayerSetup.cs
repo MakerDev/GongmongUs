@@ -33,10 +33,9 @@ namespace Assets.Scripts
 
         private void Start()
         {
-            string netId = GetComponent<NetworkIdentity>().netId.ToString();
             Player player = GetComponent<Player>();
 
-            GameManager.Instance.RegisterPlayer(netId, player);
+            GameManager.Instance.RegisterPlayer(player);
 
             if (!isLocalPlayer)
             {

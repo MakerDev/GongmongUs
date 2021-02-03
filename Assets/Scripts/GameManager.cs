@@ -3,6 +3,7 @@ using Mirror;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
@@ -14,6 +15,10 @@ namespace Assets.Scripts
         public static GameManager Instance;
         public MatchSetting MatchSetting;
 
+        private const int MAX_MESSAGES = 10;
+        private readonly List<ChatMessage> _messages = new List<ChatMessage>();
+
+        #region SCENE UIs
         [SerializeField]
         private GameObject _sceneCamera;
         [SerializeField]
@@ -34,7 +39,6 @@ namespace Assets.Scripts
         private GameObject _playerListPanel;
         [SerializeField]
         private GameObject _playerListItemPrefab;
-        private List<GameObject> _playerListItems = new List<GameObject>();
 
         [SerializeField]
         private GameObject _minimapUI;
@@ -45,17 +49,19 @@ namespace Assets.Scripts
         private MiniMap _minimapOnTab;
         [SerializeField]
         private MiniMap _staticMinimap;
+        #endregion
+        [SerializeField]
+        private Button _readyButton;
+        [SerializeField]
+        private Button _startGameButton;
 
+        private List<GameObject> _playerListItems = new List<GameObject>();
         public bool GameStarted { get; private set; } = false;
 
-        private static Dictionary<string, Player> _players = new Dictionary<string, Player>();
+        private static readonly Dictionary<string, Player> _players = new Dictionary<string, Player>();
 
         public static bool DisableControl { get; private set; } = true;
-
         public bool IsMenuOpen { get; private set; } = false;
-
-        private const int MAX_MESSAGES = 10;
-        private List<ChatMessage> _messages = new List<ChatMessage>();
 
 #if UNITY_WEBGL
         private const KeyCode MENU_KEY = KeyCode.LeftControl;
@@ -82,7 +88,7 @@ namespace Assets.Scripts
 
             //At first, mouse needs to be enabled to press start button.
             Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+            Cursor.visible = true;            
         }
 
         public override void OnStartClient()
@@ -90,6 +96,15 @@ namespace Assets.Scripts
             base.OnStartClient();
 
             _matchNameText.text = $"<{MatchManager.Instance.Match.Name}>";
+
+            if (UserManager.Instance.User.IsHost)
+            {
+                _readyButton.gameObject.SetActive(false);
+            }
+            else
+            {
+                _startGameButton.gameObject.SetActive(false);
+            }
         }
 
         public void DisablePlayerControl()
@@ -113,6 +128,7 @@ namespace Assets.Scripts
                 return;
             }
 
+            //TODO : fix mouse cursor problem.
             HandleChat();
 
             if (Input.GetKeyDown(MENU_KEY))
@@ -142,18 +158,70 @@ namespace Assets.Scripts
             }
         }
 
+        private bool CanStartGame()
+        {
+            return true;
+        }
+
+        public void ReadyGame()
+        {
+            Player.LocalPlayer.GetReady();
+            _readyButton.enabled = false;
+        }
+
+        public void StartGame()
+        {
+            if (UserManager.Instance.User.IsHost == false || CanStartGame() == false)
+            {
+                return;
+            }
+
+            //if (UserManager.Instance.User.IsHost)
+            //{
+            //    Player.LocalPlayer.ISre
+            //}
+
+            foreach (var player in _players.Values)
+            {
+                if (player == Player.LocalPlayer)
+                {
+                    continue;
+                }
+
+                if (player.IsReady == false)
+                {
+                    //TODO : Notify this
+                    Debug.Log("all users must be ready to start");
+                    return;
+                }
+            }
+
+            CmdStartGame();
+        }
+
         [Command(ignoreAuthority = true)]
         public void CmdStartGame()
         {
-            RpcStartGame();
+            //Set player states.
+            var index = UnityEngine.Random.Range(0, _players.Count);
+            var professorName = _players.Keys.ToArray()[index];
+
+            RpcStartGame(professorName);
         }
 
         [ClientRpc]
-        private void RpcStartGame()
+        private void RpcStartGame(string professorName)
         {
             _startGameUI.SetActive(false);
             _minimapOnTab.ReigsterPlayerObjects(_players.Values);
             _staticMinimap.ReigsterPlayerObjects(_players.Values);
+
+            foreach (var player in _players.Values)
+            {
+                player.SetState(PlayerState.Student);
+            }
+
+            _players[professorName].SetState(PlayerState.Professor);
 
             GameStarted = true;
             EnablePlayerControl();
@@ -198,7 +266,22 @@ namespace Assets.Scripts
 
             EnablePlayerControl();
         }
+        public void SetSceneCameraActive(bool isActive)
+        {
+            if (_sceneCamera == null)
+            {
+                return;
+            }
 
+            _sceneCamera.SetActive(isActive);
+        }
+
+        public void RenameLocalPlayer()
+        {
+            Player.LocalPlayer.SetName(_renameInputField.text);
+        }
+
+        #region CHAT
         private void HandleChat()
         {
             if (_chatInputField.text != "")
@@ -272,21 +355,7 @@ namespace Assets.Scripts
 
             return Color.black;
         }
-
-        public void SetSceneCameraActive(bool isActive)
-        {
-            if (_sceneCamera == null)
-            {
-                return;
-            }
-
-            _sceneCamera.SetActive(isActive);
-        }
-
-        public void RenameLocalPlayer()
-        {
-            Player.LocalPlayer.SetName(_renameInputField.text);
-        }
+        #endregion
 
         #region PLAYER TRACKING
         public const string PLAYER_ID_PREFIX = "Player";
@@ -294,9 +363,9 @@ namespace Assets.Scripts
         /// <summary>
         /// Key : PlayerId == transform.name
         /// </summary>
-        public void RegisterPlayer(string netId, Player player)
+        public void RegisterPlayer(Player player)
         {
-            string playerId = PLAYER_ID_PREFIX + netId;
+            string playerId = player.PlayerId;
             _players.Add(playerId, player);
             player.transform.name = playerId;
 
