@@ -86,13 +86,13 @@ public class MiniMap : MonoBehaviour
         {
             switch (player.State)
             {
-                case PlayerState.Monster:
+                case PlayerState.Professor:
                     mob = Instantiate(_monsterPlayerMobPrefab, _mobSpawnPoint.transform);
                     break;
-                case PlayerState.Infected:
+                case PlayerState.Assistant:
                     mob = Instantiate(_infectedPlayerMobPrefab, _mobSpawnPoint.transform);
                     break;
-                case PlayerState.Normal:
+                case PlayerState.Student:
                     mob = Instantiate(_normalPlayerMobPrefab, _mobSpawnPoint.transform);
                     break;
                 default:

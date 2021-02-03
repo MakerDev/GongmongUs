@@ -2,8 +2,8 @@
 {
     public enum PlayerState
     {
-        Monster,
-        Infected,
-        Normal,
+        Professor,
+        Assistant,
+        Student,
     }
 }
