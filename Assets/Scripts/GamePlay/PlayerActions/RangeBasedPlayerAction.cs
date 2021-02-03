@@ -15,11 +15,13 @@ namespace Assets.Scripts.GamePlay.PlayerActions
         //TODO : Set this properly
         public Transform RaycastTransform { get; protected set; }
 
-        public bool CanExecute()
+        protected RaycastHit _hit;
+
+        public virtual bool CanExecute()
         {
             var isHit = Physics.Raycast(RaycastTransform.position,
                                         RaycastTransform.forward,
-                                        out RaycastHit hit,
+                                        out _hit,
                                         Range,
                                         TargetLayerMask);
 
@@ -31,6 +33,7 @@ namespace Assets.Scripts.GamePlay.PlayerActions
 
         public virtual void Execute()
         {
+
         }
     }
 }
