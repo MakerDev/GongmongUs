@@ -4,6 +4,6 @@ using UnityEngine;
 
 public interface IPlayerAction
 {
-    public bool CanExecute();
-    public void Execute();
+    bool CanExecute();
+    void Execute();
 }
