@@ -36,7 +36,7 @@ namespace Assets.Scripts
 
         [SyncVar(hook = nameof(OnNameSet))]
         private string _playerName = "player";
-        public string PlayerName { get { return _playerName; } }
+        public string PlayerName { get { return _playerName; } private set { _playerName = value; } }
 
         private PlayerState _playerState = PlayerState.Student;
         public PlayerState State { get { return _playerState; } private set { _playerState = value; } }
@@ -127,6 +127,30 @@ namespace Assets.Scripts
         }
 
         #endregion
+
+        public void StartGame()
+        {
+            CmdStartGame();
+        }
+
+        [Command]
+        private void CmdStartGame()
+        {
+            //Set player states.
+            //var index = UnityEngine.Random.Range(0, _players.Count);
+            //var professorName = _players.Keys.ToArray()[index];
+            var index = 0;
+            var professorId = PlayerId;
+
+            //TODO : Report MatchServer this game has started and prevent further entering players.
+            RpcStartGame(professorId);
+        }
+
+        [ClientRpc]
+        private void RpcStartGame(string professorId)
+        {
+            GameManager.Instance.ConfigureGameOnStart(professorId);
+        }
 
         public void GetReady()
         {

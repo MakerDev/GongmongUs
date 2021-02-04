@@ -58,7 +58,7 @@ namespace Assets.Scripts
         private List<GameObject> _playerListItems = new List<GameObject>();
         public bool GameStarted { get; private set; } = false;
 
-        private static readonly Dictionary<string, Player> _players = new Dictionary<string, Player>();
+        private readonly Dictionary<string, Player> _players = new Dictionary<string, Player>();
 
         public static bool DisableControl { get; private set; } = true;
         public bool IsMenuOpen { get; private set; } = false;
@@ -82,18 +82,15 @@ namespace Assets.Scripts
             }
         }
 
-        private void Start()
+        public override void OnStartClient()
         {
+            base.OnStartClient();
+
             _menuCanvas.SetActive(false);
 
             //At first, mouse needs to be enabled to press start button.
             Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;            
-        }
-
-        public override void OnStartClient()
-        {
-            base.OnStartClient();
+            Cursor.visible = true;
 
             _matchNameText.text = $"<{MatchManager.Instance.Match.Name}>";
 
@@ -176,11 +173,6 @@ namespace Assets.Scripts
                 return;
             }
 
-            //if (UserManager.Instance.User.IsHost)
-            //{
-            //    Player.LocalPlayer.ISre
-            //}
-
             foreach (var player in _players.Values)
             {
                 if (player == Player.LocalPlayer)
@@ -196,22 +188,10 @@ namespace Assets.Scripts
                 }
             }
 
-            CmdStartGame();
+            Player.LocalPlayer.StartGame();
         }
 
-        [Command(ignoreAuthority = true)]
-        public void CmdStartGame()
-        {
-            //Set player states.
-            var index = UnityEngine.Random.Range(0, _players.Count);
-            var professorName = _players.Keys.ToArray()[index];
-
-            //TODO : Report MatchServer this game has started and prevent further entering players.
-            RpcStartGame(professorName);
-        }
-
-        [ClientRpc]
-        private void RpcStartGame(string professorName)
+        public void ConfigureGameOnStart(string professorName)
         {
             _startGameUI.SetActive(false);
             _minimapOnTab.ReigsterPlayerObjects(_players.Values);
@@ -229,6 +209,7 @@ namespace Assets.Scripts
             Debug.Log($"You're {Player.LocalPlayer.State}");
             EnablePlayerControl();
         }
+
 
         public void NofityPlayerStateChanged(Player player)
         {

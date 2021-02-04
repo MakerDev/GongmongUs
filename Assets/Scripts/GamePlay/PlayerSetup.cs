@@ -32,11 +32,7 @@ namespace Assets.Scripts
         }
 
         private void Start()
-        {
-            Player player = GetComponent<Player>();
-
-            GameManager.Instance.RegisterPlayer(player);
-
+        {           
             if (!isLocalPlayer)
             {
                 foreach (var component in _componentsToDiable)
@@ -60,6 +56,13 @@ namespace Assets.Scripts
 
                 Debug.Log("PlayerSetUp: Called player setup on server? " + isServer);
             }
+        }
+
+        public override void OnStartClient()
+        {
+            Player player = GetComponent<Player>();
+            GameManager.Instance.RegisterPlayer(player);
+            Debug.Log($"Registerd {player.PlayerId}");
         }
 
         private void ConfigurePlayerUI()
@@ -88,7 +91,8 @@ namespace Assets.Scripts
                 GameManager.Instance.SetSceneCameraActive(true);                
             }
 
-            GameManager.Instance.UnRegisterPlayer(transform.name);
+            Player player = GetComponent<Player>();
+            GameManager.Instance.UnRegisterPlayer(player.PlayerId);
         }
     }
 }
