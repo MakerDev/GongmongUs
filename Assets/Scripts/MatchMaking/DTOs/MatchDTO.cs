@@ -11,5 +11,6 @@ namespace BattleCampusMatchServer.Models.DTOs
         public IpPortInfo IpPortInfo { get; set; }
         public int MaxPlayers { get; set; } = 6;
         public int CurrentPlayersCount { get; set; }
+        public bool CanJoin { get; set; } = false;
     }
 }

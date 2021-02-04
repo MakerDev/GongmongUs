@@ -156,7 +156,7 @@ namespace Assets.Scripts.Networking
                     _requestResultText.text = result.JoinFailReason;
                     return;
                 }
-
+                UserManager.Instance.User.IsHost = false;
                 MoveToMatch(result.Match);
             }
             catch (Exception)

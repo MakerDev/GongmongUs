@@ -21,6 +21,8 @@ namespace Assets.Scripts
         private Text _matchIDText;
         [SerializeField]
         private Button _joinButton;
+        [SerializeField]
+        private Image _joinShield;
 
         public void UpdateInfo(MatchDTO match)
         {
@@ -29,6 +31,10 @@ namespace Assets.Scripts
             _matchIDText.text = match.MatchID;
             _matchNameText.text = match.Name;
             _currentPlayerInfoText.text = $"{match.CurrentPlayersCount}/{match.MaxPlayers}";
+
+
+            _joinButton.enabled = match.CanJoin;
+            _joinShield.enabled = !match.CanJoin;
         }
 
         public async void JoinMatch()

@@ -79,6 +79,11 @@ namespace Assets.Scripts.Networking
             await MatchServer.Instance.NotifyUserConnect(MatchManager.Instance.Match.IpPortInfo, connectionId, user);
         }
 
+        public async UniTask NotifyStartGame(string matchID)
+        {
+            await MatchServer.Instance.NotifyMatchStarted(_ipPortInfo, matchID);
+        }
+
         //This is called on server. 
         public override async void OnServerDisconnect(NetworkConnection conn)
         {
