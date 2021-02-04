@@ -120,6 +120,11 @@ public class MiniMap : MonoBehaviour
         }
     }
 
+    public void RemovePlayer(Player player)
+    {
+        _allPlayers.Remove(player);
+    }
+
     private int GetCurrentFloor(float y)
     {
         if (y >= 3.2)
@@ -193,7 +198,7 @@ public class MiniMap : MonoBehaviour
         {
             var player = _allPlayers[i];
 
-            if (GetCurrentFloor(player.transform.position.y) != floor)
+            if (player == null || GetCurrentFloor(player.transform.position.y) != floor)
             {
                 continue;
             }

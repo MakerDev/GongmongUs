@@ -9,21 +9,20 @@ namespace Assets.Scripts.GamePlay.PlayerActions
 {
     public class CatchAction : RangeBasedPlayerAction
     {
-        public CatchAction()
+        public CatchAction(Transform raycastTransform, LayerMask targetLayers)
+            : base(raycastTransform)
         {
-            Range = 10.0f;
+            TargetLayerMask = targetLayers;
         }
 
         public override void Execute()
         {
-            if (Input.GetKeyDown("Fire1"))
-            {
-                var player = _hit.collider.gameObject.GetComponent<Player>();
+            var player = _hit.collider.gameObject.GetComponent<Player>();
 
-                if (player.State == PlayerState.Student)
-                {
-                    player.CaughtByProfessor();
-                }
+            if (player.State == PlayerState.Student)
+            {
+                Debug.Log($"Caught {player.PlayerId}");
+                player.CaughtByProfessor();
             }
         }
     }

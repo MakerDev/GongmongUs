@@ -206,6 +206,7 @@ namespace Assets.Scripts
             var index = UnityEngine.Random.Range(0, _players.Count);
             var professorName = _players.Keys.ToArray()[index];
 
+            //TODO : Report MatchServer this game has started and prevent further entering players.
             RpcStartGame(professorName);
         }
 
@@ -224,6 +225,8 @@ namespace Assets.Scripts
             _players[professorName].SetState(PlayerState.Professor);
 
             GameStarted = true;
+
+            Debug.Log($"You're {Player.LocalPlayer.State}");
             EnablePlayerControl();
         }
 
@@ -379,12 +382,16 @@ namespace Assets.Scripts
 
         public void UnRegisterPlayer(string playerId)
         {
+            var player = _players[playerId];
             _players.Remove(playerId);
 
             if (isClient)
             {
                 RefreshPlayerList();
             }
+
+            _minimapOnTab.RemovePlayer(player);
+            _staticMinimap.RemovePlayer(player);
 
             Debug.Log($"Client : {playerId} is removed");
         }

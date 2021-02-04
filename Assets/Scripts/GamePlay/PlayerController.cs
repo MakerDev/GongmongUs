@@ -26,6 +26,9 @@ namespace Assets.Scripts
         private PlayerMotor _motor;
         private Animator _animator;
 
+        [SerializeField]
+        private Transform _raycastTransform;
+
         private void Start()
         {
             _motor = GetComponent<PlayerMotor>();
@@ -39,6 +42,11 @@ namespace Assets.Scripts
 
         private void FixedUpdate()
         {
+            if (GameManager.DisableControl)
+            {
+                return;
+            }
+
             float xMov = Input.GetAxisRaw("Horizontal");
             float zMov = Input.GetAxisRaw("Vertical");
 

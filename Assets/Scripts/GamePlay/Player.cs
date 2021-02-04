@@ -44,16 +44,21 @@ namespace Assets.Scripts
         [SerializeField]
         public GameObject _chatHubPrefab;
 
+
+        private PlayerShoot _playerShootComponent;
+
         public bool IsReady { get; private set; } = false;
 
         private void NotifyStateChanged(PlayerState oldState_, PlayerState newState)
         {
             GameManager.Instance.NofityPlayerStateChanged(this);
+            _playerShootComponent.NotifyStateChanged(newState);
         }
 
         private void Start()
         {
             _playerInfo.SetPlayer(this);
+            _playerShootComponent = GetComponent<PlayerShoot>();
         }
 
         #region CONNECTIONS
@@ -72,10 +77,37 @@ namespace Assets.Scripts
             CmdGetConnectionID();
         }
 
+        public override void OnStartClient()
+        {
+            base.OnStartClient();
+
+            //If this is local player, set player name manually because this script being called 'Start'
+            //means that this is joining the existing room and other players' name will be automatically synced.
+            if (isLocalPlayer)
+            {
+                LocalPlayer = this;
+
+                string userName = UserManager.Instance.User.Name;
+                string netId = GetComponent<NetworkIdentity>().netId.ToString();
+                var newName = $"{userName}{netId}";
+                SetName(newName);
+
+                //GameManager.Instance.CmdPrintMessage($"{newName} joined!", null, ChatType.Info);
+                //TODO : Report
+            }
+
+            CmdSetMatchChecker(MatchManager.Instance.Match.MatchID.ToGuid());
+
+            if (UserManager.Instance.User.IsHost && isLocalPlayer)
+            {
+                CmdSpawnChatHub(MatchManager.Instance.Match.MatchID.ToGuid());
+            }
+        }
+
         public override void OnStopClient()
         {
             GameManager.Instance.PrintMessage($"{PlayerName} leaved", null, ChatType.Info);
-
+            
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
@@ -117,8 +149,24 @@ namespace Assets.Scripts
 
         public void CaughtByProfessor()
         {
+            CmdCaughByProfessor();
+        }
+
+        [Command]
+        private void CmdCaughByProfessor()
+        {
+            RpcCaughtByProfessor();
+
+        }
+
+        [ClientRpc]
+        private void RpcCaughtByProfessor()
+        {
+            GameManager.Instance.DisablePlayerControl();
             //TODO : Display transformation effct and animation.
+
             CmdSetState(PlayerState.Assistant);
+            GameManager.Instance.EnablePlayerControl();
         }
 
         public void SetState(PlayerState state)
@@ -142,34 +190,6 @@ namespace Assets.Scripts
             if (isLocalPlayer)
             {
                 NotifyStateChanged(oldState, state);
-            }
-        }
-
-
-        public override void OnStartClient()
-        {
-            base.OnStartClient();
-
-            //If this is local player, set player name manually because this script being called 'Start'
-            //means that this is joining the existing room and other players' name will be automatically synced.
-            if (isLocalPlayer)
-            {
-                LocalPlayer = this;
-
-                string userName = UserManager.Instance.User.Name;
-                string netId = GetComponent<NetworkIdentity>().netId.ToString();
-                var newName = $"{userName}{netId}";
-                SetName(newName);
-
-                //GameManager.Instance.CmdPrintMessage($"{newName} joined!", null, ChatType.Info);
-                //TODO : Report
-            }
-
-            CmdSetMatchChecker(MatchManager.Instance.Match.MatchID.ToGuid());
-
-            if (UserManager.Instance.User.IsHost && isLocalPlayer)
-            {
-                CmdSpawnChatHub(MatchManager.Instance.Match.MatchID.ToGuid());
             }
         }
 

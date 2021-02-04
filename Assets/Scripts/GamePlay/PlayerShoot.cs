@@ -1,4 +1,5 @@
 ﻿using Assets.Scripts;
+using Assets.Scripts.GamePlay.PlayerActions;
 using Mirror;
 using System;
 using System.Collections;
@@ -21,6 +22,10 @@ namespace Assets.Scripts
         private WeaponManager _weaponManager;
         private PlayerWeapon _currentWeapon;
 
+        [SerializeField]
+        private Transform _raycastTransform;
+        private RangeBasedPlayerAction _playerAction;
+
         private void Start()
         {
             if (_camera == null)
@@ -31,9 +36,21 @@ namespace Assets.Scripts
             _weaponManager = GetComponent<WeaponManager>();
         }
 
+        public void NotifyStateChanged(PlayerState state)
+        {
+            if (state == PlayerState.Professor)
+            {
+                _playerAction = new CatchAction(_raycastTransform, _remotePlayerLayer);
+            }
+            else if (state == PlayerState.Student)
+            {
+                _playerAction = new CatchAction(_raycastTransform, _remotePlayerLayer);
+            }
+        }
+
         private void Update()
         {
-            if (GameManager.DisableControl)
+            if (GameManager.DisableControl || _playerAction == null)
             {
                 return;
             }
@@ -43,31 +60,19 @@ namespace Assets.Scripts
                 return;
             }
 
-            _currentWeapon = _weaponManager.GetCurrentWeapon();
+            //_currentWeapon = _weaponManager.GetCurrentWeapon();
 
-            var isHit = Physics.Raycast(_camera.transform.position,
-                                        _camera.transform.forward,
-                                        out RaycastHit hit,
-                                        _currentWeapon.Range,
-                                        _remotePlayerLayer);
-            PlayerSetup.PlayerUI.SetCrossHair(isHit);
-
-            if (_currentWeapon.FireRate <= 0f)
+            //var isHit = Physics.Raycast(_camera.transform.position,
+            //                            _camera.transform.forward,
+            //                            out RaycastHit hit,
+            //                            _currentWeapon.Range,
+            //                            _remotePlayerLayer);
+            //PlayerSetup.PlayerUI.SetCrossHair(isHit);
+            if (_playerAction.CanExecute())
             {
                 if (Input.GetButtonDown("Fire1"))
                 {
-                    Shoot();
-                }
-            }
-            else
-            {
-                if (Input.GetButtonDown("Fire1"))
-                {
-                    InvokeRepeating(nameof(Shoot), 0f, 1f / _currentWeapon.FireRate);
-                }
-                else if (Input.GetButtonUp("Fire1"))
-                {
-                    CancelInvoke("Shoot");
+                    _playerAction.Execute();
                 }
             }            
         }
