@@ -13,7 +13,7 @@ namespace Assets.Scripts.GamePlay.PlayerActions
             throw new NotImplementedException();
         }
 
-        public void Execute()
+        public void TryExecute()
         {
             throw new NotImplementedException();
         }

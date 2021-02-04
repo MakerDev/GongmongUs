@@ -15,7 +15,7 @@ namespace Assets.Scripts.GamePlay.PlayerActions
             TargetLayerMask = targetLayers;
         }
 
-        public override void Execute()
+        public override void TryExecute()
         {
             var player = _hit.collider.gameObject.GetComponent<Player>();
 

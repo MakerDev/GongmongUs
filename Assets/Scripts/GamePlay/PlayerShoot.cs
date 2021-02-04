@@ -24,7 +24,7 @@ namespace Assets.Scripts
 
         [SerializeField]
         private Transform _raycastTransform;
-        private RangeBasedPlayerAction _playerAction;
+        private IPlayerAction _mainFireAction;
 
         private void Start()
         {
@@ -40,17 +40,19 @@ namespace Assets.Scripts
         {
             if (state == PlayerState.Professor)
             {
-                _playerAction = new CatchAction(_raycastTransform, _remotePlayerLayer);
+                ChatHub.Instance.PrintMessage("I'm professor", Player.LocalPlayer.PlayerName, ChatType.Player);
+                _mainFireAction = new CatchAction(_raycastTransform, _remotePlayerLayer);
             }
             else if (state == PlayerState.Student)
             {
-                _playerAction = new CatchAction(_raycastTransform, _remotePlayerLayer);
+                ChatHub.Instance.PrintMessage("I'm Student", Player.LocalPlayer.PlayerName, ChatType.Player);
+                _mainFireAction = new StartMiniGameAction();
             }
         }
 
         private void Update()
         {
-            if (GameManager.DisableControl || _playerAction == null)
+            if (GameManager.DisableControl || _mainFireAction == null)
             {
                 return;
             }
@@ -68,13 +70,14 @@ namespace Assets.Scripts
             //                            _currentWeapon.Range,
             //                            _remotePlayerLayer);
             //PlayerSetup.PlayerUI.SetCrossHair(isHit);
-            if (_playerAction.CanExecute())
+
+            var canExecute = _mainFireAction.CanExecute();
+            PlayerSetup.PlayerUI.SetCrossHair(canExecute);
+
+            if (canExecute && Input.GetButtonDown("Fire1"))
             {
-                if (Input.GetButtonDown("Fire1"))
-                {
-                    _playerAction.Execute();
-                }
-            }            
+                _mainFireAction.TryExecute();
+            }
         }
 
         [Command]

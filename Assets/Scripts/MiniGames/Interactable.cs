@@ -7,6 +7,8 @@ namespace Assets.Scripts.MiniGames
 {
     public class Interactable : MonoBehaviour
     {
+        public static Interactable EnteredInteractable { get; private set; } = null;
+
         [SerializeField]
         private GameObject _miniGameObject;
         [SerializeField]
@@ -44,7 +46,7 @@ namespace Assets.Scripts.MiniGames
             if (_outlineComponent != null)
             {
                 _outlineComponent.enabled = false;
-            }            
+            }
         }
 
         private void SetHighlight(bool turnOn)
@@ -59,18 +61,37 @@ namespace Assets.Scripts.MiniGames
             {
                 _outlineComponent.enabled = turnOn;
             }
+
+            if (turnOn)
+            {
+                EnteredInteractable = this;
+            }
+            else
+            {
+                EnteredInteractable = null;
+            }
         }
 
         private void OnTriggerEnter(Collider other)
         {
+            if (Player.LocalPlayer.State != PlayerState.Student)
+            {
+                return;
+            }
+
             if (other.gameObject.layer == _localPlayerLayer && _miniGame.IsCompleted == false)
-            {                
+            {
                 SetHighlight(true);
             }
         }
 
         private void OnTriggerExit(Collider other)
         {
+            if (Player.LocalPlayer.State != PlayerState.Student)
+            {
+                return;
+            }
+
             if (other.gameObject.layer == _localPlayerLayer)
             {
                 SetHighlight(false);
@@ -86,8 +107,13 @@ namespace Assets.Scripts.MiniGames
 
             if (Highlighted && Input.GetKeyDown(KeyCode.Space))
             {
-                _miniGameObject.SetActive(true);
+                StartMiniGame();
             }
+        }
+
+        public void StartMiniGame()
+        {
+            _miniGameObject.SetActive(true);
         }
     }
 }

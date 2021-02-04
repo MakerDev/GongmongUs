@@ -49,7 +49,7 @@ namespace Assets.Scripts
 
         public bool IsReady { get; private set; } = false;
 
-        private void NotifyStateChanged(PlayerState oldState_, PlayerState newState)
+        private void NotifyStateChanged(PlayerState newState)
         {
             GameManager.Instance.NofityPlayerStateChanged(this);
             _playerShootComponent.NotifyStateChanged(newState);
@@ -94,9 +94,9 @@ namespace Assets.Scripts
 
                 //GameManager.Instance.CmdPrintMessage($"{newName} joined!", null, ChatType.Info);
                 //TODO : Report
+                CmdSetMatchChecker(MatchManager.Instance.Match.MatchID.ToGuid());
             }
 
-            CmdSetMatchChecker(MatchManager.Instance.Match.MatchID.ToGuid());
 
             if (UserManager.Instance.User.IsHost && isLocalPlayer)
             {
@@ -107,7 +107,7 @@ namespace Assets.Scripts
         public override void OnStopClient()
         {
             GameManager.Instance.PrintMessage($"{PlayerName} leaved", null, ChatType.Info);
-            
+
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
@@ -152,11 +152,10 @@ namespace Assets.Scripts
             CmdCaughByProfessor();
         }
 
-        [Command]
+        [Command(ignoreAuthority = true)]
         private void CmdCaughByProfessor()
         {
             RpcCaughtByProfessor();
-
         }
 
         [ClientRpc]
@@ -171,7 +170,12 @@ namespace Assets.Scripts
 
         public void SetState(PlayerState state)
         {
-            CmdSetState(state);
+            State = state;
+
+            if (isLocalPlayer)
+            {
+                CmdSetState(state);
+            }
         }
 
         [Command]
@@ -184,13 +188,7 @@ namespace Assets.Scripts
         [ClientRpc]
         private void RpcSetState(PlayerState state)
         {
-            var oldState = State;
-            State = state;
-
-            if (isLocalPlayer)
-            {
-                NotifyStateChanged(oldState, state);
-            }
+            NotifyStateChanged(state);
         }
 
         [Command]
@@ -242,7 +240,6 @@ namespace Assets.Scripts
 
             //This is client side health regen
             //CurrentHealth = _maxHealth;
-            Debug.Log($"Player Setup is called on Player{netId}");
             CmdBroadCastNewPlayerSetUp();
         }
 

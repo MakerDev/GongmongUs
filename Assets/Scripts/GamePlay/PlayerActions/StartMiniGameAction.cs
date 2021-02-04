@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Assets.Scripts.MiniGames;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,12 +11,15 @@ namespace Assets.Scripts.GamePlay.PlayerActions
     {
         public bool CanExecute()
         {
-            throw new NotImplementedException();
+            return Interactable.EnteredInteractable != null;
         }
 
-        public void Execute()
+        public void TryExecute()
         {
-            throw new NotImplementedException();
+            if (CanExecute())
+            {
+                Interactable.EnteredInteractable.StartMiniGame();
+            }
         }
     }
 }
