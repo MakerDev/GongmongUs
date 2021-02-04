@@ -191,7 +191,7 @@ namespace Assets.Scripts
             Player.LocalPlayer.StartGame();
         }
 
-        public void ConfigureGameOnStart(string professorName)
+        public void ConfigureGameOnStart(string professorId)
         {
             _startGameUI.SetActive(false);
             _minimapOnTab.ReigsterPlayerObjects(_players.Values);
@@ -199,10 +199,15 @@ namespace Assets.Scripts
 
             foreach (var player in _players.Values)
             {
-                player.SetState(PlayerState.Student);
+                if (player.PlayerId == professorId)
+                {
+                    player.SetState(PlayerState.Professor);
+                }
+                else
+                {
+                    player.SetState(PlayerState.Student);
+                }
             }
-
-            _players[professorName].SetState(PlayerState.Professor);
 
             GameStarted = true;
 
@@ -231,7 +236,7 @@ namespace Assets.Scripts
         {
             _minimapUI.SetActive(true);
 
-            //DisablePlayerControl();
+            DisablePlayerControl();
         }
 
         public void Resume()
@@ -362,7 +367,7 @@ namespace Assets.Scripts
         }
 
         public void UnRegisterPlayer(string playerId)
-        {
+        {            
             var player = _players[playerId];
             _players.Remove(playerId);
 

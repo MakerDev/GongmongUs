@@ -26,6 +26,8 @@ namespace Assets.Scripts
         private Transform _raycastTransform;
         private IPlayerAction _mainFireAction;
 
+        private Player _player;
+
         private void Start()
         {
             if (_camera == null)
@@ -33,6 +35,7 @@ namespace Assets.Scripts
                 Debug.LogError("PlayerShoot : No camera reference");
                 this.enabled = false;
             }
+            _player = GetComponent<Player>();
             _weaponManager = GetComponent<WeaponManager>();
         }
 
@@ -40,13 +43,18 @@ namespace Assets.Scripts
         {
             if (state == PlayerState.Professor)
             {
-                ChatHub.Instance.PrintMessage("I'm professor", Player.LocalPlayer.PlayerName, ChatType.Player);
+                //ChatHub.Instance.PrintMessage("I'm professor", Player.LocalPlayer.PlayerName, ChatType.Player);
                 _mainFireAction = new CatchAction(_raycastTransform, _remotePlayerLayer);
             }
             else if (state == PlayerState.Student)
             {
-                ChatHub.Instance.PrintMessage("I'm Student", Player.LocalPlayer.PlayerName, ChatType.Player);
+                //ChatHub.Instance.PrintMessage("I'm Student", Player.LocalPlayer.PlayerName, ChatType.Player);
                 _mainFireAction = new StartMiniGameAction();
+            }
+            else
+            {
+                _mainFireAction = new StunByAssignmentAction();
+                GameManager.Instance.PrintMessage($"{_player.PlayerName} is now assistant.", "SYSTEM", ChatType.Info);
             }
         }
 
@@ -62,21 +70,12 @@ namespace Assets.Scripts
                 return;
             }
 
-            //_currentWeapon = _weaponManager.GetCurrentWeapon();
-
-            //var isHit = Physics.Raycast(_camera.transform.position,
-            //                            _camera.transform.forward,
-            //                            out RaycastHit hit,
-            //                            _currentWeapon.Range,
-            //                            _remotePlayerLayer);
-            //PlayerSetup.PlayerUI.SetCrossHair(isHit);
-
             var canExecute = _mainFireAction.CanExecute();
             PlayerSetup.PlayerUI.SetCrossHair(canExecute);
 
             if (canExecute && Input.GetButtonDown("Fire1"))
             {
-                _mainFireAction.TryExecute();
+                _mainFireAction.Execute();
             }
         }
 

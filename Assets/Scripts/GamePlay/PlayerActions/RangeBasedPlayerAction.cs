@@ -36,7 +36,7 @@ namespace Assets.Scripts.GamePlay.PlayerActions
             return isHit;
         }
 
-        public virtual void TryExecute()
+        public virtual void Execute()
         {
 
         }

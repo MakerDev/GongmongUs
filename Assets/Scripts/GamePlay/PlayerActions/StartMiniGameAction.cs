@@ -14,8 +14,9 @@ namespace Assets.Scripts.GamePlay.PlayerActions
             return Interactable.EnteredInteractable != null;
         }
 
-        public void TryExecute()
+        public void Execute()
         {
+            //Just double check for sure.
             if (CanExecute())
             {
                 Interactable.EnteredInteractable.StartMiniGame();

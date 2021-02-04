@@ -44,7 +44,6 @@ namespace Assets.Scripts
         [SerializeField]
         public GameObject _chatHubPrefab;
 
-
         private PlayerShoot _playerShootComponent;
 
         public bool IsReady { get; private set; } = false;
@@ -53,6 +52,8 @@ namespace Assets.Scripts
         {
             GameManager.Instance.NofityPlayerStateChanged(this);
             _playerShootComponent.NotifyStateChanged(newState);
+
+            PlayerSetup.PlayerUI.SetState();
         }
 
         private void Start()
@@ -147,8 +148,13 @@ namespace Assets.Scripts
         }
 
         [ClientRpc]
-        private void RpcStartGame(string professorId)
+        private async void RpcStartGame(string professorId)
         {
+            if (UserManager.Instance.User.IsHost)
+            {
+                await BCNetworkManager.Instance.NotifyStartGame(MatchManager.Instance.Match.MatchID);
+            }
+
             GameManager.Instance.ConfigureGameOnStart(professorId);
         }
 
@@ -179,17 +185,28 @@ namespace Assets.Scripts
         [Command(ignoreAuthority = true)]
         private void CmdCaughByProfessor()
         {
+            State = PlayerState.Assistant;
             RpcCaughtByProfessor();
         }
 
         [ClientRpc]
         private void RpcCaughtByProfessor()
         {
-            GameManager.Instance.DisablePlayerControl();
             //TODO : Display transformation effct and animation.
-
             CmdSetState(PlayerState.Assistant);
-            GameManager.Instance.EnablePlayerControl();
+            Debug.Log("Catch");
+
+            if (isLocalPlayer)
+            {
+                GameManager.Instance.DisablePlayerControl();
+                //TODO : Display transformation effct and animation.
+                GameManager.Instance.EnablePlayerControl();
+            }
+            else
+            {
+                //TODO : Display transformation effct and animation.
+            }
+
         }
 
         public void SetState(PlayerState state)
@@ -212,6 +229,7 @@ namespace Assets.Scripts
         [ClientRpc]
         private void RpcSetState(PlayerState state)
         {
+            State = state;
             NotifyStateChanged(state);
         }
 

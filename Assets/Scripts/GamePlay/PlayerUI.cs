@@ -20,9 +20,12 @@ namespace Assets.Scripts
         private Sprite _crossHairDefault;
         [SerializeField]
         private Sprite _crossHairOnTarget;
+        [SerializeField]
+        private Text _stateText;
 
         private PlayerController _controller;
         private Player _player;
+        private bool _wasOnTarget = false;
 
         private void Start()
         {
@@ -33,8 +36,6 @@ namespace Assets.Scripts
         {
             SetFuelAmout(_controller.GetThrusterFuelAmount());
         }
-
-        private bool _wasOnTarget = false;
 
         public void SetCrossHair(bool onTarget)
         {
@@ -70,9 +71,14 @@ namespace Assets.Scripts
             _player = player;
         }
 
+        public void SetState()
+        {
+            _stateText.text = _player.State.ToString();
+        }
+
         void SetFuelAmout(float amount)
         {
             _thrusterFuelFill.localScale = new Vector3(1, amount, 1);
-        }
+        }        
     }
 }
