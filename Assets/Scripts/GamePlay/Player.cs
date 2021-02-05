@@ -45,6 +45,7 @@ namespace Assets.Scripts
         public GameObject _chatHubPrefab;
 
         private PlayerShoot _playerShootComponent;
+        private PlayerController _playerController; //For animations
 
         public bool IsReady { get; private set; } = false;
 
@@ -52,7 +53,7 @@ namespace Assets.Scripts
         {
             GameManager.Instance.NofityPlayerStateChanged(this);
             _playerShootComponent.NotifyStateChanged(newState);
-
+            _playerController.SetStateMaterial(newState);
             PlayerSetup.PlayerUI.SetState();
         }
 
@@ -60,6 +61,7 @@ namespace Assets.Scripts
         {
             _playerInfo.SetPlayer(this);
             _playerShootComponent = GetComponent<PlayerShoot>();
+            _playerController = GetComponent<PlayerController>();
         }
 
         #region CONNECTIONS
@@ -131,20 +133,13 @@ namespace Assets.Scripts
 
         public void StartGame()
         {
-            CmdStartGame();
+            CmdStartGame(GameManager.Instance.GetRandomPlayerId());
         }
 
         [Command]
-        private void CmdStartGame()
+        private void CmdStartGame(string professorID)
         {
-            //Set player states.
-            //var index = UnityEngine.Random.Range(0, _players.Count);
-            //var professorName = _players.Keys.ToArray()[index];
-            var index = 0;
-            var professorId = PlayerId;
-
-            //TODO : Report MatchServer this game has started and prevent further entering players.
-            RpcStartGame(professorId);
+            RpcStartGame(professorID);
         }
 
         [ClientRpc]
@@ -193,22 +188,30 @@ namespace Assets.Scripts
         private void RpcCaughtByProfessor()
         {
             //TODO : Display transformation effct and animation.
-            CmdSetState(PlayerState.Assistant);
-            Debug.Log("Catch");
+            State = PlayerState.Assistant;
+            NotifyStateChanged(State);
 
             if (isLocalPlayer)
             {
                 GameManager.Instance.DisablePlayerControl();
-                //TODO : Display transformation effct and animation.
+                PlayTransitionEffect();
                 GameManager.Instance.EnablePlayerControl();
             }
             else
             {
-                //TODO : Display transformation effct and animation.
+                PlayTransitionEffect();
             }
-
         }
 
+        private void PlayTransitionEffect()
+        {
+            GameObject effectObject = Instantiate(_deatchEffect, transform.position, Quaternion.identity);
+            Destroy(effectObject, 1.5f);
+            _playerController.TransformToAssistant();
+        }
+
+
+        #region SET STATE
         public void SetState(PlayerState state)
         {
             State = state;
@@ -232,7 +235,44 @@ namespace Assets.Scripts
             State = state;
             NotifyStateChanged(state);
         }
+        #endregion
+        private void SuccessExit()
+        {
+            //Disable components
+            for (int i = 0; i < _disableOnDeath.Length; i++)
+            {
+                _disableOnDeath[i].enabled = false;
+            }
 
+            for (int i = 0; i < _disableGameObjectsOnDeath.Length; i++)
+            {
+                _disableGameObjectsOnDeath[i].SetActive(false);
+            }
+
+            Collider collider = GetComponent<Collider>();
+            if (collider != null)
+            {
+                collider.enabled = false;
+            }
+
+            CharacterController controller = GetComponent<CharacterController>();
+            if (controller != null)
+            {
+                controller.enabled = false;
+            }
+
+            GameObject effectObject = Instantiate(_deatchEffect, transform.position, Quaternion.identity);
+            Destroy(effectObject, 1.5f);
+
+            Debug.Log(transform.name + " has exited!");
+
+            if (isLocalPlayer)
+            {
+                GameManager.Instance.SetSceneCameraActive(true);
+                GetComponent<PlayerSetup>().PlayerUIInstance.SetActive(false);
+            }
+        }
+        #region SETTINGS
         [Command]
         public void CmdSpawnChatHub(Guid matchGuid)
         {
@@ -312,9 +352,6 @@ namespace Assets.Scripts
 
         public void SetDefaults()
         {
-            string caller = isServer ? "Server" : "Client";
-            Debug.Log($"{caller} called SetDefaults for {PlayerName}");
-
             for (int i = 0; i < _disableOnDeath.Length; i++)
             {
                 _disableOnDeath[i].enabled = _wasEnabled[i];
@@ -337,82 +374,6 @@ namespace Assets.Scripts
                 collider.enabled = true;
             }
         }
-
-        //TODO : 잡거나 잡히는 액션을 당한 경우에 사용
-        [ClientRpc]
-        public void RpcTakeDamage(float newHealth, string shooterName)
-        {
-            //_currentHealth = newHealth;
-            //Debug.Log(transform.name + " now has " + _currentHealth + " health.");
-
-            Die();
-            GameManager.Instance.PrintMessage($"{PlayerName} is killed by {shooterName}", null);
-        }
-        private IEnumerator Respawn()
-        {
-            yield return new WaitForSeconds(GameManager.Instance.MatchSetting.RespawnTime);
-
-            CmdRespawn();
-
-            yield return new WaitForSeconds(0.1f);
-
-            PlayerSetUp();
-
-            Debug.Log(transform.name + " respawned");
-        }
-
-        [Command]
-        private void CmdRespawn()
-        {
-            var spawnPoint = NetworkManager.singleton.GetStartPosition();
-            RpcSpawn(spawnPoint.position, spawnPoint.rotation);
-        }
-
-        [ClientRpc]
-        private void RpcSpawn(Vector3 position, Quaternion rotation)
-        {
-            transform.position = position;
-            transform.rotation = rotation;
-        }
-
-        private void Die()
-        {
-            //Disable components
-            for (int i = 0; i < _disableOnDeath.Length; i++)
-            {
-                _disableOnDeath[i].enabled = false;
-            }
-
-            for (int i = 0; i < _disableGameObjectsOnDeath.Length; i++)
-            {
-                _disableGameObjectsOnDeath[i].SetActive(false);
-            }
-
-            Collider collider = GetComponent<Collider>();
-            if (collider != null)
-            {
-                collider.enabled = false;
-            }
-
-            CharacterController controller = GetComponent<CharacterController>();
-            if (controller != null)
-            {
-                controller.enabled = false;
-            }
-
-            GameObject effectObject = Instantiate(_deatchEffect, transform.position, Quaternion.identity);
-            Destroy(effectObject, 1.5f);
-
-            Debug.Log(transform.name + " is dead!");
-
-            if (isLocalPlayer)
-            {
-                GameManager.Instance.SetSceneCameraActive(true);
-                GetComponent<PlayerSetup>().PlayerUIInstance.SetActive(false);
-            }
-
-            //Respawn
-            StartCoroutine(Respawn());
-        }
+        #endregion
     }
 }

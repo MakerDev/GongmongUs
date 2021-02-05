@@ -32,7 +32,7 @@ namespace Assets.Scripts
         }
 
         private void Start()
-        {           
+        {
             if (!isLocalPlayer)
             {
                 foreach (var component in _componentsToDiable)
@@ -66,7 +66,7 @@ namespace Assets.Scripts
         }
 
         private void ConfigurePlayerUI()
-        {                
+        {
             //Configure PlayerUI
             _playerUI = PlayerUIInstance.GetComponent<PlayerUI>();
             if (_playerUI == null)
@@ -88,11 +88,14 @@ namespace Assets.Scripts
 
             if (isLocalPlayer)
             {
-                GameManager.Instance.SetSceneCameraActive(true);                
+                GameManager.Instance.SetSceneCameraActive(true);
             }
 
-            Player player = GetComponent<Player>();
-            GameManager.Instance.UnRegisterPlayer(player.PlayerId);
+            if (isServer == false)
+            {
+                Player player = GetComponent<Player>();
+                GameManager.Instance.UnRegisterPlayer(player.PlayerId);
+            }
         }
     }
 }

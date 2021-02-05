@@ -320,7 +320,9 @@ MonoBehaviour:
   _thrusterForce: 1100
   _thrusterFuelBurnSpeed: 0.5
   _thrusterFuelRegenSpeed: 0.9
-  _raycastTransform: {fileID: 0}
+  _bodyRenderer: {fileID: 1788763162559962576}
+  _assistantMaterial: {fileID: 2100000, guid: a760e8bbb10db774593f8946e83c77e7, type: 2}
+  _professorMaterial: {fileID: 2100000, guid: f73b1f8ac8cf19840a8a08b56feaa346, type: 2}
 --- !u!114 &-3757069456253890867
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1147,9 +1149,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 18f32a984e8c7f24e9e2d473c2babe02, type: 3}
---- !u!1 &4881642240430196219 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 18f32a984e8c7f24e9e2d473c2babe02,
+--- !u!23 &1788763162559962576 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 6317578925029434746, guid: 18f32a984e8c7f24e9e2d473c2babe02,
+    type: 3}
+  m_PrefabInstance: {fileID: 5728149989653182634}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7684147416652712660 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2728593470376473214, guid: 18f32a984e8c7f24e9e2d473c2babe02,
     type: 3}
   m_PrefabInstance: {fileID: 5728149989653182634}
   m_PrefabAsset: {fileID: 0}
@@ -1159,9 +1167,9 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 5728149989653182634}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &7684147416652712660 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2728593470376473214, guid: 18f32a984e8c7f24e9e2d473c2babe02,
+--- !u!1 &4881642240430196219 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 18f32a984e8c7f24e9e2d473c2babe02,
     type: 3}
   m_PrefabInstance: {fileID: 5728149989653182634}
   m_PrefabAsset: {fileID: 0}

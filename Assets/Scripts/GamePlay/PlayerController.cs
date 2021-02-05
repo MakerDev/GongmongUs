@@ -27,7 +27,11 @@ namespace Assets.Scripts
         private Animator _animator;
 
         [SerializeField]
-        private Transform _raycastTransform;
+        private MeshRenderer _bodyRenderer;
+        [SerializeField]
+        private Material _assistantMaterial;
+        [SerializeField]
+        private Material _professorMaterial;
 
         private void Start()
         {
@@ -40,11 +44,40 @@ namespace Assets.Scripts
             return _thrusterFuelAmount;
         }
 
+        public void SetStateMaterial(PlayerState playerState)
+        {
+            if (playerState == PlayerState.Professor)
+            {
+                _bodyRenderer.material = _professorMaterial;
+            }
+            else if (playerState == PlayerState.Assistant)
+            {
+                _bodyRenderer.material = _assistantMaterial;
+            }
+        }
+
+        public void PlayCatchAnimation()
+        {
+            _animator.Play("PlayCatch");
+        }
+
+        public void TransformToAssistant()
+        {
+            _animator.Play("PlayTransformation");
+
+            SetStateMaterial(PlayerState.Assistant);
+        }
+
         private void FixedUpdate()
         {
             if (GameManager.DisableControl)
             {
                 return;
+            }
+
+            if (Input.GetKeyDown(KeyCode.A))
+            {
+                _animator.Play("Transform"); 
             }
 
             float xMov = Input.GetAxisRaw("Horizontal");
