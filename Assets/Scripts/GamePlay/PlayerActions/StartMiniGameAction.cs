@@ -14,7 +14,7 @@ namespace Assets.Scripts.GamePlay.PlayerActions
             return Interactable.EnteredInteractable != null;
         }
 
-        public void Execute()
+        public void TryExecute()
         {
             //Just double check for sure.
             if (CanExecute())

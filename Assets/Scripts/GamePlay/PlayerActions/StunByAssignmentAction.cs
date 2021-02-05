@@ -10,12 +10,12 @@ namespace Assets.Scripts.GamePlay.PlayerActions
     {
         public bool CanExecute()
         {
-            throw new NotImplementedException();
+            return false;
         }
 
-        public void Execute()
+        public void TryExecute()
         {
-            throw new NotImplementedException();
+
         }
     }
 }

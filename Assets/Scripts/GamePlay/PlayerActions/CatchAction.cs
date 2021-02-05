@@ -9,15 +9,26 @@ namespace Assets.Scripts.GamePlay.PlayerActions
 {
     public class CatchAction : RangeBasedPlayerAction
     {
-        public CatchAction(Transform raycastTransform, LayerMask targetLayers)
+        private PlayerController _playerController;
+
+        public CatchAction(Transform raycastTransform, LayerMask targetLayers, PlayerController playerController)
             : base(raycastTransform)
         {
             TargetLayerMask = targetLayers;
+            _playerController = playerController;
         }
 
-        public override void Execute()
+        public override void TryExecute()
         {
+            _playerController.PlayCatchAnimation();
+
+            if (CanExecute() == false)
+            {
+                return;
+            }
+
             var player = _hit.collider.gameObject.GetComponent<Player>();
+            _playerController.PlayCatchAnimation();
 
             if (player.State == PlayerState.Student)
             {

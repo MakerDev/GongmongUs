@@ -21,6 +21,7 @@ namespace Assets.Scripts
 
         private WeaponManager _weaponManager;
         private PlayerWeapon _currentWeapon;
+        private PlayerController _playerController;
 
         [SerializeField]
         private Transform _raycastTransform;
@@ -37,6 +38,7 @@ namespace Assets.Scripts
             }
             _player = GetComponent<Player>();
             _weaponManager = GetComponent<WeaponManager>();
+            _playerController = GetComponent<PlayerController>();
         }
 
         public void NotifyStateChanged(PlayerState state)
@@ -44,7 +46,7 @@ namespace Assets.Scripts
             if (state == PlayerState.Professor)
             {
                 //ChatHub.Instance.PrintMessage("I'm professor", Player.LocalPlayer.PlayerName, ChatType.Player);
-                _mainFireAction = new CatchAction(_raycastTransform, _remotePlayerLayer);
+                _mainFireAction = new CatchAction(_raycastTransform, _remotePlayerLayer, _playerController);
             }
             else if (state == PlayerState.Student)
             {
@@ -73,9 +75,9 @@ namespace Assets.Scripts
             var canExecute = _mainFireAction.CanExecute();
             PlayerSetup.PlayerUI.SetCrossHair(canExecute);
 
-            if (canExecute && Input.GetButtonDown("Fire1"))
+            if (Input.GetButtonDown("Fire1"))
             {
-                _mainFireAction.Execute();
+                _mainFireAction.TryExecute();
             }
         }
 
