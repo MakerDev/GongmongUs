@@ -346,6 +346,13 @@ namespace Assets.Scripts
         }
         #endregion
 
+        public string GetRandomPlayerId()
+        {
+            var index = UnityEngine.Random.Range(0, _players.Count);
+
+            return _players.Values.ToArray()[index].PlayerId;
+        }
+
         #region PLAYER TRACKING
         public const string PLAYER_ID_PREFIX = "Player";
 
@@ -409,20 +416,6 @@ namespace Assets.Scripts
 
             throw new System.Exception($"No player with ID {playerId} is found");
         }
-
-        //private void OnGUI()
-        //{
-        //    GUILayout.BeginArea(new Rect(200, 200, 200, 200));
-        //    GUILayout.BeginVertical();
-
-        //    foreach (var playerId in _players.Keys)
-        //    {
-        //        GUILayout.Label(playerId + " - " + _players[playerId].transform.name);
-        //    }
-
-        //    GUILayout.EndVertical();
-        //    GUILayout.EndArea();
-        //}
         #endregion
     }
 }
