@@ -7,7 +7,6 @@ using UnityEngine;
 
 namespace Assets.Scripts
 {
-    [RequireComponent(typeof(WeaponManager))]
     public class PlayerShoot : NetworkBehaviour
     {
         private const string PLAYER_TAG = "Player";
@@ -19,8 +18,6 @@ namespace Assets.Scripts
         [SerializeField]
         private LayerMask _remotePlayerLayer;
 
-        private WeaponManager _weaponManager;
-        private PlayerWeapon _currentWeapon;
         private PlayerController _playerController;
 
         [SerializeField]
@@ -37,7 +34,6 @@ namespace Assets.Scripts
                 this.enabled = false;
             }
             _player = GetComponent<Player>();
-            _weaponManager = GetComponent<WeaponManager>();
             _playerController = GetComponent<PlayerController>();
         }
 
@@ -79,71 +75,6 @@ namespace Assets.Scripts
             {
                 _mainFireAction.TryExecute();
             }
-        }
-
-        [Command]
-        private void CmdOnHit(Vector3 position, Vector3 normal)
-        {
-            RpcInstantiateHitEffect(position, normal);
-        }
-
-        [ClientRpc]
-        private void RpcInstantiateHitEffect(Vector3 position, Vector3 normal)
-        {
-            GameObject hitEffect = Instantiate(_weaponManager.GetCurrentWeaponGraphics().HitEffectPrefab, position, Quaternion.LookRotation(normal));
-            Destroy(hitEffect, 1.5f);
-        }
-
-        [Command]
-        private void CmdOnShoot()
-        {
-            RpcPlayShootEffect();
-        }
-
-        [ClientRpc]
-        private void RpcPlayShootEffect()
-        {
-            _weaponManager.GetCurrentWeaponGraphics().MuzzleFlash.Play();
-        }
-
-        [Client]
-        private void Shoot()
-        {
-            if (!isLocalPlayer)
-            {
-                return;
-            }
-
-            CmdOnShoot();
-
-            if (Physics.Raycast(_camera.transform.position, _camera.transform.forward, out RaycastHit hit, _currentWeapon.Range, _layerMask))
-            {
-                //We hit something
-                //Debug.Log($"Hit : {hit.collider.name}");
-
-                if (hit.collider.CompareTag(PLAYER_TAG))
-                {
-                    CmdPlayerGotShot(hit.collider.name, _currentWeapon.Damage, Player.LocalPlayer.PlayerName);
-                }
-
-                CmdOnHit(hit.point, hit.normal);
-            }
-        }
-
-        [Command]
-        void CmdPlayerGotShot(string playerId, float damage, string shooter)
-        {
-            //Debug.Log(playerId + " has been shot by damage " + damage + $" by {shooter}");
-            Player player = GameManager.Instance.GetPlayer(playerId);
-
-            //player.RpcTakeDamage(player.CurrentHealth, shooter);
-
-            //Does this increase too much server load..? Looks fine.
-            //Server side respawn
-            //if (player.CurrentHealth <= 0)
-            //{
-            //    player.CurrentHealth = 100;
-            //}
         }
     }
 }
