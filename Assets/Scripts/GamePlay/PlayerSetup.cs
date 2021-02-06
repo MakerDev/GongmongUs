@@ -1,4 +1,5 @@
 ﻿using Assets.Scripts;
+using cakeslice;
 using Mirror;
 using System;
 using System.Collections;
@@ -39,7 +40,6 @@ namespace Assets.Scripts
                 {
                     component.enabled = false;
                 }
-
                 Utils.SetLayerRecursive(gameObject, LayerMask.NameToLayer(_remoteLayerName));
             }
             else
@@ -56,13 +56,10 @@ namespace Assets.Scripts
 
                 Debug.Log("PlayerSetUp: Called player setup on server? " + isServer);
             }
-        }
 
-        public override void OnStartClient()
-        {
+
             Player player = GetComponent<Player>();
             GameManager.Instance.RegisterPlayer(player);
-            Debug.Log($"Registerd {player.PlayerId}");
         }
 
         private void ConfigurePlayerUI()
@@ -91,11 +88,9 @@ namespace Assets.Scripts
                 GameManager.Instance.SetSceneCameraActive(true);
             }
 
-            if (isServer == false)
-            {
-                Player player = GetComponent<Player>();
-                GameManager.Instance.UnRegisterPlayer(player.PlayerId);
-            }
+
+            Player player = GetComponent<Player>();
+            GameManager.Instance.UnRegisterPlayer(player.PlayerId);
         }
     }
 }
