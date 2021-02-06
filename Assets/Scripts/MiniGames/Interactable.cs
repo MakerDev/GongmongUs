@@ -1,4 +1,5 @@
 ﻿using cakeslice;
+using Mirror;
 using System;
 using System.Collections;
 using UnityEngine;
@@ -74,7 +75,7 @@ namespace Assets.Scripts.MiniGames
 
         private void OnTriggerEnter(Collider other)
         {
-            if (Player.LocalPlayer.State != PlayerState.Student)
+            if (ShouldActivate() == false)
             {
                 return;
             }
@@ -87,7 +88,7 @@ namespace Assets.Scripts.MiniGames
 
         private void OnTriggerExit(Collider other)
         {
-            if (Player.LocalPlayer.State != PlayerState.Student)
+            if (ShouldActivate() == false)
             {
                 return;
             }
@@ -98,8 +99,24 @@ namespace Assets.Scripts.MiniGames
             }
         }
 
+        private bool ShouldActivate()
+        {
+            if (Player.LocalPlayer == null)
+            {
+                return false;
+            }
+
+            //return Player.LocalPlayer.State != PlayerState.Student || _miniGame.AssingnedPlayer?.isLocalPlayer == false;
+            return Player.LocalPlayer.State == PlayerState.Student;
+        }
+
         private void Update()
         {
+            if (ShouldActivate() == false)
+            {
+                return;
+            }
+
             if (_miniGameObject.activeSelf)
             {
                 return;
