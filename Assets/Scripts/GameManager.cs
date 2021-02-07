@@ -58,10 +58,17 @@ namespace Assets.Scripts
         private List<GameObject> _playerListItems = new List<GameObject>();
         public bool GameStarted { get; private set; } = false;
 
-        private readonly Dictionary<string, Player> _players = new Dictionary<string, Player>();
+        public Dictionary<string, Player> Players { get; private set; } = new Dictionary<string, Player>();
+
+        /// <summary>
+        /// The number of remaining students;
+        /// </summary>
+        public int StudentCount { get; private set; }
+        public int ExitedStudents { get; private set; } = 0;
 
         public static bool DisableControl { get; private set; } = true;
         public bool IsMenuOpen { get; private set; } = false;
+
 
 #if UNITY_WEBGL
         private const KeyCode MENU_KEY = KeyCode.LeftControl;
@@ -173,7 +180,7 @@ namespace Assets.Scripts
                 return;
             }
 
-            foreach (var player in _players.Values)
+            foreach (var player in Players.Values)
             {
                 if (player == Player.LocalPlayer)
                 {
@@ -194,10 +201,10 @@ namespace Assets.Scripts
         public void ConfigureGameOnStart(string professorId)
         {
             _startGameUI.SetActive(false);
-            _minimapOnTab.ReigsterPlayerObjects(_players.Values);
-            _staticMinimap.ReigsterPlayerObjects(_players.Values);
+            _minimapOnTab.ReigsterPlayerObjects(Players.Values);
+            _staticMinimap.ReigsterPlayerObjects(Players.Values);
 
-            foreach (var player in _players.Values)
+            foreach (var player in Players.Values)
             {
                 if (player.PlayerId == professorId)
                 {
@@ -209,17 +216,24 @@ namespace Assets.Scripts
                 }
             }
 
+            StudentCount = Players.Count - 1;
+            ExitedStudents = 0;
+
             GameStarted = true;
 
             Debug.Log($"You're {Player.LocalPlayer.State}");
             EnablePlayerControl();
         }
 
-
         public void NofityPlayerStateChanged(Player player)
         {
             _staticMinimap.NotifyStateChanged(player);
             _minimapOnTab.NotifyStateChanged(player);
+
+            if (player.State == PlayerState.Assistant)
+            {
+                StudentCount -= 1;
+            }
         }
 
         public void OpenMenu()
@@ -348,9 +362,9 @@ namespace Assets.Scripts
 
         public string GetRandomPlayerId()
         {
-            var index = UnityEngine.Random.Range(0, _players.Count);
+            var index = UnityEngine.Random.Range(0, Players.Count);
 
-            return _players.Values.ToArray()[index].PlayerId;
+            return Players.Values.ToArray()[index].PlayerId;
         }
 
         #region PLAYER TRACKING
@@ -362,7 +376,7 @@ namespace Assets.Scripts
         public void RegisterPlayer(Player player)
         {
             string playerId = player.PlayerId;
-            _players.Add(playerId, player);
+            Players.Add(playerId, player);
             player.transform.name = playerId;
 
             if (isClient)
@@ -370,13 +384,13 @@ namespace Assets.Scripts
                 RefreshPlayerList();
             }
 
-            Debug.Log($"Client : {playerId} is registered");
+            Debug.Log($"Client : {playerId} is registered. Now {Players.Count} players");
         }
 
         public void UnRegisterPlayer(string playerId)
         {            
-            var player = _players[playerId];
-            _players.Remove(playerId);
+            var player = Players[playerId];
+            Players.Remove(playerId);
 
             if (isClient)
             {
@@ -386,7 +400,7 @@ namespace Assets.Scripts
             _minimapOnTab.RemovePlayer(player);
             _staticMinimap.RemovePlayer(player);
 
-            Debug.Log($"Client : {playerId} is removed");
+            Debug.Log($"Client : {playerId} is removed. Now {Players.Count} players");
         }
 
         public void RefreshPlayerList()
@@ -398,7 +412,7 @@ namespace Assets.Scripts
 
             _playerListItems.Clear();
 
-            foreach (var player in _players.Values)
+            foreach (var player in Players.Values)
             {
                 var playerListItem = Instantiate(_playerListItemPrefab, _playerListPanel.transform);
                 _playerListItems.Add(playerListItem);
@@ -409,9 +423,9 @@ namespace Assets.Scripts
 
         public Player GetPlayer(string playerId)
         {
-            if (_players.ContainsKey(playerId))
+            if (Players.ContainsKey(playerId))
             {
-                return _players[playerId];
+                return Players[playerId];
             }
 
             throw new System.Exception($"No player with ID {playerId} is found");
