@@ -1,4 +1,6 @@
-﻿using Mirror;
+﻿using Assets.Scripts.MatchMaking;
+using Assets.Scripts.MiniGames;
+using Mirror;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -13,7 +15,7 @@ namespace Assets.Scripts
 
         public List<MiniGame> AllMissions { get; private set; } = new List<MiniGame>();
 
-        public Dictionary<string, bool> MissionCompletedPlayers { get; set; } = new Dictionary<string, bool>();
+        public Dictionary<string, bool> PlayerMissionsProgress { get; private set; } = new Dictionary<string, bool>();
 
         public int MissionsPerPlayer { get; private set; } = 2;
         public int LeftMissionsCount { get; private set; } = 2;
@@ -30,18 +32,40 @@ namespace Assets.Scripts
 
         private void Start()
         {
-            AllMissions = FindObjectsOfType<MiniGame>().ToList();
+            var interactables = FindObjectsOfType<Interactable>();
+
+            foreach (var interactable in interactables)
+            {
+                AllMissions.Add(interactable.MiniGame);
+            }
+
+            AllMissions = AllMissions.OrderBy(x => x.gameObject.transform.parent.name).ToList();
+
             OpenableDoors = FindObjectsOfType<OpenableDoor>().ToList();
+
+            if (isClient)
+            {
+                AssignMissions(MatchManager.Instance.Match.MatchID.ToGuid());
+            }
         }
 
         //랜덤 Guid로 플레이어들을 정렬해서 미션을 분배하는 방식을 선택
-        public void AssignMissions(Guid orderId)
+        private void AssignMissions(Guid orderId)
         {
-            var players = GameManager.Instance.Players.Values.OrderBy(p => orderId).ToList();
+            var players = GameManager.Instance.Players.Values.OrderBy(p => p.PlayerId).ToList();
 
-            for (int i = 0; i < players.Count * MissionsPerPlayer; i += MissionsPerPlayer)
+            for (int i = 0; i < players.Count; i++)
             {
+                Player player = players[i];
+                //PlayerState might not be updated here. However, Missions assigned to Profesor has no meaning.
+                if (player.State != PlayerState.Student)
+                {
+                    continue;
+                }
 
+                PlayerMissionsProgress.Add(player.PlayerId, false);
+
+                player.AssignMissions(AllMissions.Skip(i*MissionsPerPlayer).Take(MissionsPerPlayer));                
             }
 
             LeftMissionsCount = players.Count * MissionsPerPlayer;
@@ -52,17 +76,24 @@ namespace Assets.Scripts
         /// </summary>
         public void RemovePlayer(string playerId)
         {
-            MissionCompletedPlayers.Remove(playerId);
+            PlayerMissionsProgress.Remove(playerId);
         }
 
         [Client]
         public void NotifyPlayerCompleteMissions(string playerId)
         {
             //Check whether all missions are completed.
-            MissionCompletedPlayers[playerId] = true;
+            PlayerMissionsProgress[playerId] = true;
 
-            foreach (var isDone in MissionCompletedPlayers.Values)
+            foreach (var isDone in PlayerMissionsProgress.Values)
             {
+                var player = GameManager.Instance.GetPlayer(playerId);
+
+                if (player.State != PlayerState.Student)
+                {
+                    continue;
+                }
+
                 if (isDone == false)
                 {
                     return;
@@ -83,6 +114,7 @@ namespace Assets.Scripts
         private void RpcCompleteMission()
         {
             //TODO : Notify all missions complete.
+            GameManager.Instance.PrintMessage("Go exit here", "SYSTEM", ChatType.Info);
 
             //TOOD : Open the exit doors.
             foreach (var openableDoor in OpenableDoors)
