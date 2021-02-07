@@ -18,7 +18,8 @@ namespace Assets.Scripts.MiniGames
         private GameObject _highlight;
 
         private Outline _outlineComponent;
-        private MiniGame _miniGame;
+        public MiniGame MiniGame { get; private set; }
+
         private int _localPlayerLayer;
         public bool Highlighted
         {
@@ -41,7 +42,7 @@ namespace Assets.Scripts.MiniGames
         private void Start()
         {
             _localPlayerLayer = LayerMask.NameToLayer("LocalPlayer");
-            _miniGame = _miniGameObject.GetComponent<MiniGame>();
+            MiniGame = _miniGameObject.GetComponent<MiniGame>();
             _outlineComponent = _original.GetComponent<Outline>();
 
             if (_outlineComponent != null)
@@ -80,7 +81,7 @@ namespace Assets.Scripts.MiniGames
                 return;
             }
 
-            if (other.gameObject.layer == _localPlayerLayer && _miniGame.IsCompleted == false)
+            if (other.gameObject.layer == _localPlayerLayer && MiniGame.IsCompleted == false)
             {
                 SetHighlight(true);
             }
@@ -106,8 +107,8 @@ namespace Assets.Scripts.MiniGames
                 return false;
             }
 
-            //return Player.LocalPlayer.State != PlayerState.Student || _miniGame.AssingnedPlayer?.isLocalPlayer == false;
-            return Player.LocalPlayer.State == PlayerState.Student;
+            return Player.LocalPlayer.State == PlayerState.Student && MiniGame.IsCompleted == false
+                && (MiniGame.AssignedPlayer != null && MiniGame.AssignedPlayer.isLocalPlayer == true);
         }
 
         private void Update()
