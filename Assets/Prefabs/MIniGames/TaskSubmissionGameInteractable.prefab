@@ -326,6 +326,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 54d7c5bb1b4724246bce8755ae1c770d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _outline: {fileID: 5596527126057236120}
   _userAnswerField: {fileID: 4705204878169244894}
   _wrongText: {fileID: 4705204878593302540}
 --- !u!1 &4705204877137259352

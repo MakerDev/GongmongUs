@@ -15,10 +15,14 @@ public class OutlineEffectAttacher : NetworkBehaviour
         {
             var outlineEffect = _cameraObject.AddComponent<OutlineEffect>();
             outlineEffect.lineColor0 = new Color(242, 255, 0);
-            outlineEffect.fillColor = new Color(252, 182, 0);
-            outlineEffect.lineThickness = 2.3f;
-            outlineEffect.lineIntensity = 1.6f;
+            outlineEffect.fillAmount = 0;
             outlineEffect.useFillColor = true;
+            outlineEffect.fillColor = new Color(252, 182, 0)
+            {
+                a = 0.2f
+            };
+            outlineEffect.lineThickness = 3.3f;
+            outlineEffect.lineIntensity = 2.6f;
         }
     }
 }
