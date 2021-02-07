@@ -11,7 +11,7 @@ namespace Assets.Scripts.GamePlay.PlayerActions
     {
         public bool CanExecute()
         {
-            return Interactable.EnteredInteractable != null;
+            return Interactable.EnteredInteractable != null && Interactable.EnteredInteractable.MiniGame?.IsCompleted == false;
         }
 
         public void TryExecute()
