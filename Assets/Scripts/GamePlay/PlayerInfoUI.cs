@@ -22,10 +22,5 @@ namespace Assets.Scripts
 
             _playerNameText.text = player.PlayerName;
         }
-
-        // Update is called once per frame
-        void Update()
-        {
-        }
     }
 }

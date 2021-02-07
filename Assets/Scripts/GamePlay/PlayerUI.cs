@@ -23,6 +23,11 @@ namespace Assets.Scripts
         [SerializeField]
         private Text _stateText;
 
+        [SerializeField]
+        private Text _leftMissionsText;
+        [SerializeField]
+        private RectTransform _progressImage;
+
         private PlayerController _controller;
         private Player _player;
         private bool _wasOnTarget = false;
@@ -74,6 +79,12 @@ namespace Assets.Scripts
         public void SetState()
         {
             _stateText.text = _player.State.ToString();
+        }
+
+        public void SetPlayerMissionProgress(int missionsCount, int completedMissionsCount)
+        {
+            _leftMissionsText.text = $"{completedMissionsCount}/{missionsCount}";
+            _progressImage.localScale = new Vector3(completedMissionsCount / missionsCount, 1);
         }
 
         void SetFuelAmout(float amount)
