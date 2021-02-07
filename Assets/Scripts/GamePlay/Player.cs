@@ -1,9 +1,11 @@
 ﻿using Assets.Scripts.MatchMaking;
 using Assets.Scripts.Networking;
 using BattleCampusMatchServer.Models;
+using cakeslice;
 using Mirror;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Assets.Scripts
@@ -47,7 +49,61 @@ namespace Assets.Scripts
         private PlayerShoot _playerShootComponent;
         private PlayerController _playerController; //For animations
 
+        public bool HasExited { get; private set; } = false;
         public bool IsReady { get; private set; } = false;
+
+        public List<MiniGame> AssignedMissions { get; private set; } = new List<MiniGame>();
+        public int MissionsLeft { get; private set; } = 1;
+
+        public void AssignMissions(IEnumerable<MiniGame> missions)
+        {
+            AssignedMissions.AddRange(missions);
+
+            foreach (var assignedMission in AssignedMissions)
+            {
+                assignedMission.AssignPlayer(this);
+                GameManager.Instance.PrintMessage($"{assignedMission.gameObject.transform.parent.name} is assigned to {PlayerId}", "SYSTEM");
+            }
+
+            MissionsLeft = AssignedMissions.Count;
+            UpdatePlayerMissionProgress();
+        }
+
+        public void OnCompleteMission(MiniGameResult miniGameResult)
+        {
+            if (miniGameResult.Passed)
+            {
+                MissionsLeft -= 1;
+                UpdatePlayerMissionProgress();
+                CmdReportMissionComplete(MissionsLeft);
+            }
+        }
+
+        [Command]
+        public void CmdReportMissionComplete(int missionsLeft)
+        {
+            MissionsLeft = missionsLeft;
+            RpcReportMissionComplete(MissionsLeft);
+        }
+
+        [ClientRpc]
+        private void RpcReportMissionComplete(int missionsLeft)
+        {
+            MissionsLeft = missionsLeft;
+
+            if (MissionsLeft == 0 && isLocalPlayer)
+            {
+                //TODO: Display all missions for the local player are completed.
+                MissionManager.Instance.NotifyPlayerCompleteMissions(PlayerId);
+                UpdatePlayerMissionProgress();
+            }
+        }
+
+        //Display mission progress for this player
+        private void UpdatePlayerMissionProgress()
+        {
+            PlayerSetup.PlayerUI.SetPlayerMissionProgress(AssignedMissions.Count, AssignedMissions.Count - MissionsLeft);
+        }
 
         private void NotifyStateChanged(PlayerState newState)
         {
@@ -55,6 +111,11 @@ namespace Assets.Scripts
             _playerShootComponent.NotifyStateChanged(newState);
             _playerController.SetStateMaterial(newState);
             PlayerSetup.PlayerUI.SetState();
+
+            if (newState != PlayerState.Student)
+            {
+                MissionManager.Instance.RemovePlayer(PlayerId);
+            }
         }
 
         private void Start()
@@ -131,14 +192,20 @@ namespace Assets.Scripts
 
         #endregion
 
+        public void Escape()
+        {
+            //TODO : Disable main camera and enable scene camera.
+        }
+
         public void StartGame()
         {
-            CmdStartGame(GameManager.Instance.GetRandomPlayerId());
+            CmdStartGame(GameManager.Instance.GetRandomPlayerId(), MatchManager.Instance.Match.MatchID.ToGuid());
         }
 
         [Command]
-        private void CmdStartGame(string professorID)
+        private void CmdStartGame(string professorID, Guid matchId)
         {
+            BCNetworkManager.Instance.SpawnMissionManager(matchId);
             RpcStartGame(professorID);
         }
 
