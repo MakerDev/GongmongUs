@@ -45,7 +45,7 @@ public class PlayerMotor : NetworkBehaviour
         {
             _isPlayingMiniGame = true;
         };
-        MiniGame.OnCompletedMiniGame += (result) =>
+        MiniGame.OnTurnOffMiniGame += (result) =>
         {
             _isPlayingMiniGame = false;
         };

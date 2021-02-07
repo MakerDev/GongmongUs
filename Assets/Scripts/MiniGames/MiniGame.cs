@@ -7,6 +7,7 @@ using UnityEngine;
 
 public class MiniGameResult
 {
+    public MiniGame MiniGame { get; set; }
     public bool Passed { get; set; } = false;
 }
 
@@ -16,13 +17,27 @@ public class MiniGameResult
 public class MiniGame : MonoBehaviour
 {
     public static event Action OnStartMiniGame;
-    public static event Action<MiniGameResult> OnCompletedMiniGame;
+    public static event Action<MiniGameResult> OnTurnOffMiniGame;
     public static bool IsPlaying { get; private set; } = false;
 
-    public event Action<MiniGameResult> OnLocalGameCompleted;
+    public event Action<MiniGameResult> OnGameCompleted;
 
     public bool IsCompleted { get; private set; } = false;
     protected MiniGameResult MiniGameResult = new MiniGameResult();
+
+    public Guid Id { get; private set; } = Guid.NewGuid();
+
+    public Player AssignedPlayer { get; private set; } = null;
+
+    private void Awake()
+    {
+        MiniGameResult.MiniGame = this;
+    }
+
+    public void AssignPlayer(Player player)
+    {
+        AssignedPlayer = player;
+    }
 
     public void OnEnable()
     {
@@ -34,8 +49,8 @@ public class MiniGame : MonoBehaviour
 
     public void OnDisable()
     {
-        OnCompletedMiniGame?.Invoke(MiniGameResult);
-        OnLocalGameCompleted?.Invoke(MiniGameResult);
+        OnTurnOffMiniGame?.Invoke(MiniGameResult);
+        OnGameCompleted?.Invoke(MiniGameResult);
         GameManager.Instance.EnablePlayerControl();
     }
 
@@ -59,5 +74,10 @@ public class MiniGame : MonoBehaviour
         this.gameObject.SetActive(false);
         IsCompleted = true;
         IsPlaying = false;
+
+        if (MiniGameResult.Passed)
+        {
+            AssignedPlayer.OnCompleteMission(miniGameResult);
+        }
     }
 }
