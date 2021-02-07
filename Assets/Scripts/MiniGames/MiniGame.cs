@@ -1,5 +1,7 @@
 ﻿using Assets.Scripts;
+using cakeslice;
 using Cysharp.Threading.Tasks.Triggers;
+using Mirror;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -28,6 +30,9 @@ public class MiniGame : MonoBehaviour
     public Guid Id { get; private set; } = Guid.NewGuid();
 
     public Player AssignedPlayer { get; private set; } = null;
+
+    [SerializeField]
+    private Outline _outline;
 
     private void Awake()
     {
@@ -72,12 +77,17 @@ public class MiniGame : MonoBehaviour
         MiniGameResult = miniGameResult;
         //TODO : report to the GameManaget
         this.gameObject.SetActive(false);
-        IsCompleted = true;
         IsPlaying = false;
 
         if (MiniGameResult.Passed)
         {
             AssignedPlayer.OnCompleteMission(miniGameResult);
+            IsCompleted = true;
+
+            if (_outline != null)
+            {
+                _outline.enabled = false;
+            }
         }
     }
 }
