@@ -108,5 +108,13 @@ namespace Assets.Scripts.Networking
 
             base.OnStopServer();
         }
+
+        [Server]
+        public void SpawnMissionManager(Guid matchId)
+        {
+            var missionManager = Instantiate(spawnPrefabs[1]);
+            missionManager.GetComponent<NetworkMatchChecker>().matchId = matchId;
+            NetworkServer.Spawn(missionManager);
+        }
     }
 }
