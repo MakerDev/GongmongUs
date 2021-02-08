@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Fire
   - ExitTrigger
+  - PlayerCamera
   layers:
   - Default
   - TransparentFX
