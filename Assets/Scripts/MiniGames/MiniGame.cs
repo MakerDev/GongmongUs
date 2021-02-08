@@ -49,14 +49,14 @@ public class MiniGame : MonoBehaviour
         OnStartMiniGame?.Invoke();
         MiniGameResult = new MiniGameResult();
         StartMiniGame();
-        GameManager.Instance.DisablePlayerControl();
+        GameManager.Instance?.DisablePlayerControl();
     }
 
     public void OnDisable()
     {
         OnTurnOffMiniGame?.Invoke(MiniGameResult);
         OnGameCompleted?.Invoke(MiniGameResult);
-        GameManager.Instance.EnablePlayerControl();
+        GameManager.Instance?.EnablePlayerControl();
     }
 
     public void StartMiniGame()
