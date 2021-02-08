@@ -19,7 +19,8 @@ namespace Assets.Scripts.MiniGames
 
         public void Submit()
         {
-            if (_userAnswerField.text == _answer)
+            //if (_userAnswerField.text == _answer)
+            if(true)
             {
                 _wrongText.text = "";
                 MiniGameResult.Passed = true;
