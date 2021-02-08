@@ -171,6 +171,7 @@ namespace Assets.Scripts
         {
             Player.LocalPlayer.GetReady();
             _readyButton.enabled = false;
+            _readyButton.interactable = false;
         }
 
         public void StartGame()

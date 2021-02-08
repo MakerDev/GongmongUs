@@ -34,6 +34,7 @@ namespace Assets.Scripts
 
 
             _joinButton.enabled = match.CanJoin;
+            _joinButton.interactable = match.CanJoin;
             _joinShield.enabled = !match.CanJoin;
         }
 
