@@ -13,13 +13,13 @@ namespace Assets.Scripts
             Instance = this;
         }
 
-        public void PrintMessage(string message, string sender, ChatType chatType)
+        public void BroadcastMessage(string message, string sender, ChatType chatType)
         {
-            CmdPrintMessage(message, sender, chatType);
+            CmdBroadcastMessage(message, sender, chatType);
         }
 
         [Command(ignoreAuthority = true)]
-        public void CmdPrintMessage(string message, string sender, ChatType chatType)
+        public void CmdBroadcastMessage(string message, string sender, ChatType chatType)
         {
             RpcPrintMessage(message, sender, chatType);
         }

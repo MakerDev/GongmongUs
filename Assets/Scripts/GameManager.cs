@@ -190,8 +190,7 @@ namespace Assets.Scripts
 
                 if (player.IsReady == false)
                 {
-                    //TODO : Notify this
-                    Debug.Log("all users must be ready to start");
+                    ChatHub.Instance.BroadcastMessage("All players must be ready to start game.", "SYSTEM", ChatType.Info);
                     return;
                 }
             }
@@ -294,7 +293,7 @@ namespace Assets.Scripts
                 {
                     if (ChatHub.Instance != null)
                     {
-                        ChatHub.Instance.PrintMessage(_chatInputField.text, Player.LocalPlayer.PlayerName, ChatType.Player);
+                        ChatHub.Instance.BroadcastMessage(_chatInputField.text, Player.LocalPlayer.PlayerName, ChatType.Player);
                     }
 
                     _chatInputField.text = "";
