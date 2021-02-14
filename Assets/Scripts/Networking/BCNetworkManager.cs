@@ -85,12 +85,13 @@ namespace Assets.Scripts.Networking
             base.OnClientConnect(conn);
 
             //If the match has already started, disconnect
-            if (GameManager.Instance.GameStarted)
-            {
-                Debug.LogError("disconnect as game already started");
-                conn.Disconnect();                
-                //TODO: Report MatchServer.
-            }
+            //GameManager말고 매치서버에서 확인해야될듯
+            //if (GameManager.Instance.GameStarted)
+            //{
+            //    Debug.LogError("disconnect as game already started");
+            //    conn.Disconnect();                
+            //    //TODO: Report MatchServer.
+            //}
         }
 
         public async UniTask NotifyStartGame(string matchID)

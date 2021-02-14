@@ -111,6 +111,16 @@ namespace Assets.Scripts
             }
         }
 
+        public void DisableMove()
+        {
+            DisableControl = false;
+        }
+
+        public void EnableMove()
+        {
+            DisableControl = true;
+        }
+
         public void DisablePlayerControl()
         {
             Cursor.lockState = CursorLockMode.None;
@@ -181,6 +191,12 @@ namespace Assets.Scripts
                 return;
             }
 
+            if (Players.Count <= 4)
+            {
+                ChatHub.Instance.BroadcastMessage("네 명 이상의 플레이어가 필요합니다.", "SYSTEM", ChatType.KillInfo);
+                return;
+            }
+
             foreach (var player in Players.Values)
             {
                 if (player == Player.LocalPlayer)
@@ -190,7 +206,7 @@ namespace Assets.Scripts
 
                 if (player.IsReady == false)
                 {
-                    ChatHub.Instance.BroadcastMessage("All players must be ready to start game.", "SYSTEM", ChatType.Info);
+                    ChatHub.Instance.BroadcastMessage("모든 플레이어가 레디하여야 시작할 수 있습니다.", "SYSTEM", ChatType.KillInfo);
                     return;
                 }
             }
@@ -388,7 +404,7 @@ namespace Assets.Scripts
         }
 
         public void UnRegisterPlayer(string playerId)
-        {            
+        {
             var player = Players[playerId];
             Players.Remove(playerId);
 

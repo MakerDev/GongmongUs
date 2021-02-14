@@ -1,4 +1,6 @@
-﻿using System.Collections;
+﻿using FirstGearGames.Mirrors.Assets.FlexNetworkAnimators;
+using Mirror;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,6 +9,9 @@ namespace Assets.Scripts
     [RequireComponent(typeof(PlayerMotor))]
     public class PlayerController : MonoBehaviour
     {
+        private const float _walkSpeed = 4.0f;
+        private const float _runSpeed = 8.0f;
+
         #region STATS
         [Header("Stats")]
         [SerializeField]
@@ -24,7 +29,7 @@ namespace Assets.Scripts
 
         private PlayerMotor _motor;
         [SerializeField]
-        private Animator _animator;
+        private CustomNetworkAnimator _animator;
 
         [SerializeField]
         private SkinnedMeshRenderer _bodyRenderer;
@@ -32,11 +37,15 @@ namespace Assets.Scripts
         private Material _assistantMaterial;
         [SerializeField]
         private Material _professorMaterial;
+        [SerializeField]
+        private Material _studentMaterial;
+        [SerializeField]
+        private Material _onCaughtMaterial;
 
         private void Start()
         {
             _motor = GetComponent<PlayerMotor>();
-            //_animator = GetComponent<Animator>();
+            _animator = GetComponent<CustomNetworkAnimator>();
         }
 
         public float GetThrusterFuelAmount()
@@ -68,6 +77,18 @@ namespace Assets.Scripts
             SetStateMaterial(PlayerState.Assistant);
         }
 
+        public void SetOnCaughtByAssistantMaterial(bool isReleased)
+        {
+            if (isReleased)
+            {
+                _bodyRenderer.material = _studentMaterial;
+            }
+            else
+            {
+                _bodyRenderer.material = _onCaughtMaterial;
+            }
+        }
+
         private void FixedUpdate()
         {
             if (GameManager.DisableControl)
@@ -83,13 +104,11 @@ namespace Assets.Scripts
 
             if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
             {
-                _motor.SetSpeed(9.0f);
-                _animator.SetFloat("Speed", 9.0f);
+                _motor.SetSpeed(_runSpeed);                
             }
             else
             {
-                _motor.SetSpeed(3.0f);
-                _animator.SetFloat("Speed", 3.0f);
+                _motor.SetSpeed(_walkSpeed);
             }
 
             float xMov = Input.GetAxisRaw("Horizontal");
@@ -97,11 +116,11 @@ namespace Assets.Scripts
 
             Vector3 movHorizontal = transform.right * xMov;
             Vector3 movVertical = transform.forward * zMov;
-
             Vector3 velocity = (movHorizontal + movVertical) * _speed * Time.fixedDeltaTime;
 
-            _animator.SetFloat("ForwardVelocity", zMov);
-            _animator.SetBool("IsWalking", zMov != 0 || xMov != 0);
+            var isWalking = zMov != 0 || xMov != 0;
+
+            _animator.PlayWalkOrRun(isWalking, zMov, _motor.Speed);
 
             _motor.Move(velocity);
 
@@ -118,7 +137,7 @@ namespace Assets.Scripts
             Vector3 thrusterForce = Vector3.zero;
             if (Input.GetButton("Jump") && _thrusterFuelAmount >= 0)
             {
-                _animator.SetBool("IsJumping", true);
+                _animator.Jump(true);
                 _thrusterFuelAmount -= _thrusterFuelBurnSpeed * Time.fixedDeltaTime;
 
                 if (_thrusterFuelAmount >= 0.01f)
@@ -128,7 +147,7 @@ namespace Assets.Scripts
             }
             else
             {
-                _animator.SetBool("IsJumping", false);
+                _animator.Jump(false);
                 _thrusterFuelAmount += _thrusterFuelRegenSpeed * Time.fixedDeltaTime;
             }
 

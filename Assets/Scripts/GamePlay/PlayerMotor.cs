@@ -30,6 +30,8 @@ public class PlayerMotor : NetworkBehaviour
     public float gravity = -9.8f;
     [SerializeField]
     private float _speed = 9f;
+    public float Speed { get { return _speed; } }
+
 
     private bool _isPlayingMiniGame = false;
     private Vector3 _velocity;

@@ -2,6 +2,7 @@
 using Assets.Scripts.Networking;
 using BattleCampusMatchServer.Models;
 using cakeslice;
+using Cysharp.Threading.Tasks;
 using Mirror;
 using System;
 using System.Collections;
@@ -17,9 +18,9 @@ namespace Assets.Scripts
 
         #region SETUP
         [SerializeField]
-        private Behaviour[] _disableOnDeath;
+        private Behaviour[] _disableOnExit;
         [SerializeField]
-        private GameObject[] _disableGameObjectsOnDeath;
+        private GameObject[] _disableGameObjectsOnExit;
 
         private bool[] _wasEnabled;
 
@@ -192,11 +193,6 @@ namespace Assets.Scripts
 
         #endregion
 
-        public void Escape()
-        {
-            //TODO : Disable main camera and enable scene camera.
-        }
-
         public void StartGame()
         {
             CmdStartGame(GameManager.Instance.GetRandomPlayerId(), MatchManager.Instance.Match.MatchID.ToGuid());
@@ -239,6 +235,7 @@ namespace Assets.Scripts
             Debug.Log("Im ready");
         }
 
+        #region CaughtBy
         public void CaughtByProfessor()
         {
             CmdCaughByProfessor();
@@ -269,6 +266,42 @@ namespace Assets.Scripts
                 PlayTransitionEffect();
             }
         }
+
+        //No need to sync because while the local player is trying to solve the given assignment,
+        //that player character will not move.
+        public void CaughtByAssistant()
+        {
+            CmdCaughtByAssistant();
+        }
+
+        [Command(ignoreAuthority = true)]
+        private void CmdCaughtByAssistant()
+        {
+            RpcCaughtByAssistant();
+        }
+
+        [ClientRpc]
+        private async void RpcCaughtByAssistant()
+        {
+            _playerController.SetOnCaughtByAssistantMaterial(false);
+
+
+            if (isLocalPlayer)
+            {
+                GameManager.Instance.DisableMove();
+            }
+
+            await UniTask.Delay(2000);
+
+            if (isLocalPlayer)
+            {
+                GameManager.Instance.EnableMove();
+            }
+
+            _playerController.SetOnCaughtByAssistantMaterial(true);
+        }
+
+        #endregion
 
         private void PlayTransitionEffect()
         {
@@ -303,17 +336,43 @@ namespace Assets.Scripts
             NotifyStateChanged(state);
         }
         #endregion
+
+        public void Escape()
+        {
+            //TODO : Disable main camera and enable scene camera.
+        }
+
+        [Command]
+        private void CmdEscape()
+        {
+            RpcEscape();
+        }
+
+        [ClientRpc]
+        private void RpcEscape()
+        {
+            if (isLocalPlayer)
+            {
+                SuccessExit();
+            }
+            else
+            {
+                //Disable
+                this.gameObject.SetActive(false);
+            }
+        }
+
         private void SuccessExit()
         {
             //Disable components
-            for (int i = 0; i < _disableOnDeath.Length; i++)
+            for (int i = 0; i < _disableOnExit.Length; i++)
             {
-                _disableOnDeath[i].enabled = false;
+                _disableOnExit[i].enabled = false;
             }
 
-            for (int i = 0; i < _disableGameObjectsOnDeath.Length; i++)
+            for (int i = 0; i < _disableGameObjectsOnExit.Length; i++)
             {
-                _disableGameObjectsOnDeath[i].SetActive(false);
+                _disableGameObjectsOnExit[i].SetActive(false);
             }
 
             Collider collider = GetComponent<Collider>();
@@ -339,6 +398,7 @@ namespace Assets.Scripts
                 GetComponent<PlayerSetup>().PlayerUIInstance.SetActive(false);
             }
         }
+
         #region SETTINGS
         [Command]
         public void CmdSpawnChatHub(Guid matchGuid)
@@ -403,11 +463,11 @@ namespace Assets.Scripts
         {
             if (_isFirstSetup)
             {
-                _wasEnabled = new bool[_disableOnDeath.Length];
+                _wasEnabled = new bool[_disableOnExit.Length];
 
-                for (int i = 0; i < _disableOnDeath.Length; i++)
+                for (int i = 0; i < _disableOnExit.Length; i++)
                 {
-                    _wasEnabled[i] = _disableOnDeath[i].enabled;
+                    _wasEnabled[i] = _disableOnExit[i].enabled;
                 }
 
 
@@ -419,14 +479,14 @@ namespace Assets.Scripts
 
         public void SetDefaults()
         {
-            for (int i = 0; i < _disableOnDeath.Length; i++)
+            for (int i = 0; i < _disableOnExit.Length; i++)
             {
-                _disableOnDeath[i].enabled = _wasEnabled[i];
+                _disableOnExit[i].enabled = _wasEnabled[i];
             }
 
-            for (int i = 0; i < _disableGameObjectsOnDeath.Length; i++)
+            for (int i = 0; i < _disableGameObjectsOnExit.Length; i++)
             {
-                _disableGameObjectsOnDeath[i].SetActive(true);
+                _disableGameObjectsOnExit[i].SetActive(true);
             }
 
             CharacterController controller = GetComponent<CharacterController>();

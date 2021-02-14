@@ -20,9 +20,9 @@ RenderSettings:
   m_FogDensity: 0.01
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
-  m_AmbientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
-  m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
-  m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
+  m_AmbientSkyColor: {r: 0.48384658, g: 0.7550085, b: 0.7830189, a: 1}
+  m_AmbientEquatorColor: {r: 0.68124783, g: 0.75497717, b: 0.764151, a: 1}
+  m_AmbientGroundColor: {r: 0.754717, g: 0.6182509, b: 0.34531865, a: 1}
   m_AmbientIntensity: 1
   m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.503827, g: 0.63357323, b: 0.9622642, a: 1}
@@ -2555,27 +2555,6 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_ShadowRadius: 0
   m_ShadowAngle: 0
---- !u!1 &571858805 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 6198846753230582387, guid: 49d598b7df45446438ebf76d045c404a,
-    type: 3}
-  m_PrefabInstance: {fileID: 589564788}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &571858810
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 571858805}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6442dc8070ceb41f094e44de0bf87274, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  showGUI: 1
-  offsetX: 0
-  offsetY: 0
 --- !u!1001 &576295430
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2716,20 +2695,6 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 589564794, guid: 49d598b7df45446438ebf76d045c404a, type: 3}
-      propertyPath: m_Enabled
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 5797143323073332327, guid: 49d598b7df45446438ebf76d045c404a,
-        type: 3}
-      propertyPath: showDebugMessages
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5797143323073332327, guid: 49d598b7df45446438ebf76d045c404a,
-        type: 3}
-      propertyPath: disconnectInactiveConnections
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 6198846753230582387, guid: 49d598b7df45446438ebf76d045c404a,
         type: 3}
       propertyPath: m_Name
@@ -2798,7 +2763,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 589564788}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 571858805}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ac72dc73bf101e44bafd9b408b83e131, type: 3}
@@ -10703,7 +10668,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &859320598
 RectTransform:
   m_ObjectHideFlags: 0

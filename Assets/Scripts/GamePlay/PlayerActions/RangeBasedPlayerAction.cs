@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Assets.Scripts.GamePlay.PlayerActions
 {
-    public class RangeBasedPlayerAction : IPlayerAction
+    public class RangeBasedPlayerAction : CooltimeAction
     {
         public float Range { get; protected set; } = 4f;
         public LayerMask TargetLayerMask { get; protected set; } = LayerMask.NameToLayer("RemotePlayer");
@@ -18,12 +18,18 @@ namespace Assets.Scripts.GamePlay.PlayerActions
         protected RaycastHit _hit;
 
         public RangeBasedPlayerAction(Transform raycastTransform)
+            : base("MainAction")
         {
             RaycastTransform = raycastTransform;
         }
 
-        public virtual bool CanExecute()
+        public override bool CanExecute()
         {
+            if (base.CanExecute() == false)
+            {
+                return false;
+            }
+
             var isHit = Physics.Raycast(RaycastTransform.position,
                                         RaycastTransform.forward,
                                         out _hit,
@@ -34,11 +40,6 @@ namespace Assets.Scripts.GamePlay.PlayerActions
             PlayerSetup.PlayerUI.SetCrossHair(isHit);
 
             return isHit;
-        }
-
-        public virtual void TryExecute()
-        {
-
         }
     }
 }

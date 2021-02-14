@@ -51,7 +51,7 @@ namespace Assets.Scripts
             }
             else
             {
-                _mainFireAction = new StunByAssignmentAction();
+                _mainFireAction = new StunByAssignmentAction(_raycastTransform, _remotePlayerLayer, _playerController);
                 GameManager.Instance.PrintMessage($"{_player.PlayerName} is now assistant.", "SYSTEM", ChatType.Info);
             }
         }

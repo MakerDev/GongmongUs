@@ -11,7 +11,9 @@ namespace Assets.Scripts.GamePlay.PlayerActions
     {
         private PlayerController _playerController;
 
-        public CatchAction(Transform raycastTransform, LayerMask targetLayers, PlayerController playerController)
+        public CatchAction(Transform raycastTransform,
+            LayerMask targetLayers,
+            PlayerController playerController)
             : base(raycastTransform)
         {
             TargetLayerMask = targetLayers;
@@ -28,7 +30,6 @@ namespace Assets.Scripts.GamePlay.PlayerActions
             }
 
             var player = _hit.collider.gameObject.GetComponent<Player>();
-            _playerController.PlayCatchAnimation();
 
             if (player.State == PlayerState.Student)
             {

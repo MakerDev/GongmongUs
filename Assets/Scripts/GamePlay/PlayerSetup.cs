@@ -88,7 +88,6 @@ namespace Assets.Scripts
                 GameManager.Instance.SetSceneCameraActive(true);
             }
 
-
             Player player = GetComponent<Player>();
             GameManager.Instance.UnRegisterPlayer(player.PlayerId);
         }
