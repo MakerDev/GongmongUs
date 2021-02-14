@@ -21,7 +21,7 @@ public class PlayerMotor : NetworkBehaviour
     [SerializeField]
     private Transform _groundCheck;
     [SerializeField]
-    private float _groundDistance = 0.2f;
+    private float _groundDistance = 0.5f;
     private bool _isGrounded = false;
 
     [SerializeField]
@@ -97,13 +97,13 @@ public class PlayerMotor : NetworkBehaviour
 
         _isGrounded = Physics.CheckSphere(_groundCheck.position, _groundDistance, _groundLayerMask);
 
-        if (!_isGrounded && gameObject.transform.position.y >= 0)
+        if (!_isGrounded && gameObject.transform.position.y >= 0.3f)
         {
             var newPos = gameObject.transform.position - (Vector3.up * (5.3f) * Time.fixedDeltaTime);
             
-            if (newPos.y <= 0)
+            if (newPos.y <= 0.3f)
             {
-                newPos.y = 0;
+                newPos.y = 0.3f;
             }
 
             gameObject.transform.position = newPos;
