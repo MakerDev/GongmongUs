@@ -20,13 +20,13 @@ public class PlayerMotor : NetworkBehaviour
 
     [SerializeField]
     private Transform _groundCheck;
+    [SerializeField]
     private float _groundDistance = 0.2f;
+    private bool _isGrounded = false;
 
     [SerializeField]
     private LayerMask _groundLayerMask;
-
-    private bool _isGrounded = false;
-
+    [SerializeField]
     public float gravity = -9.8f;
     [SerializeField]
     private float _speed = 9f;
@@ -71,6 +71,11 @@ public class PlayerMotor : NetworkBehaviour
         _thrusterForce = thruster;
     }
 
+    public void SetSpeed(float newSpeed)
+    {
+        _speed = newSpeed;
+    }
+
     private void FixedUpdate()
     {
         if (GameManager.DisableControl || (!isLocalPlayer && !gameObject.activeSelf) || _isPlayingMiniGame)
@@ -92,13 +97,13 @@ public class PlayerMotor : NetworkBehaviour
 
         _isGrounded = Physics.CheckSphere(_groundCheck.position, _groundDistance, _groundLayerMask);
 
-        if (!_isGrounded && gameObject.transform.position.y >= 1)
+        if (!_isGrounded && gameObject.transform.position.y >= 0)
         {
             var newPos = gameObject.transform.position - (Vector3.up * (5.3f) * Time.fixedDeltaTime);
             
-            if (newPos.y <= 1)
+            if (newPos.y <= 0)
             {
-                newPos.y = 1;
+                newPos.y = 0;
             }
 
             gameObject.transform.position = newPos;

@@ -75,9 +75,21 @@ namespace Assets.Scripts
                 return;
             }
 
+            //TODO: delete this
             if (Input.GetKeyDown(KeyCode.A))
             {
                 _animator.Play("Transform");
+            }
+
+            if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+            {
+                _motor.SetSpeed(9.0f);
+                _animator.SetFloat("Speed", 9.0f);
+            }
+            else
+            {
+                _motor.SetSpeed(3.0f);
+                _animator.SetFloat("Speed", 3.0f);
             }
 
             float xMov = Input.GetAxisRaw("Horizontal");
