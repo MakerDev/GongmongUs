@@ -5,7 +5,6 @@ using UnityEngine;
 namespace Assets.Scripts
 {
     [RequireComponent(typeof(PlayerMotor))]
-    [RequireComponent(typeof(Animator))]
     public class PlayerController : MonoBehaviour
     {
         #region STATS
@@ -24,10 +23,11 @@ namespace Assets.Scripts
         #endregion
 
         private PlayerMotor _motor;
+        [SerializeField]
         private Animator _animator;
 
         [SerializeField]
-        private MeshRenderer _bodyRenderer;
+        private SkinnedMeshRenderer _bodyRenderer;
         [SerializeField]
         private Material _assistantMaterial;
         [SerializeField]
@@ -36,7 +36,7 @@ namespace Assets.Scripts
         private void Start()
         {
             _motor = GetComponent<PlayerMotor>();
-            _animator = GetComponent<Animator>();
+            //_animator = GetComponent<Animator>();
         }
 
         public float GetThrusterFuelAmount()
@@ -58,12 +58,12 @@ namespace Assets.Scripts
 
         public void PlayCatchAnimation()
         {
-            _animator.Play("PlayCatch");
+            //_animator.Play("PlayCatch");
         }
 
         public void TransformToAssistant()
         {
-            _animator.Play("PlayTransformation");
+            //_animator.Play("PlayTransformation");
 
             SetStateMaterial(PlayerState.Assistant);
         }
@@ -77,7 +77,7 @@ namespace Assets.Scripts
 
             if (Input.GetKeyDown(KeyCode.A))
             {
-                _animator.Play("Transform"); 
+                _animator.Play("Transform");
             }
 
             float xMov = Input.GetAxisRaw("Horizontal");
@@ -89,6 +89,8 @@ namespace Assets.Scripts
             Vector3 velocity = (movHorizontal + movVertical) * _speed * Time.fixedDeltaTime;
 
             _animator.SetFloat("ForwardVelocity", zMov);
+            _animator.SetBool("IsWalking", zMov != 0 || xMov != 0);
+
             _motor.Move(velocity);
 
             float yRot = Input.GetAxisRaw("Mouse X");
@@ -104,6 +106,7 @@ namespace Assets.Scripts
             Vector3 thrusterForce = Vector3.zero;
             if (Input.GetButton("Jump") && _thrusterFuelAmount >= 0)
             {
+                _animator.SetBool("IsJumping", true);
                 _thrusterFuelAmount -= _thrusterFuelBurnSpeed * Time.fixedDeltaTime;
 
                 if (_thrusterFuelAmount >= 0.01f)
@@ -113,6 +116,7 @@ namespace Assets.Scripts
             }
             else
             {
+                _animator.SetBool("IsJumping", false);
                 _thrusterFuelAmount += _thrusterFuelRegenSpeed * Time.fixedDeltaTime;
             }
 
