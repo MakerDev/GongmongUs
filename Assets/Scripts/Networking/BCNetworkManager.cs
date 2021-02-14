@@ -79,6 +79,20 @@ namespace Assets.Scripts.Networking
             await MatchServer.Instance.NotifyUserConnect(MatchManager.Instance.Match.IpPortInfo, connectionId, user);
         }
 
+        public override void OnClientConnect(NetworkConnection conn)
+        {
+            //반드시 불러줘야한다!!
+            base.OnClientConnect(conn);
+
+            //If the match has already started, disconnect
+            if (GameManager.Instance.GameStarted)
+            {
+                Debug.LogError("disconnect as game already started");
+                conn.Disconnect();                
+                //TODO: Report MatchServer.
+            }
+        }
+
         public async UniTask NotifyStartGame(string matchID)
         {
             await MatchServer.Instance.NotifyMatchStarted(_ipPortInfo, matchID);
