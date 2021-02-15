@@ -113,6 +113,8 @@ namespace Assets.Scripts.MiniGames
                 return true;
             }
 
+            SetHighlight(false);
+            
             return false;
         }
 
