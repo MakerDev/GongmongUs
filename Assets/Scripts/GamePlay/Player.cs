@@ -296,7 +296,7 @@ namespace Assets.Scripts
                 GameManager.Instance.DisableMove();
             }
 
-            await UniTask.Delay(3000);
+            await UniTask.Delay(PlayerController.STUN_AMOUNT_SEC * 1000);
 
             if (isLocalPlayer)
             {

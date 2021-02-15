@@ -1,4 +1,5 @@
-﻿using FirstGearGames.Mirrors.Assets.FlexNetworkAnimators;
+﻿using Cysharp.Threading.Tasks;
+using FirstGearGames.Mirrors.Assets.FlexNetworkAnimators;
 using Mirror;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,6 +10,8 @@ namespace Assets.Scripts
     [RequireComponent(typeof(PlayerMotor))]
     public class PlayerController : MonoBehaviour
     {
+        public const int STUN_AMOUNT_SEC = 3;
+
         private const float WALK_SPEED = 5.0f;
         private const float RUN_SPEED = 10.0f;
 
@@ -70,8 +73,12 @@ namespace Assets.Scripts
             _animator.Play("Catch");
         }
 
+        /// <summary>
+        /// This is called by all target players.
+        /// </summary>
         public void TransformToAssistant()
         {
+            _animator.Animator.Play("Transform");
             SetStateMaterial(PlayerState.Assistant);
         }
 
@@ -80,12 +87,12 @@ namespace Assets.Scripts
             if (isReleased)
             {
                 _bodyRenderer.material = _studentMaterial;
-                _animator.SetBool("Stunned", false);
+                _animator.SetBoolLocal("IsStunned", false);
             }
             else
             {
                 _bodyRenderer.material = _onCaughtMaterial;
-                _animator.SetBool("Stunned", false);
+                _animator.Animator.Play("Stunned");
             }
         }
 
