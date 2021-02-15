@@ -65,34 +65,53 @@ namespace Assets.Scripts
 
                 PlayerMissionsProgress.Add(player.PlayerId, false);
 
-                player.AssignMissions(AllMissions.Skip(i*MissionsPerPlayer).Take(MissionsPerPlayer));                
+                player.AssignMissions(AllMissions.Skip(i * MissionsPerPlayer).Take(MissionsPerPlayer));
             }
 
             LeftMissionsCount = players.Count * MissionsPerPlayer;
         }
-        
-        public bool OnPlayerExit(string playerId)
+
+        //This is called by Localplayer
+        public void OnPlayerExit(string playerId)
         {
+            RemovePlayer(playerId);
             //If there is no students left, then Students win as it means all students
             //has exited.
-
-            return false;
+            if (PlayerMissionsProgress.Count <= 0)
+            {
+                CmdMoveToResult(MatchResult.StudentsWin);
+            }
         }
 
+        //This is called by LocalPlayer
         public bool OnPlayerCaught(string playerId)
         {
+            RemovePlayer(playerId);
+
             //If no more player is left, professor wins
             if (PlayerMissionsProgress.Count <= 0)
             {
-                MoveToResult(professorIsWinner: true);
+                CmdMoveToResult(MatchResult.ProfessorWins);
             }
 
             return false;
         }
 
-        public void MoveToResult(bool professorIsWinner)
+        [Command(ignoreAuthority = true)]
+        public void CmdMoveToResult(MatchResult matchResult)
         {
+            RpcMoveToResult(matchResult);
+        }
 
+        [ClientRpc]
+        private void RpcMoveToResult(MatchResult matchResult)
+        {
+            MoveToResult(matchResult);
+        }
+
+        public void MoveToResult(MatchResult matchResult)
+        {
+            MatchManager.Instance.MatchCompleted(matchResult);
         }
 
         /// <summary>

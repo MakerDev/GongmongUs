@@ -191,11 +191,12 @@ namespace Assets.Scripts
                 return;
             }
 
-            if (Players.Count <= 4)
-            {
-                ChatHub.Instance.BroadcastMessage("네 명 이상의 플레이어가 필요합니다.", "SYSTEM", ChatType.KillInfo);
-                return;
-            }
+            //TODO : Uncomment this on Release build.
+            //if (Players.Count < 4)
+            //{
+            //    ChatHub.Instance.BroadcastMessage("네 명 이상의 플레이어가 필요합니다.", "SYSTEM", ChatType.KillInfo);
+            //    return;
+            //}
 
             foreach (var player in Players.Values)
             {

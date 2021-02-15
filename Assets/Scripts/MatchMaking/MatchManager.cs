@@ -1,4 +1,5 @@
-﻿using BattleCampusMatchServer.Models;
+﻿using Assets.Scripts.Networking;
+using BattleCampusMatchServer.Models;
 using BattleCampusMatchServer.Models.DTOs;
 using Cysharp.Threading.Tasks;
 using System;
@@ -36,8 +37,9 @@ namespace Assets.Scripts.MatchMaking
 
         public void MatchCompleted(MatchResult matchResult)
         {
+            MatchResult = matchResult;
             //TODO : report result
-            SceneManager.LoadScene("MatchResultScene");
+            BCNetworkManager.Instance.MoveToResult();
         }
 
         public void ClearMatchResult()

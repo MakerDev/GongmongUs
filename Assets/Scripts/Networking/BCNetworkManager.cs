@@ -4,11 +4,15 @@ using Cysharp.Threading.Tasks;
 using Mirror;
 using System;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Assets.Scripts.Networking
 {
     public class BCNetworkManager : NetworkManager
     {
+        [SerializeField]
+        private GameObject _gamePlayerPrefab;
+
         public static BCNetworkManager Instance { get; private set; }
 
         private string _serverName = null;
@@ -75,7 +79,7 @@ namespace Assets.Scripts.Networking
         public async void NotifyUserConnect(int connectionId, GameUser user)
         {
             user.ConnectionID = connectionId;
-            
+
             await MatchServer.Instance.NotifyUserConnect(MatchManager.Instance.Match.IpPortInfo, connectionId, user);
         }
 
@@ -108,13 +112,13 @@ namespace Assets.Scripts.Networking
             base.OnServerDisconnect(conn);
         }
 
-        //Reset MatchManager, UserManager
+        //Don't reset MatchManager, UserManager
+        //리셋하면 게임 재시작이 불가능해짐
         public override void OnClientDisconnect(NetworkConnection conn)
         {
             base.OnClientDisconnect(conn);
-
-            UserManager.Instance.ResetMatchInfo();
-            MatchManager.Instance.ResetMatchInfo();
+            //UserManager.Instance.ResetMatchInfo();
+            //MatchManager.Instance.ResetMatchInfo();
         }
 
         public override async void OnStopServer()
@@ -130,6 +134,25 @@ namespace Assets.Scripts.Networking
             var missionManager = Instantiate(spawnPrefabs[1]);
             missionManager.GetComponent<NetworkMatchChecker>().matchId = matchId;
             NetworkServer.Spawn(missionManager);
+        }
+
+        [Client]
+        public void MoveToResult()
+        {
+            //Re-enable mouse controls
+            GameManager.Instance.DisablePlayerControl();
+            //await SceneManager.UnloadSceneAsync(SceneManager.GetActiveScene());
+            //SceneManager.UnloadScene("GameScene");
+
+            offlineScene = "MatchResultScene";
+            StopClient();
+        }
+
+        [Client]
+        public void ExitGame()
+        {
+            offlineScene = "Lobby";
+            StopClient();
         }
     }
 }

@@ -260,6 +260,8 @@ namespace Assets.Scripts
                 GameManager.Instance.DisablePlayerControl();
                 PlayTransitionEffect();
                 GameManager.Instance.EnablePlayerControl();
+
+                MissionManager.Instance.OnPlayerCaught(PlayerId);
             }
             else
             {
@@ -283,8 +285,7 @@ namespace Assets.Scripts
         [ClientRpc]
         private async void RpcCaughtByAssistant()
         {
-            _playerController.SetOnCaughtByAssistantMaterial(false);
-
+            _playerController.SetOnCaughtByAssistant(false);
 
             if (isLocalPlayer)
             {
@@ -298,7 +299,7 @@ namespace Assets.Scripts
                 GameManager.Instance.EnableMove();
             }
 
-            _playerController.SetOnCaughtByAssistantMaterial(true);
+            _playerController.SetOnCaughtByAssistant(true);
         }
 
         #endregion
@@ -446,7 +447,7 @@ namespace Assets.Scripts
             _playerName = newName;
         }
 
-        public void PlayerSetUp()
+        public void SetupPlayer()
         {
             if (isLocalPlayer)
             {

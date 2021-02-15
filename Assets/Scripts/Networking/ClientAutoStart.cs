@@ -21,15 +21,14 @@ public class ClientAutoStart : MonoBehaviour
         if (!Application.isBatchMode)
         {
             Debug.Log($"===Client Build===");
-            var matchManager = GameObject.Find("MatchManager").GetComponent<MatchManager>();
+            //var matchManager = GameObject.Find("MatchManager").GetComponent<MatchManager>();
 
-            if (matchManager==null)
-            {
-                Debug.LogError("Couldn't find MatchManager");
-                return;
-            }
-
-            JoinServer(matchManager.IpPortInfo);
+            //if (matchManager==null)
+            //{
+            //    Debug.LogError("Couldn't find MatchManager");
+            //    return;
+            //}
+            JoinServer(MatchManager.Instance.IpPortInfo);
         }
         else
         {
