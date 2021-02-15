@@ -21,7 +21,7 @@ public class PlayerMotor : NetworkBehaviour
     [SerializeField]
     private Transform _groundCheck;
     [SerializeField]
-    private float _groundDistance = 0.5f;
+    private float _groundDistance = 0.1f;
     private bool _isGrounded = false;
 
     [SerializeField]
@@ -103,9 +103,9 @@ public class PlayerMotor : NetworkBehaviour
         {
             var newPos = gameObject.transform.position - (Vector3.up * (5.3f) * Time.fixedDeltaTime);
             
-            if (newPos.y <= 0.3f)
+            if (newPos.y <= 0.2f)
             {
-                newPos.y = 0.3f;
+                newPos.y = 0.2f;
             }
 
             gameObject.transform.position = newPos;

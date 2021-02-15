@@ -52,7 +52,7 @@ namespace Assets.Scripts
 
                 ConfigurePlayerUI();
 
-                GetComponent<Player>().PlayerSetUp();
+                GetComponent<Player>().SetupPlayer();
 
                 Debug.Log("PlayerSetUp: Called player setup on server? " + isServer);
             }

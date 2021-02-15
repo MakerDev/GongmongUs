@@ -77,7 +77,7 @@ namespace Assets.Scripts
             SetStateMaterial(PlayerState.Assistant);
         }
 
-        public void SetOnCaughtByAssistantMaterial(bool isReleased)
+        public void SetOnCaughtByAssistant(bool isReleased)
         {
             if (isReleased)
             {
