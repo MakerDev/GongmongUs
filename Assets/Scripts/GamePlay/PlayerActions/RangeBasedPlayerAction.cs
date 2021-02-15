@@ -9,7 +9,7 @@ namespace Assets.Scripts.GamePlay.PlayerActions
 {
     public class RangeBasedPlayerAction : CooltimeAction
     {
-        public float Range { get; protected set; } = 4f;
+        public float Range { get; protected set; } = 2.5f;
         public LayerMask TargetLayerMask { get; protected set; } = LayerMask.NameToLayer("RemotePlayer");
 
         //TODO : Set this properly
