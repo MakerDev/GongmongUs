@@ -116,12 +116,12 @@ namespace Assets.Scripts
 
         public void DisableMove()
         {
-            DisableControl = false;
+            DisableControl = true;
         }
 
         public void EnableMove()
         {
-            DisableControl = true;
+            DisableControl = false;
         }
 
         public void DisablePlayerControl()
