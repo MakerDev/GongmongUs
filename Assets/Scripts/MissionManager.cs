@@ -1,5 +1,6 @@
 ﻿using Assets.Scripts.MatchMaking;
 using Assets.Scripts.MiniGames;
+using Assets.Scripts.Networking;
 using Mirror;
 using System;
 using System.Collections;
@@ -39,6 +40,7 @@ namespace Assets.Scripts
                 AllMissions.Add(interactable.MiniGame);
             }
 
+            //TODO : 정렬방법 더 좋은 거 가져와
             AllMissions = AllMissions.OrderBy(x => x.gameObject.transform.parent.name).ToList();
 
             OpenableDoors = FindObjectsOfType<OpenableDoor>().ToList();
@@ -46,6 +48,14 @@ namespace Assets.Scripts
             if (isClient)
             {
                 AssignMissions(MatchManager.Instance.Match.MatchID.ToGuid());
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (isClient)
+            {
+                BCNetworkManager.Instance.MoveToResultScene();
             }
         }
 
@@ -75,15 +85,18 @@ namespace Assets.Scripts
         public void OnPlayerExit(string playerId)
         {
             RemovePlayer(playerId);
+
+            var isLocalPlayer = Player.LocalPlayer.PlayerId == playerId;
+
             //If there is no students left, then Students win as it means all students
             //has exited.
-            if (PlayerMissionsProgress.Count <= 0)
+            if (isLocalPlayer && PlayerMissionsProgress.Count <= 0)
             {
-                CmdMoveToResult(MatchResult.StudentsWin);
+                CmdCompleteMatch(MatchResult.StudentsWin, Player.LocalPlayer.PlayerId);
             }
         }
 
-        //This is called by LocalPlayer
+        //This is called by "LocalPlayer"
         public bool OnPlayerCaught(string playerId)
         {
             RemovePlayer(playerId);
@@ -91,27 +104,42 @@ namespace Assets.Scripts
             //If no more player is left, professor wins
             if (PlayerMissionsProgress.Count <= 0)
             {
-                CmdMoveToResult(MatchResult.ProfessorWins);
+                CmdCompleteMatch(MatchResult.ProfessorWins, Player.LocalPlayer.PlayerId);
+            }
+
+            //If all missions are cleared except for this caught student, the exit door should be opened.
+            if (CheckAllMissionsCleared())
+            {
+                CmdOnAllMissionsComplete();
             }
 
             return false;
         }
 
         [Command(ignoreAuthority = true)]
-        public void CmdMoveToResult(MatchResult matchResult)
+        private void CmdNotifyMatchResult(Guid matchId)
         {
-            RpcMoveToResult(matchResult);
+            BCNetworkManager.Instance.CompleteMatch(matchId);
+        }
+
+        [Command(ignoreAuthority = true)]
+        public void CmdCompleteMatch(MatchResult matchResult, string issuerPlayerId)
+        {
+            RpcCompleteMatch(matchResult, issuerPlayerId);
         }
 
         [ClientRpc]
-        private void RpcMoveToResult(MatchResult matchResult)
+        private void RpcCompleteMatch(MatchResult matchResult, string issuerPlayerId)
         {
-            MoveToResult(matchResult);
-        }
-
-        public void MoveToResult(MatchResult matchResult)
-        {
+            var isIssuer = Player.LocalPlayer.PlayerId == issuerPlayerId;
             MatchManager.Instance.MatchCompleted(matchResult);
+
+            //To make sure when MissionManager is destoryed the match result is all synced, NotifyMatchResult to 
+            //Networkmanager here.
+            if (isIssuer)
+            {
+                CmdNotifyMatchResult(MatchManager.Instance.Match.MatchID.ToGuid());
+            }
         }
 
         /// <summary>
@@ -122,13 +150,9 @@ namespace Assets.Scripts
             PlayerMissionsProgress.Remove(playerId);
         }
 
-        [Client]
-        public void NotifyPlayerCompleteMissions(string playerId)
+        private bool CheckAllMissionsCleared()
         {
-            //Check whether all missions are completed.
-            PlayerMissionsProgress[playerId] = true;
-
-            foreach (var isDone in PlayerMissionsProgress.Values)
+            foreach (var playerId in PlayerMissionsProgress.Keys)
             {
                 var player = GameManager.Instance.GetPlayer(playerId);
 
@@ -137,18 +161,40 @@ namespace Assets.Scripts
                     continue;
                 }
 
+                var isDone = PlayerMissionsProgress[playerId];
+
                 if (isDone == false)
                 {
-                    return;
+                    return false;
                 }
             }
 
-            //If all completed
-            CmdCompleteMission();
+            return true;
+        }
+
+        /// <summary>
+        /// This is called by LocalPlayer
+        /// </summary>
+        /// <param name="playerId"></param>
+        [Client]
+        public void NotifyPlayerCompleteMissions(string playerId)
+        {
+            //Check whether all missions are completed.
+            PlayerMissionsProgress[playerId] = true;
+
+            var isLocalPlayer = Player.LocalPlayer.PlayerId == playerId;
+
+            GameManager.Instance.PrintMessage($"Player {playerId} has done his jobs", "SYSTEM", ChatType.Info);
+
+            if (isLocalPlayer && CheckAllMissionsCleared())
+            {
+                //If all completed
+                CmdOnAllMissionsComplete();
+            }
         }
 
         [Command(ignoreAuthority = true)]
-        private void CmdCompleteMission()
+        private void CmdOnAllMissionsComplete()
         {
             RpcCompleteMission();
         }

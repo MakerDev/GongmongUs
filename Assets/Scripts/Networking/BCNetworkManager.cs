@@ -3,6 +3,7 @@ using BattleCampusMatchServer.Models;
 using Cysharp.Threading.Tasks;
 using Mirror;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -14,6 +15,8 @@ namespace Assets.Scripts.Networking
         private GameObject _gamePlayerPrefab;
 
         public static BCNetworkManager Instance { get; private set; }
+
+        public Dictionary<Guid, GameObject> MissionManagers { get; private set; } = new Dictionary<Guid, GameObject>();
 
         private string _serverName = null;
 
@@ -133,16 +136,39 @@ namespace Assets.Scripts.Networking
         {
             var missionManager = Instantiate(spawnPrefabs[1]);
             missionManager.GetComponent<NetworkMatchChecker>().matchId = matchId;
+
+
+            if (MissionManagers.ContainsKey(matchId))
+            {
+                MissionManagers[matchId] = missionManager;
+            }
+            else
+            {
+                MissionManagers.Add(matchId, missionManager);
+            }
+
             NetworkServer.Spawn(missionManager);
         }
 
+        [Server]
+        public void CompleteMatch(Guid matchId)
+        {
+            //TODO : report result to Match Server
+
+            //Destroy MissionManager
+            var hasManager = MissionManagers.TryGetValue(matchId, out var missionManager);
+
+            if (hasManager)
+            {
+                NetworkServer.Destroy(missionManager);
+            }
+        }
+
         [Client]
-        public void MoveToResult()
+        public void MoveToResultScene()
         {
             //Re-enable mouse controls
             GameManager.Instance.DisablePlayerControl();
-            //await SceneManager.UnloadSceneAsync(SceneManager.GetActiveScene());
-            //SceneManager.UnloadScene("GameScene");
 
             offlineScene = "MatchResultScene";
             StopClient();

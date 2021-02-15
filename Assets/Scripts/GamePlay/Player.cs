@@ -92,11 +92,15 @@ namespace Assets.Scripts
         {
             MissionsLeft = missionsLeft;
 
-            if (MissionsLeft == 0 && isLocalPlayer)
+            if (MissionsLeft == 0)
             {
                 //TODO: Display all missions for the local player are completed.
                 MissionManager.Instance.NotifyPlayerCompleteMissions(PlayerId);
-                UpdatePlayerMissionProgress();
+
+                if (isLocalPlayer)
+                {
+                    UpdatePlayerMissionProgress();
+                }
             }
         }
 
@@ -292,7 +296,7 @@ namespace Assets.Scripts
                 GameManager.Instance.DisableMove();
             }
 
-            await UniTask.Delay(2000);
+            await UniTask.Delay(3000);
 
             if (isLocalPlayer)
             {
@@ -358,10 +362,11 @@ namespace Assets.Scripts
             GameManager.Instance.PrintMessage($"{PlayerName} has exited!", "SYSTEM", ChatType.Info);
             HasExited = true;
 
+            MissionManager.Instance.OnPlayerExit(PlayerId);
+
             if (isLocalPlayer)
             {
                 SuccessExit();
-                MissionManager.Instance.OnPlayerExit(PlayerId);
             }
             else
             {
@@ -429,7 +434,7 @@ namespace Assets.Scripts
             if (isLocalPlayer)
             {
                 //HACK
-                PlayerSetup.PlayerUI?.SetLocalPlayerName(newName);                
+                PlayerSetup.PlayerUI?.SetLocalPlayerName(newName);
             }
 
             _playerInfo.SetPlayer(this);

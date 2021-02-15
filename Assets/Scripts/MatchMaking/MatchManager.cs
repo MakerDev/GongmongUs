@@ -38,8 +38,6 @@ namespace Assets.Scripts.MatchMaking
         public void MatchCompleted(MatchResult matchResult)
         {
             MatchResult = matchResult;
-            //TODO : report result
-            BCNetworkManager.Instance.MoveToResult();
         }
 
         public void ClearMatchResult()
