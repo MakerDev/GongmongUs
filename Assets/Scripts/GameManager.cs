@@ -55,6 +55,9 @@ namespace Assets.Scripts
         [SerializeField]
         private Button _startGameButton;
 
+        [SerializeField]
+        private GameObject _gameLobbyUI;
+
         private List<GameObject> _playerListItems = new List<GameObject>();
         public bool GameStarted { get; private set; } = false;
 
@@ -218,6 +221,9 @@ namespace Assets.Scripts
         public void ConfigureGameOnStart(string professorId)
         {
             _startGameUI.SetActive(false);
+            _gameLobbyUI.SetActive(false);
+            Destroy(_gameLobbyUI);
+
             _minimapOnTab.ReigsterPlayerObjects(Players.Values);
             _staticMinimap.ReigsterPlayerObjects(Players.Values);
 
