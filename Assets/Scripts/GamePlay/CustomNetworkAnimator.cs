@@ -8,6 +8,8 @@ namespace Assets.Scripts
         [SerializeField]
         private Animator _animator;
 
+        public Animator Animator { get { return _animator; } }
+
         private bool _wasWalking;
         private float _lastForwardVelocity = 0.0f;
         private float _lastSpeed = 0.0f;
@@ -29,6 +31,17 @@ namespace Assets.Scripts
         private void RpcPlay(string name)
         {
             _animator.Play(name);
+        }
+
+        /// <summary>
+        /// This doesn't sync with server.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="value"></param>
+        [Client]
+        public void SetBoolLocal(string name, bool value)
+        {
+            _animator.SetBool(name, value);
         }
 
         public void SetBool(string name, bool value)
