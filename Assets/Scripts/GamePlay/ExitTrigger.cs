@@ -19,7 +19,7 @@ namespace Assets.Scripts.GamePlay
 
         private void OnTriggerEnter(Collider other)
         {
-            if (other.gameObject.layer == _localPlayerLayer)
+            if (other.gameObject.layer == _localPlayerLayer && Player.LocalPlayer.State == PlayerState.Student)
             {
                 Player.LocalPlayer.Escape();
             }
