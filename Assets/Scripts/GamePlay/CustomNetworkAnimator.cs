@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Assets.Scripts
 {
-    public class CustomNetworkAnimator: NetworkBehaviour
+    public class CustomNetworkAnimator : NetworkBehaviour
     {
         [SerializeField]
         private Animator _animator;
@@ -16,7 +16,53 @@ namespace Assets.Scripts
 
         public void Play(string name)
         {
+            CmdPlay(name);
+        }
+
+        [Command]
+        private void CmdPlay(string name)
+        {
+            RpcPlay(name);
+        }
+
+        [ClientRpc]
+        private void RpcPlay(string name)
+        {
             _animator.Play(name);
+        }
+
+        public void SetBool(string name, bool value)
+        {
+            CmdSetBool(name, value);
+        }
+
+        [Command]
+        private void CmdSetBool(string name, bool value)
+        {
+            RpcSetBool(name, value);
+        }
+
+        [ClientRpc]
+        private void RpcSetBool(string name, bool value)
+        {
+            _animator.SetBool(name, value);
+        }
+
+        public void SetTrigger(string name)
+        {
+            CmdSetTrigger(name);
+        }
+
+        [Command]
+        private void CmdSetTrigger(string name)
+        {
+            RpcSetTrigger(name);
+        }
+
+        [ClientRpc]
+        private void RpcSetTrigger(string name)
+        {
+            _animator.SetTrigger(name);
         }
 
         public void Jump(bool isJumping)

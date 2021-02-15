@@ -67,13 +67,11 @@ namespace Assets.Scripts
 
         public void PlayCatchAnimation()
         {
-            //_animator.Play("PlayCatch");
+            _animator.Play("Catch");
         }
 
         public void TransformToAssistant()
         {
-            //_animator.Play("PlayTransformation");
-
             SetStateMaterial(PlayerState.Assistant);
         }
 
@@ -82,10 +80,12 @@ namespace Assets.Scripts
             if (isReleased)
             {
                 _bodyRenderer.material = _studentMaterial;
+                _animator.SetBool("Stunned", false);
             }
             else
             {
                 _bodyRenderer.material = _onCaughtMaterial;
+                _animator.SetBool("Stunned", false);
             }
         }
 
@@ -94,12 +94,6 @@ namespace Assets.Scripts
             if (GameManager.DisableControl)
             {
                 return;
-            }
-
-            //TODO: delete this
-            if (Input.GetKeyDown(KeyCode.A))
-            {
-                _animator.Play("Transform");
             }
 
             if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
