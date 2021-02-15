@@ -47,6 +47,10 @@ namespace Assets.Scripts.Networking
                 {
                     _serverName = arguments[i + 1];
                 }
+                else if (arg == "-maxConn")
+                {
+                    maxConnections = int.Parse(arguments[i + 1]);
+                }
             }
 
             return _ipPortInfo;
