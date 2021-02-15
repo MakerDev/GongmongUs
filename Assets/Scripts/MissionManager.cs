@@ -70,6 +70,30 @@ namespace Assets.Scripts
 
             LeftMissionsCount = players.Count * MissionsPerPlayer;
         }
+        
+        public bool OnPlayerExit(string playerId)
+        {
+            //If there is no students left, then Students win as it means all students
+            //has exited.
+
+            return false;
+        }
+
+        public bool OnPlayerCaught(string playerId)
+        {
+            //If no more player is left, professor wins
+            if (PlayerMissionsProgress.Count <= 0)
+            {
+                MoveToResult(professorIsWinner: true);
+            }
+
+            return false;
+        }
+
+        public void MoveToResult(bool professorIsWinner)
+        {
+
+        }
 
         /// <summary>
         /// Call this when a Player is caught by professor and becomes assistant.

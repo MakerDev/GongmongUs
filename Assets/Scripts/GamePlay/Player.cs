@@ -340,20 +340,27 @@ namespace Assets.Scripts
         public void Escape()
         {
             //TODO : Disable main camera and enable scene camera.
+            HasExited = true;
+            CmdEscape();
         }
 
         [Command]
         private void CmdEscape()
         {
+            HasExited = true;
             RpcEscape();
         }
 
         [ClientRpc]
         private void RpcEscape()
         {
+            GameManager.Instance.PrintMessage($"{PlayerName} has exited!", "SYSTEM", ChatType.Info);
+            HasExited = true;
+
             if (isLocalPlayer)
             {
                 SuccessExit();
+                MissionManager.Instance.OnPlayerExit(PlayerId);
             }
             else
             {
@@ -364,6 +371,8 @@ namespace Assets.Scripts
 
         private void SuccessExit()
         {
+            HasExited = true;
+
             //Disable components
             for (int i = 0; i < _disableOnExit.Length; i++)
             {
@@ -389,8 +398,6 @@ namespace Assets.Scripts
 
             GameObject effectObject = Instantiate(_deatchEffect, transform.position, Quaternion.identity);
             Destroy(effectObject, 1.5f);
-
-            Debug.Log(transform.name + " has exited!");
 
             if (isLocalPlayer)
             {

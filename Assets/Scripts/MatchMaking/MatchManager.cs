@@ -1,16 +1,26 @@
 ﻿using BattleCampusMatchServer.Models;
 using BattleCampusMatchServer.Models.DTOs;
 using Cysharp.Threading.Tasks;
+using System;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Assets.Scripts.MatchMaking
 {
+    public enum MatchResult
+    {
+        ProfessorWins,
+        StudentsWin,
+    }
+
     public class MatchManager : MonoBehaviour
     {
         public static MatchManager Instance { get; private set; }
 
         public MatchDTO Match { get; private set; }
         public IpPortInfo IpPortInfo { get; private set; } = new IpPortInfo();
+
+        public MatchResult MatchResult { get; private set; }
 
         private void Awake()
         {
@@ -22,6 +32,17 @@ namespace Assets.Scripts.MatchMaking
             }
 
             Destroy(this.gameObject);
+        }
+
+        public void MatchCompleted(MatchResult matchResult)
+        {
+            //TODO : report result
+            SceneManager.LoadScene("MatchResultScene");
+        }
+
+        public void ClearMatchResult()
+        {
+            //TODO : Do stuffs if needed.
         }
 
         public void ConfigureMatchInfo(MatchDTO match)
