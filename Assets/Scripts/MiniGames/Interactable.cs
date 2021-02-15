@@ -63,15 +63,6 @@ namespace Assets.Scripts.MiniGames
             {
                 _outlineComponent.enabled = turnOn;
             }
-
-            if (turnOn)
-            {
-                EnteredInteractable = this;
-            }
-            else
-            {
-                EnteredInteractable = null;
-            }
         }
 
         private void OnTriggerEnter(Collider other)
@@ -84,6 +75,7 @@ namespace Assets.Scripts.MiniGames
             if (other.gameObject.layer == _localPlayerLayer && MiniGame.IsCompleted == false)
             {
                 SetHighlight(true);
+                EnteredInteractable = this;
             }
         }
 
@@ -97,6 +89,7 @@ namespace Assets.Scripts.MiniGames
             if (other.gameObject.layer == _localPlayerLayer)
             {
                 SetHighlight(false);
+                EnteredInteractable = null;
             }
         }
 
@@ -107,8 +100,20 @@ namespace Assets.Scripts.MiniGames
                 return false;
             }
 
-            return Player.LocalPlayer.State == PlayerState.Student && MiniGame.IsCompleted == false
-                && (MiniGame.AssignedPlayer != null && MiniGame.AssignedPlayer.isLocalPlayer == true);
+            if (MiniGame.IsCompleted)
+            {
+                return false;
+            }
+
+            var isForLocalPlayer = MiniGame.AssignedPlayer != null && MiniGame.AssignedPlayer.isLocalPlayer == true;
+
+            if (isForLocalPlayer && Player.LocalPlayer.State == PlayerState.Student)
+            {
+                SetHighlight(true);
+                return true;
+            }
+
+            return false;
         }
 
         private void Update()
@@ -123,10 +128,10 @@ namespace Assets.Scripts.MiniGames
                 return;
             }
 
-            if (Highlighted && Input.GetKeyDown(KeyCode.Space))
-            {
-                StartMiniGame();
-            }
+            //if (Highlighted && input.getkeydown(keycode.space))
+            //{
+            //    startminigame();
+            //}
         }
 
         public void StartMiniGame()
