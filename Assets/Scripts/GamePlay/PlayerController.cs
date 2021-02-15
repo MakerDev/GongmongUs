@@ -9,8 +9,8 @@ namespace Assets.Scripts
     [RequireComponent(typeof(PlayerMotor))]
     public class PlayerController : MonoBehaviour
     {
-        private const float _walkSpeed = 4.0f;
-        private const float _runSpeed = 8.0f;
+        private const float WALK_SPEED = 5.0f;
+        private const float RUN_SPEED = 10.0f;
 
         #region STATS
         [Header("Stats")]
@@ -104,11 +104,11 @@ namespace Assets.Scripts
 
             if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
             {
-                _motor.SetSpeed(_runSpeed);                
+                _motor.SetSpeed(RUN_SPEED);                
             }
             else
             {
-                _motor.SetSpeed(_walkSpeed);
+                _motor.SetSpeed(WALK_SPEED);
             }
 
             float xMov = Input.GetAxisRaw("Horizontal");

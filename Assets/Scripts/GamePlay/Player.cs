@@ -429,7 +429,7 @@ namespace Assets.Scripts
             if (isLocalPlayer)
             {
                 //HACK
-                PlayerSetup.PlayerUI?.SetLocalPlayerName(newName);
+                PlayerSetup.PlayerUI?.SetLocalPlayerName(newName);                
             }
 
             _playerInfo.SetPlayer(this);
