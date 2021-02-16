@@ -67,10 +67,15 @@ public class MiniMap : MonoBehaviour
         _zMultiplier = _imageHeight / REAL_HEIGHT;
     }
 
-    public void NotifyStateChanged(Player player)
+    private void RemoveMinimabMob(Player player)
     {
         Destroy(_minimapMobs[player]);
         _minimapMobs.Remove(player);
+    }
+
+    public void NotifyStateChanged(Player player)
+    {
+        RemoveMinimabMob(player);
         InstantiateMob(player);
     }
 
@@ -123,6 +128,8 @@ public class MiniMap : MonoBehaviour
     public void RemovePlayer(Player player)
     {
         _allPlayers.Remove(player);
+
+        RemoveMinimabMob(player);
     }
 
     private int GetCurrentFloor(float y)
