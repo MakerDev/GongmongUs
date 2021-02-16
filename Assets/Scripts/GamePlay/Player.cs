@@ -152,22 +152,14 @@ namespace Assets.Scripts
             }
         }
 
+        private void OnDisable()
+        {
+            GameManager.Instance.UnRegisterPlayer(PlayerId);
+        }
+
         public override void OnStopClient()
         {
-            //TODO : Remove this player from map and player list.
-            GameManager.Instance.UnRegisterPlayer(PlayerId);
-
-            //if (State == PlayerState.Student)
-            //{
-            //    MissionManager.Instance.RemovePlayer(PlayerId);
-            //}
-            //else if (State == PlayerState.Professor)
-            //{
-
-            //}
-
             GameManager.Instance.PrintMessage($"{PlayerName} leaved", null, ChatType.Info);
-
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -255,6 +247,13 @@ namespace Assets.Scripts
         public void CmdReportMissionComplete(int missionsLeft)
         {
             MissionsLeft = missionsLeft;
+
+            if (missionsLeft == 0)
+            {
+                var serverMissionManager = BCNetworkManager.Instance.GetMissionManager(MatchID);
+                serverMissionManager.NotifyPlayerCompleteMissions(PlayerId);
+            }
+
             RpcReportMissionComplete(MissionsLeft);
         }
 
@@ -293,6 +292,8 @@ namespace Assets.Scripts
         private void CmdCaughByProfessor()
         {
             State = PlayerState.Assistant;
+            var serverMissionManager = BCNetworkManager.Instance.GetMissionManager(MatchID);
+            serverMissionManager.OnPlayerCaughtServer(PlayerId);
             RpcCaughtByProfessor();
         }
 
@@ -309,7 +310,8 @@ namespace Assets.Scripts
                 PlayTransitionEffect();
                 GameManager.Instance.EnablePlayerControl();
 
-                MissionManager.Instance.OnPlayerCaught(PlayerId);
+                //MissionManager.Instance.OnPlayerCaught(PlayerId);
+                MissionManager.Instance.RemovePlayer(PlayerId);
             }
             else
             {
@@ -398,6 +400,9 @@ namespace Assets.Scripts
         private void CmdEscape()
         {
             HasExited = true;
+
+            var serverMissionManager = BCNetworkManager.Instance.GetMissionManager(MatchID);
+            serverMissionManager.OnPlayerExitServer(PlayerId);
             RpcEscape();
         }
 
@@ -407,7 +412,7 @@ namespace Assets.Scripts
             GameManager.Instance.PrintMessage($"{PlayerName} has exited!", "SYSTEM", ChatType.Info);
             HasExited = true;
 
-            MissionManager.Instance.OnPlayerExit(PlayerId);
+            MissionManager.Instance.RemovePlayer(PlayerId);
 
             if (isLocalPlayer)
             {

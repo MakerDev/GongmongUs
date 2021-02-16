@@ -83,6 +83,11 @@ namespace Assets.Scripts.Networking
             }
         }
 
+        public MissionManager GetMissionManager(string matchID)
+        {
+            return MissionManagers[matchID].GetComponent<MissionManager>();
+        }
+
         public async void NotifyUserConnect(int connectionId, GameUser user)
         {
             user.ConnectionID = connectionId;
@@ -166,6 +171,7 @@ namespace Assets.Scripts.Networking
             if (hasManager)
             {
                 MissionManagers.Remove(matchId);
+                Destroy(missionManager);
                 NetworkServer.Destroy(missionManager);
             }
         }

@@ -88,6 +88,8 @@ namespace Assets.Scripts
 
             var allPlayers = GameManager.Instance.Players.Values;
 
+            PlayerMissionsProgress.Clear();
+
             foreach (var player in allPlayers)
             {
                 if (player.MatchID == matchID && player.PlayerId != professorID)
@@ -97,40 +99,39 @@ namespace Assets.Scripts
             }
         }
 
-        //서버랑 동기화하려면 얘네를 다 커맨드로 바꾸고, playerID랑 LocalPlayer랑 비교해서 역할 다르게 해야할듯.
-        //This is called by Localplayer of the playerId
-        public void OnPlayerExit(string playerId)
+        [Server]
+        public void OnPlayerExitServer(string playerId)
         {
             RemovePlayer(playerId);
 
-            var isLocalPlayer = Player.LocalPlayer.PlayerId == playerId;
-
-            //If there is no students left, then Students win as it means all students
-            //has exited.
-            if (isLocalPlayer && PlayerMissionsProgress.Count <= 0)
+            if (PlayerMissionsProgress.Count <= 0)
             {
-                CmdCompleteMatch(MatchResult.StudentsWin, Player.LocalPlayer.PlayerId);
+                ServerCompleteMatch(MatchResult.StudentsWin, playerId);
             }
         }
 
         //This is called by "LocalPlayer"
-        public bool OnPlayerCaught(string playerId)
+        [Server]
+        public void OnPlayerCaughtServer(string playerId)
         {
             RemovePlayer(playerId);
 
             //If no more player is left, professor wins
             if (PlayerMissionsProgress.Count <= 0)
             {
-                CmdCompleteMatch(MatchResult.ProfessorWins, Player.LocalPlayer.PlayerId);
+                ServerCompleteMatch(MatchResult.ProfessorWins, playerId);
             }
 
             //If all missions are cleared except for this caught student, the exit door should be opened.
             if (CheckAllMissionsCleared())
             {
-                CmdOnAllMissionsComplete();
+                RpcCompleteMission();
             }
+        }
 
-            return false;
+        public void ServerCompleteMatch(MatchResult matchResult, string issuerPlayerId)
+        {
+            RpcCompleteMatch(matchResult, issuerPlayerId);
         }
 
         [Command(ignoreAuthority = true)]
@@ -139,19 +140,13 @@ namespace Assets.Scripts
             BCNetworkManager.Instance.CompleteMatch(matchId);
         }
 
-        [Command(ignoreAuthority = true)]
-        public void CmdCompleteMatch(MatchResult matchResult, string issuerPlayerId)
-        {
-            RpcCompleteMatch(matchResult, issuerPlayerId);
-        }
-
         [ClientRpc]
         private void RpcCompleteMatch(MatchResult matchResult, string issuerPlayerId)
         {
             var isIssuer = Player.LocalPlayer.PlayerId == issuerPlayerId;
             MatchManager.Instance.MatchCompleted(matchResult);
 
-            //To make sure when MissionManager is destoryed the match result is all synced, NotifyMatchResult to 
+            //To make sure when MissionManager is destoryed the match result is all synced, notify match result to 
             //Networkmanager here.
             if (isIssuer)
             {
@@ -170,6 +165,8 @@ namespace Assets.Scripts
 
         private bool CheckAllMissionsCleared()
         {
+            Debug.Log($"STart check");
+
             foreach (var playerId in PlayerMissionsProgress.Keys)
             {
                 var player = GameManager.Instance.GetPlayer(playerId);
