@@ -1,4 +1,5 @@
 ﻿using Assets.Scripts;
+using Mirror;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices.ComTypes;
@@ -69,6 +70,11 @@ public class MiniMap : MonoBehaviour
 
     private void RemoveMinimabMob(Player player)
     {
+        if (_minimapMobs.ContainsKey(player) == false)
+        {
+            return;
+        }
+
         Destroy(_minimapMobs[player]);
         _minimapMobs.Remove(player);
     }
