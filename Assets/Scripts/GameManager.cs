@@ -164,20 +164,6 @@ namespace Assets.Scripts
                 }
             }
         }
-
-        public void ReadyGame()
-        {
-            Player.LocalPlayer.GetReady();
-            _readyButton.enabled = false;
-            _readyButton.interactable = false;
-
-            if (CanStartGame())
-            {
-                //If all ready, start game
-                Player.LocalPlayer.StartGame();
-            }
-        }
-
         private bool CanStartGame()
         {
             foreach (var player in Players.Values)
@@ -194,6 +180,19 @@ namespace Assets.Scripts
             }
 
             return true;
+        }
+
+        public void ReadyGame()
+        {
+            Player.LocalPlayer.GetReady();
+            _readyButton.enabled = false;
+            _readyButton.interactable = false;
+
+            if (CanStartGame())
+            {
+                //If all ready, start game
+                Player.LocalPlayer.StartGame();
+            }
         }
 
         public void ConfigureGameOnStart(string professorId)
