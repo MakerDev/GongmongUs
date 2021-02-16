@@ -136,11 +136,10 @@ namespace Assets.Scripts.Networking
         }
 
         [Server]
-        public void SpawnMissionManager(string matchId)
+        public MissionManager SpawnMissionManager(string matchId)
         {
             var missionManager = Instantiate(spawnPrefabs[1]);
             missionManager.GetComponent<NetworkMatchChecker>().matchId = matchId.ToGuid();
-
 
             if (MissionManagers.ContainsKey(matchId))
             {
@@ -152,6 +151,8 @@ namespace Assets.Scripts.Networking
             }
 
             NetworkServer.Spawn(missionManager);
+
+            return missionManager.GetComponent<MissionManager>();
         }
 
         [Server]
@@ -164,6 +165,7 @@ namespace Assets.Scripts.Networking
 
             if (hasManager)
             {
+                MissionManagers.Remove(matchId);
                 NetworkServer.Destroy(missionManager);
             }
         }
