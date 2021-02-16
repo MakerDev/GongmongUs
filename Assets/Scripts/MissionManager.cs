@@ -19,7 +19,7 @@ namespace Assets.Scripts
         public Dictionary<string, bool> PlayerMissionsProgress { get; private set; } = new Dictionary<string, bool>();
 
         public int MissionsPerPlayer { get; private set; } = 2;
-        public int LeftMissionsCount { get; private set; } = 2;
+        public string MatchID { get; private set; }
 
         public List<OpenableDoor> OpenableDoors { get; private set; } = new List<OpenableDoor>();
 
@@ -31,8 +31,10 @@ namespace Assets.Scripts
             }
         }
 
-        private void Start()
+        public override void OnStartClient()
         {
+            base.OnStartClient();
+
             var interactables = FindObjectsOfType<Interactable>();
 
             foreach (var interactable in interactables)
@@ -45,10 +47,7 @@ namespace Assets.Scripts
 
             OpenableDoors = FindObjectsOfType<OpenableDoor>().ToList();
 
-            if (isClient)
-            {
-                AssignMissions(MatchManager.Instance.Match.MatchID.ToGuid());
-            }
+            AssignMissions(MatchManager.Instance.Match.MatchID.ToGuid());
         }
 
         private void OnDestroy()
@@ -77,10 +76,27 @@ namespace Assets.Scripts
 
                 player.AssignMissions(AllMissions.Skip(i * MissionsPerPlayer).Take(MissionsPerPlayer));
             }
-
-            LeftMissionsCount = players.Count * MissionsPerPlayer;
         }
-        
+
+        /// <summary>
+        /// Set server's PlayerMissionsProgress dictionary for simple state sync.
+        /// </summary>
+        /// <param name="matchID"></param>
+        public void ConfigureForServer(string matchID, string professorID)
+        {
+            MatchID = matchID;
+
+            var allPlayers = GameManager.Instance.Players.Values;
+
+            foreach (var player in allPlayers)
+            {
+                if (player.MatchID == matchID && player.PlayerId != professorID)
+                {
+                    PlayerMissionsProgress.Add(player.PlayerId, false);
+                }
+            }
+        }
+
         //서버랑 동기화하려면 얘네를 다 커맨드로 바꾸고, playerID랑 LocalPlayer랑 비교해서 역할 다르게 해야할듯.
         //This is called by Localplayer of the playerId
         public void OnPlayerExit(string playerId)
@@ -145,6 +161,7 @@ namespace Assets.Scripts
 
         /// <summary>
         /// Call this when a Player is caught by professor and becomes assistant.
+        /// Or in case student exits game.
         /// </summary>
         public void RemovePlayer(string playerId)
         {

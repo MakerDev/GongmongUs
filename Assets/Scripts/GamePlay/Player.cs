@@ -36,6 +36,9 @@ namespace Assets.Scripts
         private bool _isFirstSetup = true;
         #endregion
 
+        [SerializeField]
+        public GameObject _chatHubPrefab;
+
         public string PlayerId { get { return $"{GameManager.PLAYER_ID_PREFIX}{netId}"; } }
 
         [SyncVar(hook = nameof(OnNameSet))]
@@ -45,14 +48,15 @@ namespace Assets.Scripts
         private PlayerState _playerState = PlayerState.Student;
         public PlayerState State { get { return _playerState; } private set { _playerState = value; } }
 
-        [SerializeField]
-        public GameObject _chatHubPrefab;
-
         private PlayerShoot _playerShootComponent;
         private PlayerController _playerController; //For animations
 
         public bool HasExited { get; private set; } = false;
         public bool IsReady { get; private set; } = false;
+        /// <summary>
+        /// This is for server to identify which match this player belongs to.
+        /// </summary>
+        public string MatchID { get; private set; }
 
         public List<MiniGame> AssignedMissions { get; private set; } = new List<MiniGame>();
         public int MissionsLeft { get; private set; } = 1;
@@ -81,9 +85,6 @@ namespace Assets.Scripts
         public override void OnStartServer()
         {
             base.OnStartServer();
-            //To avoid overriding synced value, only set this on server
-            //TODO : set state here instead
-            //_currentHealth = _maxHealth;
         }
 
         public override void OnStartLocalPlayer()
@@ -120,11 +121,8 @@ namespace Assets.Scripts
                 var newName = $"{userName}{netId}";
                 SetName(newName);
 
-                //GameManager.Instance.CmdPrintMessage($"{newName} joined!", null, ChatType.Info);
-                //TODO : Report
                 CmdSetMatchChecker(MatchManager.Instance.Match.MatchID.ToGuid());
             }
-
 
             if (UserManager.Instance.User.IsHost && isLocalPlayer)
             {
@@ -132,11 +130,44 @@ namespace Assets.Scripts
             }
         }
 
+        public override void OnStopServer()
+        {
+            base.OnStopServer();
+
+            //Reevaluate mission manager
+            var hasMissionMaanger = BCNetworkManager.Instance.MissionManagers.TryGetValue(MatchID, out var missionManager);
+
+            if (hasMissionMaanger == false)
+            {
+                return;
+            }
+
+            if (State == PlayerState.Student)
+            {
+                //Re
+            }
+            else if (State == PlayerState.Professor)
+            {
+
+            }
+        }
+
         public override void OnStopClient()
         {
             //TODO : Remove this player from map and player list.
+            GameManager.Instance.UnRegisterPlayer(PlayerId);
+
+            //if (State == PlayerState.Student)
+            //{
+            //    MissionManager.Instance.RemovePlayer(PlayerId);
+            //}
+            //else if (State == PlayerState.Professor)
+            //{
+
+            //}
 
             GameManager.Instance.PrintMessage($"{PlayerName} leaved", null, ChatType.Info);
+
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -154,7 +185,9 @@ namespace Assets.Scripts
         [Command]
         private void CmdStartGame(string professorID, string matchId)
         {
-            BCNetworkManager.Instance.SpawnMissionManager(matchId);
+            var serverMissionManager = BCNetworkManager.Instance.SpawnMissionManager(matchId);
+            serverMissionManager.ConfigureForServer(matchId, professorID);
+
             RpcStartGame(professorID);
         }
 
@@ -171,12 +204,15 @@ namespace Assets.Scripts
 
         public void GetReady()
         {
-            CmdGetReady();
+            MatchID = MatchManager.Instance.Match.MatchID;
+            CmdGetReady(MatchID);
         }
 
         [Command]
-        private void CmdGetReady()
+        private void CmdGetReady(string matchID)
         {
+            //Store match id for retrieving proper MissionManager on server.
+            MatchID = matchID;
             IsReady = true;
             RpcGetReady();
         }
@@ -184,6 +220,7 @@ namespace Assets.Scripts
         [ClientRpc]
         private void RpcGetReady()
         {
+            MatchID = MatchManager.Instance.Match.MatchID;
             IsReady = true;
             Debug.Log("Im ready");
         }
@@ -228,11 +265,11 @@ namespace Assets.Scripts
 
             if (MissionsLeft == 0)
             {
-                //TODO: Display all missions for the local player are completed.
                 MissionManager.Instance.NotifyPlayerCompleteMissions(PlayerId);
 
                 if (isLocalPlayer)
                 {
+                    //TODO: Display all missions for the local player are completed.
                     UpdatePlayerMissionProgress();
                 }
             }
@@ -349,6 +386,7 @@ namespace Assets.Scripts
         }
         #endregion
 
+        #region ESCAPE
         public void Escape()
         {
             //TODO : Disable main camera and enable scene camera.
@@ -418,7 +456,7 @@ namespace Assets.Scripts
                 GetComponent<PlayerSetup>().PlayerUIInstance.SetActive(false);
             }
         }
-
+        #endregion
         #region SETTINGS
         [Command]
         public void CmdSpawnChatHub(Guid matchGuid)
