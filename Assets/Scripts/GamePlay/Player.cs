@@ -251,7 +251,7 @@ namespace Assets.Scripts
             if (missionsLeft == 0)
             {
                 var serverMissionManager = BCNetworkManager.Instance.GetMissionManager(MatchID);
-                serverMissionManager.NotifyPlayerCompleteMissions(PlayerId);
+                serverMissionManager.ServerNotifyPlayerCompleteMissions(PlayerId);
             }
 
             RpcReportMissionComplete(MissionsLeft);

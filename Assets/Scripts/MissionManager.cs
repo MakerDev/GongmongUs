@@ -125,10 +125,11 @@ namespace Assets.Scripts
             //If all missions are cleared except for this caught student, the exit door should be opened.
             if (CheckAllMissionsCleared())
             {
-                RpcCompleteMission();
+                RpcOpenExitDoors();
             }
         }
 
+        [Server]
         public void ServerCompleteMatch(MatchResult matchResult, string issuerPlayerId)
         {
             RpcCompleteMatch(matchResult, issuerPlayerId);
@@ -165,8 +166,6 @@ namespace Assets.Scripts
 
         private bool CheckAllMissionsCleared()
         {
-            Debug.Log($"STart check");
-
             foreach (var playerId in PlayerMissionsProgress.Keys)
             {
                 var player = GameManager.Instance.GetPlayer(playerId);
@@ -191,31 +190,32 @@ namespace Assets.Scripts
         /// This is called by LocalPlayer
         /// </summary>
         /// <param name="playerId"></param>
-        [Client]
         public void NotifyPlayerCompleteMissions(string playerId)
         {
             //Check whether all missions are completed.
             PlayerMissionsProgress[playerId] = true;
 
-            var isLocalPlayer = Player.LocalPlayer.PlayerId == playerId;
-
             GameManager.Instance.PrintMessage($"Player {playerId} has done his jobs", "SYSTEM", ChatType.Info);
+        }
 
-            if (isLocalPlayer && CheckAllMissionsCleared())
+        /// <summary>
+        /// This is called by server on command.
+        /// </summary>
+        /// <param name="playerId"></param>
+        public void ServerNotifyPlayerCompleteMissions(string playerId)
+        {
+            //Check whether all missions are completed.
+            PlayerMissionsProgress[playerId] = true;
+
+            if (CheckAllMissionsCleared())
             {
                 //If all completed
-                CmdOnAllMissionsComplete();
+                RpcOpenExitDoors();
             }
         }
 
-        [Command(ignoreAuthority = true)]
-        private void CmdOnAllMissionsComplete()
-        {
-            RpcCompleteMission();
-        }
-
         [ClientRpc]
-        private void RpcCompleteMission()
+        private void RpcOpenExitDoors()
         {
             //TODO : Notify all missions complete.
             GameManager.Instance.PrintMessage("Go exit here", "SYSTEM", ChatType.Info);
