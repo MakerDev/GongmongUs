@@ -36,7 +36,7 @@ namespace Assets.Scripts.MatchMaking
 #if UNITY_STANDALONE_LINUX || UNITY_WEBGL
         private const string BASE_ADDRESS = "https://battlecampusmatchserver.azurewebsites.net/api/";
 #else
-        private const string BASE_ADDRESS = "https://localhost:7001/api/";
+        private const string BASE_ADDRESS = "https://localhost:4001/api/";
 #endif
         private static MatchServer _instance = null;
         public static MatchServer Instance
@@ -87,6 +87,24 @@ namespace Assets.Scripts.MatchMaking
 
             var jsonValue = JsonConvert.SerializeObject(serverMatchDTO);
             var request = UnityWebRequest.Post($"{BASE_ADDRESS}matches/start", "");
+
+            request.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(jsonValue));
+            request.uploadHandler.contentType = "application/json";
+            request.SetRequestHeader("Content-Type", "application/json");
+
+            await request.SendWebRequest();
+        }
+
+        public async UniTask NotifyMatchCompleteAsync(IpPortInfo ipPortInfo, string matchID)
+        {
+            var serverMatchDTO = new ServerMatchDTO
+            {
+                IpPortInfo = ipPortInfo,
+                MatchID = matchID
+            };
+
+            var jsonValue = JsonConvert.SerializeObject(serverMatchDTO);
+            var request = UnityWebRequest.Post($"{BASE_ADDRESS}matches/complete", "");
 
             request.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(jsonValue));
             request.uploadHandler.contentType = "application/json";
