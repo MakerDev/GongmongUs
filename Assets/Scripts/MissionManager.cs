@@ -80,8 +80,9 @@ namespace Assets.Scripts
 
             LeftMissionsCount = players.Count * MissionsPerPlayer;
         }
-
-        //This is called by Localplayer
+        
+        //서버랑 동기화하려면 얘네를 다 커맨드로 바꾸고, playerID랑 LocalPlayer랑 비교해서 역할 다르게 해야할듯.
+        //This is called by Localplayer of the playerId
         public void OnPlayerExit(string playerId)
         {
             RemovePlayer(playerId);
@@ -117,7 +118,7 @@ namespace Assets.Scripts
         }
 
         [Command(ignoreAuthority = true)]
-        private void CmdNotifyMatchResult(Guid matchId)
+        private void CmdNotifyMatchResult(string matchId)
         {
             BCNetworkManager.Instance.CompleteMatch(matchId);
         }
@@ -138,7 +139,7 @@ namespace Assets.Scripts
             //Networkmanager here.
             if (isIssuer)
             {
-                CmdNotifyMatchResult(MatchManager.Instance.Match.MatchID.ToGuid());
+                CmdNotifyMatchResult(MatchManager.Instance.Match.MatchID);
             }
         }
 

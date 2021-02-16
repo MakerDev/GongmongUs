@@ -104,6 +104,11 @@ namespace Assets.Scripts
 
             _matchNameText.text = $"<{MatchManager.Instance.Match.Name}>";
 
+            SetReadyOrStartButton();
+        }
+
+        public void SetReadyOrStartButton()
+        {
             if (UserManager.Instance.User.IsHost)
             {
                 _readyButton.gameObject.SetActive(false);

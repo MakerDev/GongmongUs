@@ -7,6 +7,7 @@ using Mirror;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Assets.Scripts
@@ -56,6 +57,139 @@ namespace Assets.Scripts
         public List<MiniGame> AssignedMissions { get; private set; } = new List<MiniGame>();
         public int MissionsLeft { get; private set; } = 1;
 
+        private void NotifyStateChanged(PlayerState newState)
+        {
+            GameManager.Instance.NofityPlayerStateChanged(this);
+            _playerShootComponent.NotifyStateChanged(newState);
+            _playerController.SetStateMaterial(newState);
+            PlayerSetup.PlayerUI.SetState();
+
+            if (newState != PlayerState.Student)
+            {
+                MissionManager.Instance.RemovePlayer(PlayerId);
+            }
+        }
+
+        private void Start()
+        {
+            _playerInfo.SetPlayer(this);
+            _playerShootComponent = GetComponent<PlayerShoot>();
+            _playerController = GetComponent<PlayerController>();
+        }
+
+        #region CONNECTIONS
+        public override void OnStartServer()
+        {
+            base.OnStartServer();
+            //To avoid overriding synced value, only set this on server
+            //TODO : set state here instead
+            //_currentHealth = _maxHealth;
+        }
+
+        public override void OnStartLocalPlayer()
+        {
+            base.OnStartLocalPlayer();
+
+            CmdGetConnectionID();
+        }
+
+        [Command]
+        private void CmdGetConnectionID()
+        {
+            TargetGetConnectionID(connectionToClient.connectionId);
+        }
+
+        [TargetRpc]
+        private void TargetGetConnectionID(int connectionID)
+        {
+            BCNetworkManager.Instance.NotifyUserConnect(connectionID, UserManager.Instance.User);
+        }
+
+        public override void OnStartClient()
+        {
+            base.OnStartClient();
+
+            //If this is local player, set player name manually because this script being called 'Start'
+            //means that this is joining the existing room and other players' name will be automatically synced.
+            if (isLocalPlayer)
+            {
+                LocalPlayer = this;
+
+                string userName = UserManager.Instance.User.Name;
+                string netId = GetComponent<NetworkIdentity>().netId.ToString();
+                var newName = $"{userName}{netId}";
+                SetName(newName);
+
+                //GameManager.Instance.CmdPrintMessage($"{newName} joined!", null, ChatType.Info);
+                //TODO : Report
+                CmdSetMatchChecker(MatchManager.Instance.Match.MatchID.ToGuid());
+            }
+
+
+            if (UserManager.Instance.User.IsHost && isLocalPlayer)
+            {
+                CmdSpawnChatHub(MatchManager.Instance.Match.MatchID.ToGuid());
+            }
+        }
+
+        public override void OnStopClient()
+        {
+            //TODO : Remove this player from map and player list.
+
+            GameManager.Instance.PrintMessage($"{PlayerName} leaved", null, ChatType.Info);
+
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+
+            base.OnStopClient();
+        }
+        #endregion
+
+        #region GAME SETUP
+        public void StartGame()
+        {
+            CmdStartGame(GameManager.Instance.GetRandomPlayerId(), MatchManager.Instance.Match.MatchID);
+        }
+
+        [Command]
+        private void CmdStartGame(string professorID, string matchId)
+        {
+            BCNetworkManager.Instance.SpawnMissionManager(matchId);
+            RpcStartGame(professorID);
+        }
+
+        [ClientRpc]
+        private async void RpcStartGame(string professorId)
+        {
+            if (UserManager.Instance.User.IsHost)
+            {
+                await BCNetworkManager.Instance.NotifyStartGame(MatchManager.Instance.Match.MatchID);
+            }
+
+            GameManager.Instance.ConfigureGameOnStart(professorId);
+        }
+
+        public void GetReady()
+        {
+            CmdGetReady();
+        }
+
+        [Command]
+        private void CmdGetReady()
+        {
+            IsReady = true;
+            RpcGetReady();
+        }
+
+        [ClientRpc]
+        private void RpcGetReady()
+        {
+            IsReady = true;
+            Debug.Log("Im ready");
+        }
+        #endregion
+
+        #region MISSIONS
         public void AssignMissions(IEnumerable<MiniGame> missions)
         {
             AssignedMissions.AddRange(missions);
@@ -109,135 +243,8 @@ namespace Assets.Scripts
         {
             PlayerSetup.PlayerUI.SetPlayerMissionProgress(AssignedMissions.Count, AssignedMissions.Count - MissionsLeft);
         }
-
-        private void NotifyStateChanged(PlayerState newState)
-        {
-            GameManager.Instance.NofityPlayerStateChanged(this);
-            _playerShootComponent.NotifyStateChanged(newState);
-            _playerController.SetStateMaterial(newState);
-            PlayerSetup.PlayerUI.SetState();
-
-            if (newState != PlayerState.Student)
-            {
-                MissionManager.Instance.RemovePlayer(PlayerId);
-            }
-        }
-
-        private void Start()
-        {
-            _playerInfo.SetPlayer(this);
-            _playerShootComponent = GetComponent<PlayerShoot>();
-            _playerController = GetComponent<PlayerController>();
-        }
-
-        #region CONNECTIONS
-        public override void OnStartServer()
-        {
-            base.OnStartServer();
-            //To avoid overriding synced value, only set this on server
-            //TODO : set state here instead
-            //_currentHealth = _maxHealth;
-        }
-
-        public override void OnStartLocalPlayer()
-        {
-            base.OnStartLocalPlayer();
-
-            CmdGetConnectionID();
-        }
-
-        public override void OnStartClient()
-        {
-            base.OnStartClient();
-
-            //If this is local player, set player name manually because this script being called 'Start'
-            //means that this is joining the existing room and other players' name will be automatically synced.
-            if (isLocalPlayer)
-            {
-                LocalPlayer = this;
-
-                string userName = UserManager.Instance.User.Name;
-                string netId = GetComponent<NetworkIdentity>().netId.ToString();
-                var newName = $"{userName}{netId}";
-                SetName(newName);
-
-                //GameManager.Instance.CmdPrintMessage($"{newName} joined!", null, ChatType.Info);
-                //TODO : Report
-                CmdSetMatchChecker(MatchManager.Instance.Match.MatchID.ToGuid());
-            }
-
-
-            if (UserManager.Instance.User.IsHost && isLocalPlayer)
-            {
-                CmdSpawnChatHub(MatchManager.Instance.Match.MatchID.ToGuid());
-            }
-        }
-
-        public override void OnStopClient()
-        {
-            GameManager.Instance.PrintMessage($"{PlayerName} leaved", null, ChatType.Info);
-
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-
-            base.OnStopClient();
-        }
-
-        [Command]
-        private void CmdGetConnectionID()
-        {
-            TargetGetConnectionID(connectionToClient.connectionId);
-        }
-
-        [TargetRpc]
-        private void TargetGetConnectionID(int connectionID)
-        {
-            BCNetworkManager.Instance.NotifyUserConnect(connectionID, UserManager.Instance.User);
-        }
-
         #endregion
 
-        public void StartGame()
-        {
-            CmdStartGame(GameManager.Instance.GetRandomPlayerId(), MatchManager.Instance.Match.MatchID.ToGuid());
-        }
-
-        [Command]
-        private void CmdStartGame(string professorID, Guid matchId)
-        {
-            BCNetworkManager.Instance.SpawnMissionManager(matchId);
-            RpcStartGame(professorID);
-        }
-
-        [ClientRpc]
-        private async void RpcStartGame(string professorId)
-        {
-            if (UserManager.Instance.User.IsHost)
-            {
-                await BCNetworkManager.Instance.NotifyStartGame(MatchManager.Instance.Match.MatchID);
-            }
-
-            GameManager.Instance.ConfigureGameOnStart(professorId);
-        }
-
-        public void GetReady()
-        {
-            CmdGetReady();
-        }
-
-        [Command]
-        private void CmdGetReady()
-        {
-            IsReady = true;
-            RpcGetReady();
-        }
-
-        [ClientRpc]
-        private void RpcGetReady()
-        {
-            IsReady = true;
-            Debug.Log("Im ready");
-        }
 
         #region CaughtBy
         public void CaughtByProfessor()

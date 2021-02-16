@@ -16,7 +16,7 @@ namespace Assets.Scripts.Networking
 
         public static BCNetworkManager Instance { get; private set; }
 
-        public Dictionary<Guid, GameObject> MissionManagers { get; private set; } = new Dictionary<Guid, GameObject>();
+        public Dictionary<string, GameObject> MissionManagers { get; private set; } = new Dictionary<string, GameObject>();
 
         private string _serverName = null;
 
@@ -136,10 +136,10 @@ namespace Assets.Scripts.Networking
         }
 
         [Server]
-        public void SpawnMissionManager(Guid matchId)
+        public void SpawnMissionManager(string matchId)
         {
             var missionManager = Instantiate(spawnPrefabs[1]);
-            missionManager.GetComponent<NetworkMatchChecker>().matchId = matchId;
+            missionManager.GetComponent<NetworkMatchChecker>().matchId = matchId.ToGuid();
 
 
             if (MissionManagers.ContainsKey(matchId))
@@ -155,9 +155,9 @@ namespace Assets.Scripts.Networking
         }
 
         [Server]
-        public void CompleteMatch(Guid matchId)
+        public async void CompleteMatch(string matchId)
         {
-            //TODO : report result to Match Server
+            await MatchServer.Instance.NotifyMatchCompleteAsync(_ipPortInfo, matchId);
 
             //Destroy MissionManager
             var hasManager = MissionManagers.TryGetValue(matchId, out var missionManager);
