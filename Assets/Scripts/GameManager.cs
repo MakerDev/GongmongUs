@@ -52,8 +52,6 @@ namespace Assets.Scripts
         #endregion
         [SerializeField]
         private Button _readyButton;
-        [SerializeField]
-        private Button _startGameButton;
 
         [SerializeField]
         private GameObject _gameLobbyUI;
@@ -104,19 +102,7 @@ namespace Assets.Scripts
 
             _matchNameText.text = $"<{MatchManager.Instance.Match.Name}>";
 
-            SetReadyOrStartButton();
-        }
-
-        public void SetReadyOrStartButton()
-        {
-            if (UserManager.Instance.User.IsHost)
-            {
-                _readyButton.gameObject.SetActive(false);
-            }
-            else
-            {
-                _startGameButton.gameObject.SetActive(false);
-            }
+            _readyButton.gameObject.SetActive(true);
         }
 
         public void DisableMove()
@@ -150,7 +136,6 @@ namespace Assets.Scripts
                 return;
             }
 
-            //TODO : fix mouse cursor problem.
             HandleChat();
 
             if (Input.GetKeyDown(MENU_KEY))
@@ -180,47 +165,35 @@ namespace Assets.Scripts
             }
         }
 
-        private bool CanStartGame()
-        {
-            return true;
-        }
-
         public void ReadyGame()
         {
             Player.LocalPlayer.GetReady();
             _readyButton.enabled = false;
             _readyButton.interactable = false;
+
+            if (CanStartGame())
+            {
+                //If all ready, start game
+                Player.LocalPlayer.StartGame();
+            }
         }
 
-        public void StartGame()
+        private bool CanStartGame()
         {
-            if (UserManager.Instance.User.IsHost == false || CanStartGame() == false)
-            {
-                return;
-            }
-
-            //TODO : Uncomment this on Release build.
-            //if (Players.Count < 4)
-            //{
-            //    ChatHub.Instance.BroadcastMessage("네 명 이상의 플레이어가 필요합니다.", "SYSTEM", ChatType.KillInfo);
-            //    return;
-            //}
-
             foreach (var player in Players.Values)
             {
-                if (player == Player.LocalPlayer)
+                if (player.isLocalPlayer)
                 {
                     continue;
                 }
 
                 if (player.IsReady == false)
                 {
-                    ChatHub.Instance.BroadcastMessage("모든 플레이어가 레디하여야 시작할 수 있습니다.", "SYSTEM", ChatType.KillInfo);
-                    return;
+                    return false;
                 }
             }
 
-            Player.LocalPlayer.StartGame();
+            return true;
         }
 
         public void ConfigureGameOnStart(string professorId)

@@ -114,6 +114,23 @@ namespace Assets.Scripts.MatchMaking
         }
 
         //TODO: chagne all signitures
+        public async UniTask MakeHostAsync(IpPortInfo ipPortInfo, GameUser user)
+        {
+            var serverUser = new ServerUserDTO
+            {
+                User = user,
+                IpPortInfo = ipPortInfo,
+            };
+            var serverUserJson = JsonConvert.SerializeObject(serverUser);
+            var request = UnityWebRequest.Post($"{BASE_ADDRESS}matches/makehost", "");
+            request.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(serverUserJson));
+            request.uploadHandler.contentType = "application/json";
+            request.SetRequestHeader("Content-Type", "application/json");
+
+            await request.SendWebRequest();
+        }
+
+        //TODO: chagne all signitures
         public async UniTask<MatchJoinResultDTO> JoinMatchAsync(IpPortInfo ipPortInfo, string matchID, GameUser user)
         {
             var serverUser = new ServerUserDTO
