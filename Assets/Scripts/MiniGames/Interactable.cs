@@ -129,16 +129,12 @@ namespace Assets.Scripts.MiniGames
             {
                 return;
             }
-
-            //if (Highlighted && input.getkeydown(keycode.space))
-            //{
-            //    startminigame();
-            //}
         }
 
         public void StartMiniGame()
         {
             _miniGameObject.SetActive(true);
+            MiniGame.enabled = true;
         }
     }
 }

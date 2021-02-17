@@ -64,12 +64,14 @@ public abstract class MiniGame : MonoBehaviour
     public void StartMiniGame()
     {
         this.gameObject.SetActive(true);
+        this.enabled = true;
         IsPlaying = true;
     }
 
     private void TurnOffGame()
     {
         this.gameObject.SetActive(false);
+        this.enabled = false;
         IsPlaying = false;
         ResetGame();
     }
@@ -87,7 +89,7 @@ public abstract class MiniGame : MonoBehaviour
 
         if (MiniGameResult.Passed)
         {
-            AssignedPlayer.OnCompleteMission(miniGameResult);
+            AssignedPlayer?.OnCompleteMission(miniGameResult);
             IsCompleted = true;
 
             if (_outline != null)
