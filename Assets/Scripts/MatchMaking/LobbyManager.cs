@@ -185,7 +185,7 @@ namespace Assets.Scripts.Networking
 
             _requestResultText.text = "";
 
-            UserManager.Instance.User.IsHost = true;
+            UserManager.Instance.User.IsHost = false;
             MoveToMatch(result.Match);
         }
 
