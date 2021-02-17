@@ -162,12 +162,8 @@ namespace Assets.Scripts
 
         public override void OnStopClient()
         {
-            GameManager.Instance.PrintMessage($"{PlayerName} leaved", null, ChatType.Info);
-
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-
             base.OnStopClient();
+            GameManager.Instance.PrintMessage($"{PlayerName} leaved", null, ChatType.Info);
         }
         #endregion
 

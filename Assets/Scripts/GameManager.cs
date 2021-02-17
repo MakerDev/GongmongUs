@@ -99,8 +99,8 @@ namespace Assets.Scripts
             _menuCanvas.SetActive(false);
 
             //At first, mouse needs to be enabled to press start button.
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+            DisablePlayerControl();
+            GameStarted = false;
 
             _matchNameText.text = $"<{MatchManager.Instance.Match.Name}>";
 
@@ -133,7 +133,7 @@ namespace Assets.Scripts
 
         private void Update()
         {
-            if (GameStarted == false)
+            if (GameStarted == false || isServer)
             {
                 return;
             }
@@ -169,7 +169,7 @@ namespace Assets.Scripts
 
         public bool CanStartGame()
         {
-            if (Players.Count < 2)
+            if (Players.Count < 3)
             {
                 return false;
             }
