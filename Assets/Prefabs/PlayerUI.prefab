@@ -886,6 +886,8 @@ MonoBehaviour:
   _stateText: {fileID: 5451276897848658425}
   _leftMissionsText: {fileID: 261046502812636581}
   _progressImage: {fileID: 600413302265831850}
+  _cooldownIndicator: {fileID: 1384453687495370536}
+  _coolDownImage: {fileID: 5583099780440454734}
 --- !u!114 &6268672840052832288
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -987,9 +989,8 @@ GameObject:
   - component: {fileID: 5583099780440454734}
   - component: {fileID: 4511178142284653585}
   - component: {fileID: 1562764368640576919}
-  - component: {fileID: 2910082468142109251}
   m_Layer: 5
-  m_Name: MainSkill
+  m_Name: MainSkillCoolDown
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1051,20 +1052,6 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &2910082468142109251
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8531999635168897236}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f11f8ca23fdc9044caeb3f14c6377476, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _cooldownImage: {fileID: 5583099780440454734}
-  _actionName: MainAction
 --- !u!1 &8718018236706116317
 GameObject:
   m_ObjectHideFlags: 0

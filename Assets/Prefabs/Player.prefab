@@ -426,6 +426,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 512
   _raycastTransform: {fileID: 1901912780159580566}
+  _playerActions:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
 --- !u!114 &-963771976714320795
 MonoBehaviour:
   m_ObjectHideFlags: 0

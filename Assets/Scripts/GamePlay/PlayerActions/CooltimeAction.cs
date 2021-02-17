@@ -9,9 +9,8 @@ namespace Assets.Scripts.GamePlay.PlayerActions
 {
     public class CooltimeAction : IPlayerAction
     {
-        private float _rechargeSpeed = 0.5f; //charge 50%/sec
-        private float _chargeAmount = 1f;
-        private SkillUI _skillUI = null;
+        public float RechargeSpeed { get; private set; } = 0.5f;
+        public float ChargeAmount { get; private set; } = 1f;
         private string _skillName = "MainAction";
 
         public CooltimeAction(string skillName)
@@ -21,9 +20,7 @@ namespace Assets.Scripts.GamePlay.PlayerActions
 
         public virtual bool CanExecute()
         {
-            return true;
-
-            if (_chargeAmount >= 1.0f)
+            if (ChargeAmount >= 1.0f)
             {
                 return true;
             }
@@ -33,9 +30,20 @@ namespace Assets.Scripts.GamePlay.PlayerActions
             }
         }
 
+        public void Charge(float rechargeAmount)
+        {
+            if (ChargeAmount >= 1.0f)
+            {
+                ChargeAmount = 1.0f;
+                return;
+            }
+
+            ChargeAmount += rechargeAmount;
+        }
+
         protected void StartCooldown()
         {
-            _chargeAmount = 0;
+            ChargeAmount = 0;
         }
 
         public virtual void TryExecute()

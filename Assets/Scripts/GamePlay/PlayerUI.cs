@@ -1,4 +1,5 @@
-﻿using FirstGearGames.Utilities.Objects;
+﻿using Assets.Scripts.GamePlay.PlayerActions;
+using FirstGearGames.Utilities.Objects;
 using Mirror;
 using System.Collections;
 using UnityEngine;
@@ -28,9 +29,16 @@ namespace Assets.Scripts
         [SerializeField]
         private RectTransform _progressImage;
 
+        [SerializeField]
+        private GameObject _cooldownIndicator;
+        [SerializeField]
+        private RectTransform _coolDownImage;
+
         private PlayerController _controller;
         private Player _player;
         private bool _wasOnTarget = false;
+
+        private CooltimeAction _cooltimeAction;
 
         private void Start()
         {
@@ -40,6 +48,29 @@ namespace Assets.Scripts
         private void Update()
         {
             SetFuelAmout(_controller.GetThrusterFuelAmount());
+        }
+
+        public void SetCooltimeAction(CooltimeAction cooltimeAction)
+        {
+            _cooltimeAction = cooltimeAction;
+
+            DisplayCooldownIndicator();
+        }
+
+        private void FixedUpdate()
+        {
+            if (_cooltimeAction == null)
+            {
+                return;
+            }
+
+            _coolDownImage.localScale = new Vector3(1, _cooltimeAction.ChargeAmount, 1);
+            _cooltimeAction.Charge(_cooltimeAction.RechargeSpeed * Time.fixedDeltaTime);
+        }
+
+        public void DisplayCooldownIndicator()
+        {
+            _cooldownIndicator.SetActive(true);
         }
 
         public void SetCrossHair(bool onTarget)
@@ -90,6 +121,6 @@ namespace Assets.Scripts
         void SetFuelAmout(float amount)
         {
             _thrusterFuelFill.localScale = new Vector3(1, amount, 1);
-        }        
+        }
     }
 }
