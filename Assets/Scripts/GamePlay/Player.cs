@@ -52,7 +52,10 @@ namespace Assets.Scripts
         private PlayerController _playerController; //For animations
 
         public bool HasExited { get; private set; } = false;
-        public bool IsReady { get; private set; } = false;
+
+        [SyncVar]
+        private bool _isReady = false;
+        public bool IsReady { get { return _isReady; } private set { _isReady = value; } }
         /// <summary>
         /// This is for server to identify which match this player belongs to.
         /// </summary>
@@ -125,7 +128,8 @@ namespace Assets.Scripts
                 CmdSetMatchChecker(MatchManager.Instance.Match.MatchID.ToGuid());
             }
 
-            if (UserManager.Instance.User.IsHost && isLocalPlayer)
+            //HACK : 호스트가 소환하는 거였는데, 이제 호스트 없어
+            if (GameManager.Instance.Players.Count <= 1 && isLocalPlayer)
             {
                 CmdSpawnChatHub(MatchManager.Instance.Match.MatchID.ToGuid());
             }
@@ -136,6 +140,11 @@ namespace Assets.Scripts
             base.OnStopServer();
 
             //Reevaluate mission manager
+            if (MatchID == null)
+            {
+                return;
+            }
+
             var missionManager = BCNetworkManager.Instance.GetMissionManager(MatchID);
 
             if (missionManager == null)
@@ -169,22 +178,18 @@ namespace Assets.Scripts
         }
 
         [Command]
-        private void CmdStartGame(string professorID, string matchId)
+        private async void CmdStartGame(string professorID, string matchId)
         {
             var serverMissionManager = BCNetworkManager.Instance.SpawnMissionManager(matchId);
             serverMissionManager.ConfigureForServer(matchId, professorID);
+            await BCNetworkManager.Instance.NotifyStartGame(matchId);
 
             RpcStartGame(professorID);
         }
 
         [ClientRpc]
-        private async void RpcStartGame(string professorId)
+        private void RpcStartGame(string professorId)
         {
-            if (UserManager.Instance.User.IsHost)
-            {
-                await BCNetworkManager.Instance.NotifyStartGame(MatchManager.Instance.Match.MatchID);
-            }
-
             GameManager.Instance.ConfigureGameOnStart(professorId);
         }
 
@@ -210,7 +215,6 @@ namespace Assets.Scripts
             IsReady = true;
 
             GameManager.Instance.PrintMessage($"{PlayerName} is now ready!", "SYSTEM", ChatType.Info);
-            GameManager.Instance.CanStartGame();
 
             //TODO : Update RoomPlayerUI
         }
@@ -224,7 +228,6 @@ namespace Assets.Scripts
             foreach (var assignedMission in AssignedMissions)
             {
                 assignedMission.AssignPlayer(this);
-                GameManager.Instance.PrintMessage($"{assignedMission.gameObject.transform.parent.name} is assigned to {PlayerId}", "SYSTEM");
             }
 
             MissionsLeft = AssignedMissions.Count;
