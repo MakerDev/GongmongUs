@@ -10,8 +10,18 @@ namespace Assets.Scripts.RoomManagement
 {
     public class RoomUIManager : MonoBehaviour
     {
+        public static RoomUIManager Instance { get; private set; }
+
         [SerializeField]
         private Text _localPlayerName;
+
+        private void Awake()
+        {
+            if (Instance == null)
+            {
+                Instance = this;
+            }
+        }
 
         private void Update()
         {
