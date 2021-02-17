@@ -61,6 +61,7 @@ namespace Assets.Scripts
         public List<MiniGame> AssignedMissions { get; private set; } = new List<MiniGame>();
         public int MissionsLeft { get; private set; } = 1;
 
+        [Client]
         private void NotifyStateChanged(PlayerState newState)
         {
             GameManager.Instance.NofityPlayerStateChanged(this);

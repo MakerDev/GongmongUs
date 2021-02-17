@@ -169,7 +169,7 @@ namespace Assets.Scripts
 
         public bool CanStartGame()
         {
-            if (Players.Count < 3)
+            if (Players.Count < 2)
             {
                 return false;
             }
@@ -187,7 +187,7 @@ namespace Assets.Scripts
                 }
             }
 
-            _readyButtonText.text = "Start";
+            //_readyButtonText.text = "Start";
 
             return true;
         }
