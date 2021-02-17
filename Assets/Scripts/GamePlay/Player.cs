@@ -207,7 +207,11 @@ namespace Assets.Scripts
         {
             MatchID = MatchManager.Instance.Match.MatchID;
             IsReady = true;
-            Debug.Log("Im ready");
+
+            GameManager.Instance.PrintMessage($"{PlayerName} is now ready!", "SYSTEM", ChatType.Info);
+            GameManager.Instance.CanStartGame();
+
+            //TODO : Update RoomPlayerUI
         }
         #endregion
 

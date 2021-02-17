@@ -52,6 +52,8 @@ namespace Assets.Scripts
         #endregion
         [SerializeField]
         private Button _readyButton;
+        [SerializeField]
+        private Text _readyButtonText;
 
         [SerializeField]
         private GameObject _gameLobbyUI;
@@ -164,8 +166,14 @@ namespace Assets.Scripts
                 }
             }
         }
-        private bool CanStartGame()
+
+        public bool CanStartGame()
         {
+            if (Players.Count < 3)
+            {
+                return false;
+            }
+
             foreach (var player in Players.Values)
             {
                 if (player.isLocalPlayer)
@@ -178,6 +186,8 @@ namespace Assets.Scripts
                     return false;
                 }
             }
+
+            _readyButtonText.text = "Start";
 
             return true;
         }
