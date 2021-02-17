@@ -50,14 +50,6 @@ namespace Assets.Scripts
             AssignMissions(MatchManager.Instance.Match.MatchID.ToGuid());
         }
 
-        private void OnDestroy()
-        {
-            if (isClient)
-            {
-                BCNetworkManager.Instance.MoveToResultScene();
-            }
-        }
-
         //랜덤 Guid로 플레이어들을 정렬해서 미션을 분배하는 방식을 선택
         private void AssignMissions(Guid orderId)
         {
@@ -100,29 +92,31 @@ namespace Assets.Scripts
         }
 
         [Server]
-        public void OnPlayerExitServer(string playerId)
+        public void OnPlayerDisconnectGame(Player player)
         {
-            RemovePlayer(playerId);
+            PlayerMissionsProgress.Remove(player.PlayerId);
 
-            if (PlayerMissionsProgress.Count <= 0)
+            if (player.State == PlayerState.Professor)
             {
-                ServerCompleteMatch(MatchResult.StudentsWin, playerId);
+                ServerCompleteMatch(MatchResult.StudentsWin, MatchID);
+            }
+            else if (player.State == PlayerState.Student)
+            {
+                //If all players exit the game, then professor wins.
+                if (PlayerMissionsProgress.Count == 0)
+                {
+                    ServerCompleteMatch(MatchResult.ProfessorWins, MatchID);
+
+                    return;
+                }
+
+                ServerEvaluateMissionState();
             }
         }
 
-        //This is called by "LocalPlayer"
         [Server]
-        public void OnPlayerCaughtServer(string playerId)
+        public void ServerEvaluateMissionState()
         {
-            RemovePlayer(playerId);
-
-            //If no more player is left, professor wins
-            if (PlayerMissionsProgress.Count <= 0)
-            {
-                ServerCompleteMatch(MatchResult.ProfessorWins, playerId);
-            }
-
-            //If all missions are cleared except for this caught student, the exit door should be opened.
             if (CheckAllMissionsCleared())
             {
                 RpcOpenExitDoors();
@@ -130,29 +124,44 @@ namespace Assets.Scripts
         }
 
         [Server]
-        public void ServerCompleteMatch(MatchResult matchResult, string issuerPlayerId)
+        public void ServerOnPlayerEscape(string playerId)
         {
-            RpcCompleteMatch(matchResult, issuerPlayerId);
+            RemovePlayer(playerId);
+
+            if (PlayerMissionsProgress.Count <= 0)
+            {
+                ServerCompleteMatch(MatchResult.StudentsWin, MatchID);
+            }
         }
 
-        [Command(ignoreAuthority = true)]
-        private void CmdNotifyMatchResult(string matchId)
+        //This is called by "LocalPlayer"
+        [Server]
+        public void ServerOnPlayerCaught(string playerId)
         {
-            BCNetworkManager.Instance.CompleteMatch(matchId);
+            RemovePlayer(playerId);
+
+            //If no more player is left, professor wins
+            if (PlayerMissionsProgress.Count <= 0)
+            {
+                ServerCompleteMatch(MatchResult.ProfessorWins, MatchID);
+            }
+
+            //If all missions are cleared except for this caught student, the exit door should be opened.
+            ServerEvaluateMissionState();
+        }
+
+        [Server]
+        public void ServerCompleteMatch(MatchResult matchResult, string matchID)
+        {
+            RpcCompleteMatch(matchResult);
+            BCNetworkManager.Instance.CompleteMatch(matchID);
         }
 
         [ClientRpc]
-        private void RpcCompleteMatch(MatchResult matchResult, string issuerPlayerId)
+        private void RpcCompleteMatch(MatchResult matchResult)
         {
-            var isIssuer = Player.LocalPlayer.PlayerId == issuerPlayerId;
             MatchManager.Instance.MatchCompleted(matchResult);
-
-            //To make sure when MissionManager is destoryed the match result is all synced, notify match result to 
-            //Networkmanager here.
-            if (isIssuer)
-            {
-                CmdNotifyMatchResult(MatchManager.Instance.Match.MatchID);
-            }
+            BCNetworkManager.Instance.MoveToResultScene();
         }
 
         /// <summary>

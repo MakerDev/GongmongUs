@@ -135,21 +135,14 @@ namespace Assets.Scripts
             base.OnStopServer();
 
             //Reevaluate mission manager
-            var hasMissionMaanger = BCNetworkManager.Instance.MissionManagers.TryGetValue(MatchID, out var missionManager);
+            var missionManager = BCNetworkManager.Instance.GetMissionManager(MatchID);
 
-            if (hasMissionMaanger == false)
+            if (missionManager == null)
             {
                 return;
             }
 
-            if (State == PlayerState.Student)
-            {
-                //Re
-            }
-            else if (State == PlayerState.Professor)
-            {
-
-            }
+            missionManager.OnPlayerDisconnectGame(this);
         }
 
         private void OnDisable()
@@ -293,7 +286,7 @@ namespace Assets.Scripts
         {
             State = PlayerState.Assistant;
             var serverMissionManager = BCNetworkManager.Instance.GetMissionManager(MatchID);
-            serverMissionManager.OnPlayerCaughtServer(PlayerId);
+            serverMissionManager.ServerOnPlayerCaught(PlayerId);
             RpcCaughtByProfessor();
         }
 
@@ -402,7 +395,7 @@ namespace Assets.Scripts
             HasExited = true;
 
             var serverMissionManager = BCNetworkManager.Instance.GetMissionManager(MatchID);
-            serverMissionManager.OnPlayerExitServer(PlayerId);
+            serverMissionManager.ServerOnPlayerEscape(PlayerId);
             RpcEscape();
         }
 

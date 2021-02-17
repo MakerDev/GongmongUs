@@ -85,6 +85,12 @@ namespace Assets.Scripts.Networking
 
         public MissionManager GetMissionManager(string matchID)
         {
+            if (MissionManagers.ContainsKey(matchID) == false)
+            {
+                Debug.LogError($"No manager for {matchID}");
+                return null;
+            }
+
             return MissionManagers[matchID].GetComponent<MissionManager>();
         }
 
@@ -172,7 +178,6 @@ namespace Assets.Scripts.Networking
             {
                 MissionManagers.Remove(matchId);
                 Destroy(missionManager);
-                NetworkServer.Destroy(missionManager);
             }
         }
 
