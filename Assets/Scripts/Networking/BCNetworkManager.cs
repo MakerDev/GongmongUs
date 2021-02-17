@@ -94,6 +94,7 @@ namespace Assets.Scripts.Networking
             return MissionManagers[matchID].GetComponent<MissionManager>();
         }
 
+        [Client]
         public async void NotifyUserConnect(int connectionId, GameUser user)
         {
             user.ConnectionID = connectionId;
@@ -105,15 +106,6 @@ namespace Assets.Scripts.Networking
         {
             //반드시 불러줘야한다!!
             base.OnClientConnect(conn);
-
-            //If the match has already started, disconnect
-            //GameManager말고 매치서버에서 확인해야될듯
-            //if (GameManager.Instance.GameStarted)
-            //{
-            //    Debug.LogError("disconnect as game already started");
-            //    conn.Disconnect();                
-            //    //TODO: Report MatchServer.
-            //}
         }
 
         public async UniTask NotifyStartGame(string matchID)
