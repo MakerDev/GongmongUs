@@ -42,7 +42,7 @@ namespace Assets.Scripts
             if (state == PlayerState.Professor)
             {
                 //ChatHub.Instance.PrintMessage("I'm professor", Player.LocalPlayer.PlayerName, ChatType.Player);
-                _mainFireAction = new CatchAction(_raycastTransform, _remotePlayerLayer, _playerController);
+                _mainFireAction = new CatchAction(_raycastTransform, _remotePlayerLayer, _playerController);                
             }
             else if (state == PlayerState.Student)
             {
@@ -53,6 +53,16 @@ namespace Assets.Scripts
             {
                 _mainFireAction = new StunByAssignmentAction(_raycastTransform, _remotePlayerLayer, _playerController);
                 GameManager.Instance.PrintMessage($"{_player.PlayerName} is now assistant.", "SYSTEM", ChatType.Info);
+            }
+
+            if (isLocalPlayer)
+            {
+                var cooltimeAction = _mainFireAction as CooltimeAction;
+
+                if (cooltimeAction != null)
+                {
+                    PlayerSetup.PlayerUI.SetCooltimeAction(cooltimeAction);
+                }
             }
         }
 

@@ -33,6 +33,7 @@ namespace Assets.Scripts.GamePlay.PlayerActions
 
             if (player.State == PlayerState.Student)
             {
+                StartCooldown();
                 Debug.Log($"Caught {player.PlayerId}");
                 player.CaughtByProfessor();
             }
