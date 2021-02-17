@@ -16,7 +16,7 @@ public class MiniGameResult
 /// <summary>
 /// Base class for all minigames
 /// </summary>
-public class MiniGame : MonoBehaviour
+public abstract class MiniGame : MonoBehaviour
 {
     public static event Action OnStartMiniGame;
     public static event Action<MiniGameResult> OnTurnOffMiniGame;
@@ -59,25 +59,31 @@ public class MiniGame : MonoBehaviour
         GameManager.Instance?.EnablePlayerControl();
     }
 
+    public virtual void ResetGame() { }
+
     public void StartMiniGame()
     {
         this.gameObject.SetActive(true);
         IsPlaying = true;
     }
 
+    private void TurnOffGame()
+    {
+        this.gameObject.SetActive(false);
+        IsPlaying = false;
+        ResetGame();
+    }
+
     public void CancelMiniGame()
     {
         MiniGameResult.Passed = false;
-        this.gameObject.SetActive(false);
-        IsPlaying = false;
+        TurnOffGame();
     }
 
     public void CompleteMiniGame(MiniGameResult miniGameResult)
     {
         MiniGameResult = miniGameResult;
-        //TODO : report to the GameManaget
-        this.gameObject.SetActive(false);
-        IsPlaying = false;
+        TurnOffGame();
 
         if (MiniGameResult.Passed)
         {
