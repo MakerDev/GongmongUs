@@ -78,7 +78,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms.Editors
             //Space.
             EditorGUILayout.LabelField("Space", EditorStyles.boldLabel);
             EditorGUI.indentLevel++;
-            EditorGUILayout.PropertyField(_useLocalSpace, new GUIContent("Use LocalSpace", "True to synchronize using localSpace rather than worldSpace. If you are to child this object throughout it's lifespan using worldspace is recommended. However, when using worldspace synchronization may not behave properly on VR. LocalSpace is the default."));
+            EditorGUILayout.PropertyField(_useLocalSpace, new GUIContent("Use LocalSpace", "True to synchronize using LocalSpace values. False to use WorldSpace."));
             EditorGUI.indentLevel--;
             EditorGUILayout.Space();
 
@@ -89,7 +89,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms.Editors
 
             //If not reliable and interval type is set to timedd.
             if (!_reliable.boolValue && _intervalType.intValue == 0)
-                EditorGUILayout.HelpBox("For best results use FixedUpdate Interval Type when not using Reliable messages.", MessageType.Warning);
+                EditorGUILayout.HelpBox("For best results use FixedUpdate Interval Type when using unreliable messages.", MessageType.Warning);
             //If reliable and interval is set to fixed update.
             if (_reliable.boolValue && _intervalType.intValue == 1)
                 EditorGUILayout.HelpBox("Using FixedUpate with a reliable transport may cause network disruptions for those with unstable connections.", MessageType.Warning);
@@ -170,9 +170,9 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms.Editors
 
             if (EditorGUI.EndChangeCheck())
             {
-                data.SetSnapPosition((Axes)_snapPosition.intValue);
-                data.SetSnapRotation((Axes)_snapRotation.intValue);
-                data.SetSnapScale((Axes)_snapScale.intValue);
+                data.SetSnapPosition((SnappingAxes)_snapPosition.intValue);
+                data.SetSnapRotation((SnappingAxes)_snapRotation.intValue);
+                data.SetSnapScale((SnappingAxes)_snapScale.intValue);
             }
 
             serializedObject.ApplyModifiedProperties();

@@ -1,10 +1,14 @@
-﻿using FirstGearGames.Utilities.Editors;
+﻿using FirstGearGames.Utilities.Networks;
+using FirstGearGames.Utilities.Editors;
 using FirstGearGames.Utilities.Maths;
 using FirstGearGames.Utilities.Objects;
 using Mirror;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+#if MIRRORNG || MirrorNg
+using NetworkConnection = Mirror.INetworkConnection;
+#endif
 
 namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
 {
@@ -14,22 +18,29 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
     {
         #region Types.
         /// <summary>
-        /// Space types to use when getting or setting platform data.
+        /// Space types to use when getting or setting attached data.
         /// </summary>
-        private enum PlatformSpaces
+        private enum AttachedSpaces
         {
             Disabled = 0,
             Local = 1,
             World = 2
         }
-        public class PlatformData
+        /// <summary>
+        /// Attached object data.
+        /// </summary>
+        public class AttachedSyncData
         {
             /// <summary>
-            /// Platform.
+            /// Attached object's Networkidentity.
             /// </summary>
-            public NetworkIdentity Identity;
+            public NetworkIdentity Identity = null;
             /// <summary>
-            /// For spectators this is the transform to move towards. For owner this is where their transform is in localspace to the platform.
+            /// ComponentIndex to attach to. Will be null if using NetworkIdentity object.
+            /// </summary>
+            public sbyte ComponentIndex = -1;
+            /// <summary>
+            /// For spectators this is the transform to move towards. For owner this is where their transform is in localspace to the attached object.
             /// </summary>
             public Transform Target = null;
         }
@@ -121,17 +132,17 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         public abstract Transform TargetTransform { get; }
         /// <summary>
-        /// PlatformData for the platform this object resides on.
+        /// AttachedData for what this object is attached to.
         /// </summary>
-        public PlatformData Platform { get; private set; } = new PlatformData();
+        public AttachedSyncData Attached { get; private set; } = new AttachedSyncData();
         /// <summary>
-        /// Sets which platform this transform is on.
+        /// Sets which object this transform is attached to.
         /// </summary>
-        /// <param name="platform"></param>
-        protected void SetPlatformInternal(NetworkIdentity platform)
+        /// <param name="attached"></param>
+        protected void SetAttachedInternal(NetworkIdentity attached, sbyte componentIndex)
         {
-            uint netId = (platform == null) ? 0 : platform.netId;
-            UpdatePlatform(netId);
+            uint netId = (attached == null) ? 0 : attached.ReturnNetworkId();
+            UpdateAttached(netId, componentIndex);
         }
         /// <summary>
         /// LastSequenceId received from the client for this FlexNetworkTransformBase.
@@ -151,11 +162,11 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// <summary>
         /// 
         /// </summary>
-        [Tooltip("True to synchronize using localSpace rather than worldSpace. If you are to child this object throughout it's lifespan using worldspace is recommended. However, when using worldspace synchronization may not behave properly on VR. LocalSpace is the default.")]
+        [Tooltip("True to synchronize using LocalSpace values. False to use WorldSpace.")]
         [SerializeField]
         private bool _useLocalSpace = true;
         /// <summary>
-        /// True to synchronize using localSpace rather than worldSpace. If you are to child this object throughout it's lifespan using worldspace is recommended. However, when using worldspace synchronization may not behave properly on VR. LocalSpace is the default.
+        /// True to synchronize using LocalSpace values. False to use WorldSpace.
         /// </summary>
         protected bool UseLocalSpace { get { return _useLocalSpace; } }
         /// <summary>
@@ -168,7 +179,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// How often to synchronize this transform.
         /// </summary>
         [Tooltip("How often to synchronize this transform.")]
-        [Range(0.01f, 0.5f)]
+        [Range(0.00f, 0.5f)]
         [SerializeField]
         private float _synchronizeInterval = 0.1f;
         /// <summary>
@@ -232,13 +243,13 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         [Tooltip("Euler axes on the rotation to snap into place rather than move towards over time.")]
         [SerializeField]
-        [BitMask(typeof(Axes))]
-        private Axes _snapPosition = (Axes)0;
+        [BitMask(typeof(SnappingAxes))]
+        private SnappingAxes _snapPosition = (SnappingAxes)0;
         /// <summary>
         /// Sets SnapPosition value. For internal use only. Must be public for editor script.
         /// </summary>
         /// <param name="value"></param>
-        public void SetSnapPosition(Axes value) { _snapPosition = value; }
+        public void SetSnapPosition(SnappingAxes value) { _snapPosition = value; }
         /// <summary>
         /// Synchronize states for rotation.
         /// </summary>
@@ -250,13 +261,13 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         [Tooltip("Euler axes on the rotation to snap into place rather than move towards over time.")]
         [SerializeField]
-        [BitMask(typeof(Axes))]
-        private Axes _snapRotation = (Axes)0;
+        [BitMask(typeof(SnappingAxes))]
+        private SnappingAxes _snapRotation = (SnappingAxes)0;
         /// <summary>
         /// Sets SnapRotation value. For internal use only. Must be public for editor script.
         /// </summary>
         /// <param name="value"></param>
-        public void SetSnapRotation(Axes value) { _snapRotation = value; }
+        public void SetSnapRotation(SnappingAxes value) { _snapRotation = value; }
         /// <summary>
         /// Synchronize states for scale.
         /// </summary>
@@ -268,24 +279,24 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         [Tooltip("Euler axes on the scale to snap into place rather than move towards over time.")]
         [SerializeField]
-        [BitMask(typeof(Axes))]
-        private Axes _snapScale = (Axes)0;
+        [BitMask(typeof(SnappingAxes))]
+        private SnappingAxes _snapScale = (SnappingAxes)0;
         /// <summary>
         /// Sets SnapScale value. For internal use only. Must be public for editor script.
         /// </summary>
         /// <param name="value"></param>
-        public void SetSnapScale(Axes value) { _snapScale = value; }
+        public void SetSnapScale(SnappingAxes value) { _snapScale = value; }
         #endregion
 
         #region Private.
         /// <summary>
         /// Last SyncData sent by client.
         /// </summary>
-        private TransformSyncData _clientSyncData = null;
+        private TransformSyncData _clientSyncData;
         /// <summary>
         /// Last SyncData sent by server.
         /// </summary>
-        private TransformSyncData _serverSyncData = null;
+        private TransformSyncData _serverSyncData;
         /// <summary>
         /// TargetSyncData to move between.
         /// </summary>
@@ -319,6 +330,15 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         private NetworkVisibility _networkVisibility = null;
         /// <summary>
+        /// FlexNetworkTransformManager reference.
+        /// </summary>
+        private FlexNetworkTransformManager _manager;
+        /// <summary>
+        /// Sets the FlexNetworkTransformManager reference.
+        /// </summary>
+        /// <param name="manager"></param>
+        public void SetManagerInternal(FlexNetworkTransformManager manager) { _manager = manager; }
+        /// <summary>
         /// Last authoritative client for this object.
         /// </summary>
         private NetworkConnection _lastAuthoritativeClient = null;
@@ -327,7 +347,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         private byte? _cachedComponentIndex = null;
         /// <summary>
-        /// Cached ComponentIndex for the NetworkBehaviour. This is because Mirror codes bad.
+        /// Cached ComponentIndex for the NetworkBehaviour this FNT is on. This is because Mirror codes bad.
         /// </summary>
         public byte CachedComponentIndex
         {
@@ -335,13 +355,17 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             {
                 if (_cachedComponentIndex == null)
                 {
+                    //Exceeds value.
                     if (base.ComponentIndex > 255)
                     {
                         Debug.LogError("ComponentIndex is larger than supported type.");
-                        return 0;
+                        _cachedComponentIndex = 0;
                     }
-
-                    _cachedComponentIndex = (byte)Mathf.Abs(base.ComponentIndex);
+                    //Doesn't exceed value.
+                    else
+                    {
+                        _cachedComponentIndex = (byte)Mathf.Abs(base.ComponentIndex);
+                    }
                 }
 
                 return _cachedComponentIndex.Value;
@@ -349,34 +373,25 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         }
         #endregion
 
-        #region Const.
-        /// <summary>
-        /// Value to use when comparing positions without precise synchronization.
-        /// </summary>
-        private const float NEAR_POSITION_TOLERANCE = 0.1f;
-        /// <summary>
-        /// Value to use when comparing rotations without precise synchronization.
-        /// </summary>
-        private const float NEAR_ROTATION_TOLERANCE = 1f;
-        #endregion
-
         #region Initializers and Ticks
         protected virtual void Awake()
         {
             SetTeleportThresholdSquared();
-#if MIRRORNG
+#if MIRRORNG || MirrorNg
+            base.NetIdentity.OnStartServer.AddListener(StartServer);
             base.NetIdentity.OnStartClient.AddListener(StartClient);
             base.NetIdentity.OnStartAuthority.AddListener(StartAuthority);
-            base.NetIdentity.OnStartAuthority.AddListener(StopAuthority);
+            base.NetIdentity.OnStopAuthority.AddListener(StopAuthority);
 #endif
         }
         protected virtual void OnDestroy()
         {
-            if (Platform.Target != null)
-                Destroy(Platform.Target.gameObject);
-#if MIRRORNG
+            if (Attached.Target != null)
+                Destroy(Attached.Target.gameObject);
+#if MIRRORNG || MirrorNg
+            base.NetIdentity.OnStopServer.RemoveListener(StartServer);
             base.NetIdentity.OnStartClient.RemoveListener(StartClient);
-            base.NetIdentity.OnStopAuthority.RemoveListener(StartAuthority);
+            base.NetIdentity.OnStartAuthority.RemoveListener(StartAuthority);
             base.NetIdentity.OnStopAuthority.RemoveListener(StopAuthority);
 #endif            
         }
@@ -390,25 +405,19 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             FlexNetworkTransformManager.RemoveFromActive(this);
         }
 
-        public override void OnStartServer()
-        {
-            base.OnStartServer();
-            _networkVisibility = transform.root.GetComponent<NetworkVisibility>();
-        }
-
         public override bool OnSerialize(NetworkWriter writer, bool initialState)
         {
             if (initialState)
             {
-                bool platformValid = PlatformValid();
-                //Write platform id regardless.
-                uint platformNetId = (platformValid) ? Platform.Identity.netId : 0;
-                writer.WriteUInt32(platformNetId);
-                //If valid also write platform target offsets.
-                if (platformValid)
+                bool attachedValid = AttachedValid();
+                writer.WriteBoolean(attachedValid);
+                /* Set flags. */
+                if (attachedValid)
                 {
-                    writer.WriteVector3(Platform.Target.localPosition);
-                    writer.WriteQuaternion(Platform.Target.localRotation);
+                    Serialization.WriteAttached(writer, CreateAttachedData().Value);
+                    //Last Pos/rot for attached target.
+                    writer.WriteVector3(Attached.Target.localPosition);
+                    writer.WriteQuaternion(Attached.Target.localRotation);
                 }
             }
 
@@ -419,51 +428,56 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         {
             if (initialState)
             {
-                /* Get current platform. */
-                uint platformNetId = reader.ReadUInt32();
-                UpdatePlatform(platformNetId);
-
-                /* If a netId was specified regardless of if platform
-                 * is found or not we must read the pos/rot of platform
-                 * to maintain serialization order. */
-                if (platformNetId != 0)
+                bool attachedValid = reader.ReadBoolean();
+                //If attached.
+                if (attachedValid)
                 {
-                    Platform.Target.localPosition = reader.ReadVector3();
-                    Platform.Target.localRotation = reader.ReadQuaternion();
-
-                    if (PlatformValid())
+                    int unused = 0;
+                    AttachedData ad = Serialization.ReadAttached(ref unused, reader);
+                    UpdateAttached(ad);
+                    //Attached pos/Rot.
+                    Vector3 pos = reader.ReadVector3();
+                    Quaternion rot = reader.ReadQuaternion();
+                    Attached.Target.localPosition = pos;
+                    Attached.Target.localRotation = rot;
+                    /* If not authoritative client with client auth, and attached
+                     * exist then make a new target data based on transforms offsets
+                     * to attached with instant move rates. This is so the transform 
+                     * sticks to the attached until new data comes in. */
+                    if (!this.ReturnHasAuthority())
                     {
-                        /* If not authoritative client with client auth, and platform
-                         * exist then make a new target data based on transforms offsets
-                         * to platform with instant move rates. This is so the transform 
-                         * sticks to the platform until new data comes in. */
-                        if (!base.hasAuthority)
-                        {
-                            Vector3 positionOffset = Platform.Target.localPosition;
-                            Quaternion rotationOffset = Platform.Target.localRotation;
-                            //Generate configured sync properties with platform.
-                            SyncProperties sp = ReturnConfiguredSynchronizedProperties();
-                            sp |= SyncProperties.Platform;
-
-                            //If TargetData exist then re-use goal data from it to save on GC. Otherwise make a new goal data.
-                            TransformSyncData goalData = (_targetData == null) ? new TransformSyncData() : _targetData.GoalData;
-                            //Update goalData values.
-                            SetTransformSyncData(
-                                ref goalData, sp,
-                                positionOffset, rotationOffset, TargetTransform.GetScale(),
-                                Platform.Identity.netId
-                                );
-                            //Update target data.
-                            SetTargetSyncData(ref _targetData, goalData, SetInstantMoveRates(), null);
-                            /* Force a move towards target. This is because server data can come often come in before
-                             * Update runs, resulting in a new target data with improper move rates. */
-                            MoveTowardsTargetSyncData();
-                        }
+                        //If TargetData exist then re-use goal data from it to save on GC. Otherwise make a new goal data.
+                        TransformSyncData goalData = (_targetData == null) ? new TransformSyncData() : _targetData.GoalData;
+                        //Update goalData values. This is the last received sync data.
+                        SetTransformSyncData(
+                            ref goalData, (SyncProperties)goalData.SyncProperties,
+                            pos, rot, TargetTransform.GetScale(),
+                            CreateAttachedData()
+                            );
+                        //Update target data to move towards.
+                        SetTargetSyncData(ref _targetData, goalData, SetInstantMoveRates(), null);
+                        /* Force a move towards target. This is because server data can come often come in before
+                         * Update runs, resulting in a new target data with improper move rates. */
+                        MoveTowardsTargetSyncData();
                     }
                 }
             }
 
             base.OnDeserialize(reader, initialState);
+        }
+
+
+#if MIRROR
+        public override void OnStartServer()
+        {
+            base.OnStartServer();
+            StartServer();
+        }
+
+#endif
+        private void StartServer()
+        {
+            _networkVisibility = transform.root.GetComponent<NetworkVisibility>();
         }
 
 #if MIRROR
@@ -509,11 +523,8 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
 
         public void ManualUpdate(bool fixedUpdate)
         {
-            if (!fixedUpdate)
-            {
-                CheckResetSequenceIds();
-            }
-            SnapToPlatform();
+            CheckResetSequenceIds();
+            SnapToAttached();
             CheckSendToServer(fixedUpdate);
             CheckSendToClients(fixedUpdate);
             MoveTowardsTargetSyncData();
@@ -542,7 +553,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
              * If not server, since server is boss and shouldn't be blocked.
              * If client does not have authority or 
              * have authority but not client authoritative. */
-            if (_targetData == null && !NetworkIsServer() && (!NetworkHasAuthority() || (NetworkHasAuthority() && !_clientAuthoritative)))
+            if (_targetData == null && !this.ReturnIsServer() && (!this.ReturnHasAuthority() || (this.ReturnHasAuthority() && !_clientAuthoritative)))
                 CreateTransformTargetData();
         }
 
@@ -551,11 +562,11 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         protected void CreateTransformTargetData()
         {
-            TransformSyncData tsd = null;
+            TransformSyncData tsd = new TransformSyncData();
             SetTransformSyncData(
                 ref tsd, 0,
                 TargetTransform.GetPosition(UseLocalSpace), TargetTransform.GetRotation(UseLocalSpace), TargetTransform.GetScale(),
-                0
+                null
                 );
 
             //Create new target data without extrpaolation.
@@ -572,9 +583,6 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             //Timed interval.
             if (_intervalType == IntervalTypes.Timed)
             {
-                if (fixedUpdate)
-                    return;
-
                 if (Time.time < _nextClientSendTime)
                     return;
             }
@@ -589,21 +597,22 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             if (!_clientAuthoritative)
                 return;
             //Only send to server if client.
-            if (!NetworkIsClient())
+            if (!this.ReturnIsClient())
                 return;
             //Not authoritative client.
-            if (!NetworkHasAuthority())
+            if (!this.ReturnHasAuthority())
                 return;
 
-            bool platformValid = PlatformValid();
-            //Update platform target position to transform.
-            if (platformValid)
+            bool attachedValid = AttachedValid();
+            //If owner of target then move target to this transforms position.
+            if (attachedValid && IsAttachedOwner())
             {
-                Platform.Target.position = transform.position;
-                Platform.Target.rotation = transform.rotation;
+
+                Attached.Target.SetPosition(false, TargetTransform.GetPosition(false));
+                Attached.Target.SetRotation(false, TargetTransform.GetRotation(false));
             }
 
-            SyncProperties sp = ReturnDifferentTransformProperties(_clientSyncData, platformValid);
+            SyncProperties sp = ReturnDifferentTransformProperties(ref _clientSyncData, attachedValid);
 
             bool useReliable = _reliable;
             if (!CanSendProperties(ref sp, ref _clientSettleSent, ref useReliable))
@@ -614,32 +623,30 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             *
             * No reason to favor performance for a single client
             * as the performance differences will only be noticeable
-            * from server to client, since it will be potentially
+            * from fent, since it will be potentially
             * updating a lot of clients vs one client updating server. */
             _nextClientSendTime = Time.time + _synchronizeInterval;
             //Add additional sync properties.
-            ApplyRequiredSyncProperties(ref sp, false, platformValid);
+            ApplyRequiredSyncProperties(ref sp, false, attachedValid);
 
-            PlatformSpaces platformSpace = (platformValid) ? PlatformSpaces.Local : PlatformSpaces.Disabled;
-            uint platformNetId = GetPlatformNetworkId(platformValid);
-            Vector3 position = GetTransformPosition(platformSpace);
-            Quaternion rotation = GetTransformRotation(platformSpace);
+            AttachedSpaces attachedSpace = (attachedValid) ? AttachedSpaces.Local : AttachedSpaces.Disabled;
+            Vector3 position = GetTransformPosition(attachedSpace);
+            Quaternion rotation = GetTransformRotation(attachedSpace);
             Vector3 scale = TargetTransform.GetScale();
             SetUseCompression(ref sp, ref position, ref scale);
             SetTransformSyncData(
                 ref _clientSyncData, sp,
                 position, rotation, scale,
-                platformNetId
+                CreateAttachedData()
                 );
 
             //send to clients.
             if (useReliable)
-                FlexNetworkTransformManager.SendToServer(_clientSyncData, true);
-            //CmdSendSyncDataReliable(_clientSyncData);
+                FlexNetworkTransformManager.SendToServer(ref _clientSyncData, true);
             else
-                FlexNetworkTransformManager.SendToServer(_clientSyncData, false);
-            //CmdSendSyncDataUnreliable(_clientSyncData);
+                FlexNetworkTransformManager.SendToServer(ref _clientSyncData, false);
         }
+
 
         /// <summary>
         /// Checks if server needs to send data to clients.
@@ -649,8 +656,6 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             //Timed interval.
             if (_intervalType == IntervalTypes.Timed)
             {
-                if (fixedUpdate)
-                    return;
                 if (Time.time < _nextServerSendTime)
                     return;
             }
@@ -662,10 +667,19 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             }
 
             //Only send to clients if server.
-            if (!NetworkIsServer())
+            if (!this.ReturnIsServer())
                 return;
 
-            bool platformValid = PlatformValid();
+            bool attachedValid = AttachedValid();
+            //If owner of target then move target to this transforms position.
+            if (attachedValid && IsAttachedOwner())
+            {
+
+                Attached.Target.SetPosition(false, TargetTransform.GetPosition(false));
+                Attached.Target.SetRotation(false, TargetTransform.GetRotation(false));
+            }
+
+
             /* TargetData is generated when there is a goal to move towards.
              * While null it's safe to assume the transform was snapped or is being controlled
              * as a client host, so data is up to date. So with that in mind,
@@ -675,12 +689,12 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             /* If at goal then compare transform values
              * against the last sent values, _serverSyncData. */
             if (transformAtGoal)
-                sp = ReturnDifferentTransformProperties(_serverSyncData, platformValid);
+                sp = ReturnDifferentTransformProperties(ref _serverSyncData, attachedValid);
             /* If not at goal then compare the last received
              * values, _targetData, against the last sent
              * values, _serverSyncData. */
             else
-                sp = ReturnDifferentTargetDataProperties(_serverSyncData, _targetData);
+                sp = ReturnDifferentTargetDataProperties(ref _serverSyncData, _targetData);
 
             bool useReliable = _reliable;
             if (!CanSendProperties(ref sp, ref _serverSettleSent, ref useReliable))
@@ -696,7 +710,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             }
 
             //Add additional sync properties.
-            ApplyRequiredSyncProperties(ref sp, false, platformValid);
+            ApplyRequiredSyncProperties(ref sp, false, attachedValid);
 
             /* If not using server sync data then we are using
              * targetdata. This is when running as a client host, and
@@ -710,7 +724,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                 SetTransformSyncData(
                     ref _serverSyncData, sp,
                     _targetData.GoalData.Position, _targetData.GoalData.Rotation, _targetData.GoalData.Scale,
-                   _targetData.GoalData.PlatformNetId
+                   _targetData.GoalData.Attached
                    );
             }
             /* If using server data then transform was snapped into position
@@ -718,29 +732,43 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
              * So there is no need to read from targetdata. */
             else
             {
-                PlatformSpaces platformSpace = (platformValid) ? PlatformSpaces.Local : PlatformSpaces.Disabled;
-                uint platformNetId = GetPlatformNetworkId(platformValid);
-                Vector3 position = GetTransformPosition(platformSpace);
-                Quaternion rotation = GetTransformRotation(platformSpace);
+                AttachedSpaces attachedSpace = (attachedValid) ? AttachedSpaces.Local : AttachedSpaces.Disabled;
+                Vector3 position = GetTransformPosition(attachedSpace);
+                Quaternion rotation = GetTransformRotation(attachedSpace);
                 Vector3 scale = TargetTransform.GetScale();
                 SetUseCompression(ref sp, ref position, ref scale);
                 SetTransformSyncData(
                     ref _serverSyncData, sp,
                     position, rotation, scale,
-                    platformNetId
+                    CreateAttachedData()
                     );
             }
 
-
             if (_networkVisibility == null)
             {
-                FlexNetworkTransformManager.SendToAll(_serverSyncData, useReliable);
+                FlexNetworkTransformManager.SendToAll(ref _serverSyncData, useReliable);
             }
             else
             {
-                foreach (KeyValuePair<int, NetworkConnection> item in _networkVisibility.netIdentity.observers)
-                    FlexNetworkTransformManager.SendToObserver(item.Value, _serverSyncData, useReliable);
+#if MIRROR
+                foreach (NetworkConnection item in _networkVisibility.netIdentity.observers.Values)
+#elif MIRRORNG
+                foreach (INetworkConnection item in _networkVisibility.NetIdentity.observers)
+#endif
+                    FlexNetworkTransformManager.SendToObserver(item, ref _serverSyncData, useReliable);
             }
+        }
+
+        /// <summary>
+        /// Creates attached data using current Attached.
+        /// </summary>
+        /// <returns></returns>
+        private AttachedData? CreateAttachedData()
+        {
+            if (Attached.Identity == null)
+                return null;
+            else
+                return new AttachedData() { NetId = Attached.Identity.ReturnNetworkId(), ComponentIndex = Attached.ComponentIndex };
         }
         #endregion
 
@@ -749,106 +777,172 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         private void CheckResetSequenceIds()
         {
-#if MIRROR
-            if (base.connectionToClient == _lastAuthoritativeClient)
+            
+
+            if (this.ReturnOwner() == _lastAuthoritativeClient)
                 return;
-            _lastAuthoritativeClient = base.connectionToClient;
-#elif MIRRONG
-            if (base.ConnectionToClient == _lastAuthoritativeClient)
-                return;
-            _lastAuthoritativeClient = base.ConnectionToClient;
-#endif
+            _lastAuthoritativeClient = this.ReturnOwner();
 
             LastClientSequenceId = 0;
         }
 
         /// <summary>
-        /// Updates the platform cache and returns true if platform exist.
+        /// Updates the attached cache and returns true if attached exist.
         /// </summary>
-        private bool UpdatePlatform(uint netId)
+        private bool UpdateAttached(AttachedData? attached)
         {
-            NetworkIdentity currentPlatformIdentity = Platform.Identity;
-            //If net id is 0 then platform cannot be looked up.
+            if (attached == null)
+                return UpdateAttached(0, -1);
+            else
+                return UpdateAttached(attached.Value.NetId, attached.Value.ComponentIndex);
+        }
+        public static byte ATC = 0;
+        /// <summary>
+        /// Updates the attached cache and returns true if attached exist.
+        /// </summary>
+        private bool UpdateAttached(uint netId, sbyte componentIndex)
+        {
+            NetworkIdentity currentAttachedIdentity = Attached.Identity;
+            //If net id is 0 then attached cannot be looked up.
             if (netId == 0)
             {
-                Platform.Identity = null;
-                if (Platform.Target != null)
-                    Destroy(Platform.Target.gameObject);
+                Attached.Identity = null;
+                if (Attached.Target != null)
+                    Destroy(Attached.Target.gameObject);
             }
             else
             {
                 /* True if the update should be blocked. This is to save performance.
                  * 
-                 * True if current platform exist, and it's netId matches passed in Id. */
-                bool blockUpdate = (Platform.Target != null && currentPlatformIdentity != null && currentPlatformIdentity.netId == netId);
+                 * True if current attached exist, and it's netId matches passed in Id. */
+                bool blockUpdate = (Attached.Target != null && Attached.ComponentIndex == componentIndex && currentAttachedIdentity != null && currentAttachedIdentity.ReturnNetworkId() == netId);
                 if (!blockUpdate)
                 {
-                    //Create Platform target if not present.
-                    if (Platform.Target == null)
+                    //Create Attached target if not present.
+                    if (Attached.Target == null)
                     {
-                        Platform.Target = new GameObject().transform;
-                        Platform.Target.name = (base.hasAuthority) ? "ClientToServer Target" : "ServerToClient Target";
+                        Attached.Target = new GameObject().transform;
+                        NameAttachedTarget(Attached.Target);
                     }
 
-                    Platform.Identity = NetworkIdentity.spawned[netId];
-                    //Child target to new platform.
-                    if (PlatformValid())
+                    if (Platforms.ReturnSpawned(_manager.CurrentNetworkManager).TryGetValue(netId, out NetworkIdentity ni))
                     {
-                        Platform.Target.SetParent(Platform.Identity.transform);
-                        /* Set platform to transform position so that it doesn't interfer
+                        Attached.Identity = ni;
+                        Attached.ComponentIndex = componentIndex;
+                    }
+                    else
+                    {
+                        Attached.Identity = null;
+                        Attached.ComponentIndex = -1;
+                    }
+
+                    //Child target to new attached object.
+                    Transform attachTarget = null;
+                    if (AttachedValid())
+                    {
+                        //If using a component to attach to.
+                        if (Attached.ComponentIndex >= 0)
+                        {
+                            if (Attached.Identity.GetComponent<FlexAttachTargets>() is FlexAttachTargets foa)
+                            {
+                                GameObject go = foa.ReturnTarget(Attached.ComponentIndex);
+                                if (go != null)
+                                    attachTarget = go.transform;
+                            }
+                            //Object attacher not found.
+                            else
+                            {
+                                Debug.LogWarning("FlexObjectAttacher is not found on identity " + Attached.Identity.gameObject + ".");
+                            }
+                        }
+                        //Attaching to root.
+                        else
+                        {
+                            attachTarget = Attached.Identity.transform;
+                        }
+
+                        Attached.Target.SetParent(attachTarget);
+                        /* Set attached to transform position so that it doesn't interfer
                          * with smoothing between space change. */
-                        Platform.Target.position = TargetTransform.GetPosition(false);
-                        Platform.Target.rotation = TargetTransform.GetRotation(false);
+                        Attached.Target.position = TargetTransform.GetPosition(false);
+                        Attached.Target.rotation = TargetTransform.GetRotation(false);
                     }
                 }
             }
 
-            return PlatformValid();
+            return AttachedValid();
         }
+
         /// <summary>
-        /// Returns if a platform is valid.
+        /// Names the AttachedTarget object relevant to it's purpose. EG: if for local player, or spectator. Only needed for debugging.
+        /// </summary>
+        /// <param name="go"></param>
+        private void NameAttachedTarget(Transform t)
+        {
+#if UNITY_EDITOR
+            t.name = IsAttachedOwner() ?
+                "OwnerTarget " + gameObject.name :
+                "SpectatorTarget " + gameObject.name;
+#endif
+        }
+
+        /// <summary>
+        /// Returns true if owner to attached.
         /// </summary>
         /// <returns></returns>
-        private bool PlatformValid()
+        private bool IsAttachedOwner()
         {
-            return (Platform.Identity != null && Platform.Identity.netId != 0);
-        }
-
-        /// <summary>
-        /// Sets which platform netId to use.
-        /// </summary>
-        /// <param name="platformNetId"></param>
-        private uint GetPlatformNetworkId(bool platformValid)
-        {
-            //Platform exist.
-            if (platformValid)
-                return Platform.Identity.netId;
+            /* Can be attached owner under the following conditions:
+             * IsServer, ClientAuthoritative and no owner.
+             * IsClient, ClientAuthoritative and is owner. */
+            if (_clientAuthoritative)
+            {
+                //Server with no owner.
+                if (this.ReturnIsServer() && !this.ReturnHasOwner())
+                    return true;
+                //Client and is owner.
+                if (this.ReturnIsClient())
+                    return this.ReturnHasAuthority();
+            }
             else
-                return 0;
+            {
+                return this.ReturnIsServer();
+            }
+
+            //Fall through.
+            return false;
+        }
+        /// <summary>
+        /// Returns if Attached is valid.
+        /// </summary>
+        /// <returns></returns>
+        private bool AttachedValid()
+        {
+            return (Attached.Identity != null && Attached.Identity.ReturnNetworkId() != 0);
         }
 
         /// <summary>
-        /// Gets the position of the platform if one is used, otherwise uses transform values.
+        /// Gets the position of the attached if one is used, otherwise uses transform values.
         /// </summary>
-        private Vector3 GetTransformPosition(PlatformSpaces platformSpace)
+        private Vector3 GetTransformPosition(AttachedSpaces attachedSpace)
         {
-            //Platform exist.
-            if (platformSpace != PlatformSpaces.Disabled)
-                return (platformSpace == PlatformSpaces.Local) ? Platform.Target.localPosition : Platform.Target.position;
-            //No platform.
+            //Attached exist.
+            if (attachedSpace != AttachedSpaces.Disabled)
+                return (attachedSpace == AttachedSpaces.Local) ? Attached.Target.localPosition : Attached.Target.position;
+            //No attached.
             else
                 return TargetTransform.GetPosition(UseLocalSpace);
         }
 
         /// <summary>
-        /// Gets the rotation of the platform if one is used, otherwise uses transform values.
+        /// Gets the rotation of the attached if one is used, otherwise uses transform values.
         /// </summary>
-        private Quaternion GetTransformRotation(PlatformSpaces platformSpace)
+        private Quaternion GetTransformRotation(AttachedSpaces attachedSpace)
         {
-            //Platform exist.
-            if (platformSpace != PlatformSpaces.Disabled)
-                return (platformSpace == PlatformSpaces.Local) ? Platform.Target.localRotation : Platform.Target.rotation;
-            //No platform.
+            //Attached exist.
+            if (attachedSpace != AttachedSpaces.Disabled)
+                return (attachedSpace == AttachedSpaces.Local) ? Attached.Target.localRotation : Attached.Target.rotation;
+            //No attached.
             else
                 return TargetTransform.GetRotation(UseLocalSpace);
         }
@@ -865,8 +959,8 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                 return;
 
             //If position or scale can compress then add compress small.
-            if (EnumContains.SyncPropertiesContains(sp, SyncProperties.Position) && FlexNetworkTransformSerializers.CanCompressVector3(ref pos) ||
-                EnumContains.SyncPropertiesContains(sp, SyncProperties.Scale) && FlexNetworkTransformSerializers.CanCompressVector3(ref scale)
+            if (EnumContains.SyncPropertiesContains(sp, SyncProperties.Position) && Serialization.CanCompressVector3(ref pos) ||
+                EnumContains.SyncPropertiesContains(sp, SyncProperties.Scale) && Serialization.CanCompressVector3(ref scale)
                 )
                 sp |= SyncProperties.CompressSmall;
         }
@@ -874,12 +968,13 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// Applies SyncProperties which are required based on settings.
         /// </summary>
         /// <param name="sp"></param>
-        private void ApplyRequiredSyncProperties(ref SyncProperties sp, bool forceAll, bool platformValid)
+        private void ApplyRequiredSyncProperties(ref SyncProperties sp, bool forceAll, bool attachedValid)
         {
-            /* //FEATURE Always send platform if platform is valid.
-             * In the future I'd like to only send if changed. */
-            if (forceAll || platformValid)
-                sp |= SyncProperties.Platform;
+            /* //FEATURE Attached is always sent when it exist.
+             * In the future I'd like to only send if changed but this
+             * won't be possible for UDP. */
+            if (forceAll || attachedValid)
+                sp |= SyncProperties.Attached;
 
             //If to force all.
             if (forceAll)
@@ -957,7 +1052,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                     {
                         float idleRequirement;
                         //If no owner then allow to be idle for a quarter of the interpolation before sending a packet.
-                        if (!NetworkHasOwner())
+                        if (!this.ReturnHasOwner())
                             idleRequirement = _interpolationFallbehind * 0.25f;
                         else
                             //If has an owner allow to be idle for half of the interpolation.
@@ -995,36 +1090,36 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// Returns which properties need to be sent to maintain synchronization with the transforms current properties.
         /// </summary>
         /// <returns></returns>
-        private SyncProperties ReturnDifferentTransformProperties(TransformSyncData data, bool platformValid)
+        private SyncProperties ReturnDifferentTransformProperties(ref TransformSyncData data, bool attachedValid)
         {
             SyncProperties sp = SyncProperties.None;
 
             //Data is null, so it's definitely not a match.
-            if (data == null)
+            if (!data.Set)
             {
-                ApplyRequiredSyncProperties(ref sp, true, platformValid);
+                ApplyRequiredSyncProperties(ref sp, true, attachedValid);
                 return sp;
             }
 
             //Position.
             if (_synchronizePosition == SynchronizeTypes.Normal)
             {
-                bool positionMatches = (platformValid) ? PlatformPositionMatches(data) : TransformPositionMatches(data);
+                bool positionMatches = (attachedValid) ? AttachedPositionMatches(ref data) : TransformPositionMatches(ref data);
                 if (!positionMatches)
                     sp |= SyncProperties.Position;
             }
             //Rotation.
             if (_synchronizeRotation == SynchronizeTypes.Normal)
             {
-                bool rotationMatches = (platformValid) ? PlatformRotationMatches(data) : TransformRotationMatches(data);
+                bool rotationMatches = (attachedValid) ? AttachedRotationMatches(ref data) : TransformRotationMatches(ref data);
                 if (!rotationMatches)
                     sp |= SyncProperties.Rotation;
             }
             //Scale.
             if (_synchronizeScale == SynchronizeTypes.Normal)
             {
-                //Platforms don't support scale, so if platform is valid then scale always matches.
-                bool scaleMatches = (platformValid) ? true : TransformScaleMatches(data);
+                //Attached don't support scale, so if attached is valid then scale always matches.
+                bool scaleMatches = (attachedValid) ? true : TransformScaleMatches(ref data);
                 if (!scaleMatches)
                     sp |= SyncProperties.Scale;
             }
@@ -1036,29 +1131,29 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         /// <param name="targetData">When specified data is compared against targetData. Otherwise, data is compared against the transform.</param>
         /// <returns></returns>
-        private SyncProperties ReturnDifferentTargetDataProperties(TransformSyncData data, TargetSyncData targetData)
+        private SyncProperties ReturnDifferentTargetDataProperties(ref TransformSyncData data, TargetSyncData targetData)
         {
             //Cannot compare if either data is null.
-            if (data == null || targetData == null)
-                return (SyncProperties.Position | SyncProperties.Rotation | SyncProperties.Scale | SyncProperties.Platform);
+            if (!data.Set || targetData == null)
+                return (SyncProperties.Position | SyncProperties.Rotation | SyncProperties.Scale | SyncProperties.Attached);
 
             SyncProperties sp = SyncProperties.None;
             //Position.
             if (_synchronizePosition == SynchronizeTypes.Normal)
             {
-                if (!TargetDataPositionMatches(data, targetData))
+                if (!TargetDataPositionMatches(ref data, targetData))
                     sp |= SyncProperties.Position;
             }
             //Rotation.
             if (_synchronizeRotation == SynchronizeTypes.Normal)
             {
-                if (!TargetDataRotationMatches(data, targetData))
+                if (!TargetDataRotationMatches(ref data, targetData))
                     sp |= SyncProperties.Rotation;
             }
             //Scale.
             if (_synchronizeScale == SynchronizeTypes.Normal)
             {
-                if (!TargetDataScaleMatches(data, targetData))
+                if (!TargetDataScaleMatches(ref data, targetData))
                     sp |= SyncProperties.Scale;
             }
 
@@ -1066,24 +1161,28 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         }
 
         /// <summary>
-        /// Snaps transform to Platform Target.
+        /// Snaps transform to attached Target if not attached owner.
         /// </summary>
-        private void SnapToPlatform()
+        private void SnapToAttached()
         {
-            /* Only used to keep transform on the server when
-             * as server only. This ensures proper position updates
-             * will be sent to clients as needed, and that the object
-             * will not slide around on the server. */
-            if (!base.isServerOnly)
+            ///* Only used to keep transform on the server when
+            // * as server only. This ensures proper position updates
+            // * will be sent to clients as needed, and that the object
+            // * will not slide around on the server. */
+            //if (!NetworkIsServerOnly())
+            //    return;
+            //if (!AttachedValid()) //todo recomment
+            //    return;
+            if (!AttachedValid())
                 return;
-            if (!PlatformValid())
+            if (IsAttachedOwner())
                 return;
 
             if (_synchronizePosition != SynchronizeTypes.NoSynchronization)
-                TargetTransform.SetPosition(false, Platform.Target.position);
+                TargetTransform.SetPosition(false, Attached.Target.position);
             if (_synchronizeRotation != SynchronizeTypes.NoSynchronization)
-                TargetTransform.SetRotation(false, Platform.Target.rotation);
-            //Platform support doesn't require scale syncing.
+                TargetTransform.SetRotation(false, Attached.Target.rotation);
+            //Attached support doesn't require scale syncing.
         }
 
 
@@ -1098,7 +1197,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             /* Client authority but there is no owner.
              * Can happen when client authority is ticked but
             * the server takes away authority. */
-            if (NetworkIsServer() && _clientAuthoritative && !NetworkHasOwner() && _targetData != null)
+            if (this.ReturnIsServer() && _clientAuthoritative && !this.ReturnHasOwner() && _targetData != null)
             {
                 /* Remove sync data so server no longer tries to sync up to last data received from client.
                  * Object may be moved around on server at this point. */
@@ -1106,39 +1205,39 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                 return;
             }
             //Client authority, don't need to synchronize with self.
-            if (NetworkHasAuthority() && _clientAuthoritative)
+            if (this.ReturnHasAuthority() && _clientAuthoritative)
                 return;
             //Not client authority but also not synchronize to owner.
-            if (NetworkHasAuthority() && !_clientAuthoritative && !_synchronizeToOwner)
+            if (this.ReturnHasAuthority() && !_clientAuthoritative && !_synchronizeToOwner)
                 return;
 
-            bool platformValid = PlatformValid();
+            bool attachedValid = AttachedValid();
             bool extrapolate = (_targetData.Extrapolation != null && _targetData.Extrapolation.Remaining > 0f);
 
-            /* Move platform target towards goal. */
-            if (platformValid)
-                TryMovePlatformTarget();
+            /* Move attached target towards goal. */
+            if (attachedValid)
+                TryMoveAttachedTarget();
 
             /* Check if transform is at goal.
              * If Transform is at goal and there
              * is no extrapolation left then exit method. */
-            if (TransformAtSyncData(_targetData.GoalData, platformValid) && !extrapolate)
+            if (TransformAtSyncData(ref _targetData.GoalData, attachedValid) && !extrapolate)
                 return;
             /* Only move using localspace if configured to local space
-             * and if not using a platform. Platform offsets arrive in local space
-             * but the transform must move in world space to the platform
+             * and if not using a attached. Attached offsets arrive in local space
+             * but the transform must move in world space to the attached
              * target. */
-            bool useLocalSpace = (UseLocalSpace && !platformValid);
+            bool useLocalSpace = (UseLocalSpace && !attachedValid);
 
             //Position
             if (_synchronizePosition != SynchronizeTypes.NoSynchronization)
             {
-                Vector3 positionGoal = (platformValid) ? Platform.Target.position : _targetData.GoalData.Position;
+                Vector3 positionGoal = (attachedValid) ? Attached.Target.position : _targetData.GoalData.Position;
 
-                /* If platform is valid then use instant move rates. This
-                 * is because the platform target is already smooth so
+                /* If attached is valid then use instant move rates. This
+                 * is because the attached target is already smooth so
                  * we can snap the transform. */
-                float moveRate = (platformValid) ? -1f : _targetData.MoveRates.Position;
+                float moveRate = (attachedValid) ? -1f : _targetData.MoveRates.Position;
                 //Instantly.
                 if (moveRate == -1f)
                 {
@@ -1159,11 +1258,11 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             //Rotation.
             if (_synchronizeRotation != SynchronizeTypes.NoSynchronization)
             {
-                Quaternion rotationGoal = (platformValid) ? Platform.Target.rotation : _targetData.GoalData.Rotation;
-                /* If platform is valid then use instant move rates. This
-                * is because the platform target is already smooth so
+                Quaternion rotationGoal = (attachedValid) ? Attached.Target.rotation : _targetData.GoalData.Rotation;
+                /* If attached is valid then use instant move rates. This
+                * is because the attached target is already smooth so
                 * we can snap the transform. */
-                float moveRate = (platformValid) ? -1f : _targetData.MoveRates.Rotation;
+                float moveRate = (attachedValid) ? -1f : _targetData.MoveRates.Rotation;
                 //Instantly.
                 if (moveRate == -1f)
                 {
@@ -1201,11 +1300,11 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         }
 
         /// <summary>
-        /// Tries to move the platform target to it's goal position. This method assumes a platform is valid.
+        /// Tries to move the attached target to it's goal position. This method assumes a attached is valid.
         /// </summary>
-        private void TryMovePlatformTarget()
+        private void TryMoveAttachedTarget()
         {
-            //Always use local space when moving the platform.
+            //Always use local space when moving the attached.
             bool useLocalSpace = true;
             //Position
             if (_synchronizePosition != SynchronizeTypes.NoSynchronization)
@@ -1213,14 +1312,14 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                 //Instant.
                 if (_targetData.MoveRates.Position == -1f)
                 {
-                    Platform.Target.SetPosition(useLocalSpace, _targetData.GoalData.Position);
+                    Attached.Target.SetPosition(useLocalSpace, _targetData.GoalData.Position);
                 }
                 //Over time.
                 else
                 {
                     //Move target to goal.
-                    Platform.Target.SetPosition(useLocalSpace,
-                        Vector3.MoveTowards(Platform.Target.GetPosition(useLocalSpace), _targetData.GoalData.Position, _targetData.MoveRates.Position * Time.deltaTime)
+                    Attached.Target.SetPosition(useLocalSpace,
+                        Vector3.MoveTowards(Attached.Target.GetPosition(useLocalSpace), _targetData.GoalData.Position, _targetData.MoveRates.Position * Time.deltaTime)
                         );
                 }
             }
@@ -1230,19 +1329,19 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                 //Instant.
                 if (_targetData.MoveRates.Rotation == -1f)
                 {
-                    Platform.Target.SetRotation(useLocalSpace, _targetData.GoalData.Rotation);
+                    Attached.Target.SetRotation(useLocalSpace, _targetData.GoalData.Rotation);
                 }
                 //Over time.
                 else
                 {
                     //Move target to goal.
-                    Platform.Target.SetRotation(useLocalSpace,
-                        Quaternion.RotateTowards(Platform.Target.GetRotation(useLocalSpace), _targetData.GoalData.Rotation, _targetData.MoveRates.Rotation * Time.deltaTime)
+                    Attached.Target.SetRotation(useLocalSpace,
+                        Quaternion.RotateTowards(Attached.Target.GetRotation(useLocalSpace), _targetData.GoalData.Rotation, _targetData.MoveRates.Rotation * Time.deltaTime)
                         );
                 }
             }
 
-            //Platform target ignores scale.
+            //Attached target ignores scale.
         }
 
         /// <summary>
@@ -1250,9 +1349,9 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         /// <param name="axes"></param>
         /// <returns></returns>
-        private bool SnapAll(Axes axes)
+        private bool SnapAll(SnappingAxes axes)
         {
-            return (axes == (Axes.X | Axes.Y | Axes.Z));
+            return (axes == (SnappingAxes.X | SnappingAxes.Y | SnappingAxes.Z));
         }
 
         /// <summary>
@@ -1260,38 +1359,38 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        private bool TransformAtSyncData(TransformSyncData data, bool platformValid)
+        private bool TransformAtSyncData(ref TransformSyncData data, bool attachedValid)
         {
-            if (data == null)
+            if (!data.Set)
                 return false;
 
-            bool positionMatches = (platformValid) ? TransformPositionMatchesPlatform() : TransformPositionMatches(data);
-            bool rotationMatches = (platformValid) ? TransformRotationMatchesPlatform() : TransformRotationMatches(data);
-            bool scaleMatches = TransformScaleMatches(data);
+            bool positionMatches = (attachedValid) ? TransformPositionMatchesAttached() : TransformPositionMatches(ref data);
+            bool rotationMatches = (attachedValid) ? TransformRotationMatchesAttached() : TransformRotationMatches(ref data);
+            bool scaleMatches = TransformScaleMatches(ref data);
             return (positionMatches && rotationMatches && scaleMatches);
         }
 
         #region Position Matches.
         /// <summary>
-        /// Returns if the transform position matches platform position.
+        /// Returns if the transform position matches attached position.
         /// </summary>
         /// <param name="precise"></param>
         /// <returns></returns>
-        private bool TransformPositionMatchesPlatform()
+        private bool TransformPositionMatchesAttached()
         {
-            return Platform.Target.position == TargetTransform.GetPosition(false);
+            return Attached.Target.position == TargetTransform.GetPosition(false);
         }
         /// <summary>
-        /// Returns if this Platform.Target position matches data.
+        /// Returns if this Attached.Target position matches data.
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        private bool PlatformPositionMatches(TransformSyncData data)
+        private bool AttachedPositionMatches(ref TransformSyncData data)
         {
-            if (data == null)
+            if (!data.Set)
                 return false;
 
-            return Platform.Target.localPosition == data.Position;
+            return Attached.Target.localPosition == data.Position;
         }
 
         /// <summary>
@@ -1299,9 +1398,9 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        private bool TransformPositionMatches(TransformSyncData data)
+        private bool TransformPositionMatches(ref TransformSyncData data)
         {
-            if (data == null)
+            if (!data.Set)
                 return false;
 
             return TargetTransform.GetPosition(UseLocalSpace) == data.Position;
@@ -1311,9 +1410,9 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        private bool TargetDataPositionMatches(TransformSyncData data, TargetSyncData targetData)
+        private bool TargetDataPositionMatches(ref TransformSyncData data, TargetSyncData targetData)
         {
-            if (data == null || targetData == null)
+            if (!data.Set || targetData == null)
                 return false;
 
             return targetData.GoalData.Position == data.Position;
@@ -1322,34 +1421,34 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
 
         #region Rotation Matches.
         /// <summary>
-        /// Returns if this transform rotation matches platform.
+        /// Returns if this transform rotation matches Attached.
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        private bool TransformRotationMatchesPlatform()
+        private bool TransformRotationMatchesAttached()
         {
-            return Platform.Target.rotation == TargetTransform.GetRotation(false);
+            return Attached.Target.rotation == TargetTransform.GetRotation(false);
         }
         /// <summary>
         /// Returns if this transform rotation matches data.
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        private bool PlatformRotationMatches(TransformSyncData data)
+        private bool AttachedRotationMatches(ref TransformSyncData data)
         {
-            if (data == null)
+            if (!data.Set)
                 return false;
 
-            return Platform.Target.localRotation == data.Rotation;
+            return Attached.Target.localRotation == data.Rotation;
         }
         /// <summary>
         /// Returns if this transform rotation matches data.
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        private bool TransformRotationMatches(TransformSyncData data)
+        private bool TransformRotationMatches(ref TransformSyncData data)
         {
-            if (data == null)
+            if (!data.Set)
                 return false;
 
             return TargetTransform.GetRotation(UseLocalSpace) == data.Rotation;
@@ -1359,9 +1458,9 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        private bool TargetDataRotationMatches(TransformSyncData data, TargetSyncData targetData)
+        private bool TargetDataRotationMatches(ref TransformSyncData data, TargetSyncData targetData)
         {
-            if (data == null || targetData == null)
+            if (!data.Set || targetData == null)
                 return false;
 
             return targetData.GoalData.Rotation == data.Rotation;
@@ -1374,9 +1473,9 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        private bool TransformScaleMatches(TransformSyncData data)
+        private bool TransformScaleMatches(ref TransformSyncData data)
         {
-            if (data == null)
+            if (!data.Set)
                 return false;
 
             return TargetTransform.GetScale() == data.Scale;
@@ -1386,66 +1485,12 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        private bool TargetDataScaleMatches(TransformSyncData data, TargetSyncData targetData)
+        private bool TargetDataScaleMatches(ref TransformSyncData data, TargetSyncData targetData)
         {
-            if (data == null || targetData == null)
+            if (!data.Set || targetData == null)
                 return false;
 
             return targetData.GoalData.Scale == data.Scale;
-        }
-        #endregion
-
-        #region Remote Actions.
-        /// <summary>
-        /// Sends SyncData to clients.
-        /// </summary>
-        /// <param name="data"></param>
-#if MIRROR
-        [ClientRpc(channel = 0, excludeOwner = true)]
-#elif MIRRORNG
-        [ClientRpc(channel = 0, excludeOwner = true)]
-#endif
-        private void RpcSendSyncDataReliableExcludeOwner(TransformSyncData data)
-        {
-            ServerDataReceived(data);
-        }
-        /// <summary>
-        /// Sends SyncData to clients.
-        /// </summary>
-        /// <param name="data"></param>
-#if MIRROR
-        [ClientRpc(channel = 0)]
-#elif MIRRORNG
-        [ClientRpc(channel = 0)]
-#endif
-        private void RpcSendSyncDataReliable(TransformSyncData data)
-        {
-            ServerDataReceived(data);
-        }
-        /// <summary>
-        /// Sends SyncData to clients.
-        /// </summary>
-        /// <param name="data"></param>
-#if MIRROR
-        [ClientRpc(channel = 1, excludeOwner = true)]
-#elif MIRRORNG
-        [ClientRpc(channel = 1, excludeOwner = true)]
-#endif
-        private void RpcSendSyncDataUnreliableExcludeOwner(TransformSyncData data)
-        {
-            ServerDataReceived(data);
-        }
-        /// Sends SyncData to clients.
-        /// </summary>
-        /// <param name="data"></param>
-#if MIRROR
-        [ClientRpc(channel = 1)]
-#elif MIRRONG
-        [ClientRpc(channel = 1)]
-#endif
-        private void RpcSendSyncDataUnreliable(TransformSyncData data)
-        {
-            ServerDataReceived(data);
         }
         #endregion
 
@@ -1454,15 +1499,14 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// Called on clients when server data is received.
         /// </summary>
         /// <param name="data"></param>
-        [Client]
         public void ServerDataReceived(TransformSyncData data)
         {
             //If client host exit method.
-            if (NetworkIsServer())
+            if (this.ReturnIsServer())
                 return;
 
             //If owner of object.
-            if (NetworkHasAuthority())
+            if (this.ReturnHasAuthority())
             {
                 //Client authoritative, already in sync.
                 if (_clientAuthoritative)
@@ -1473,28 +1517,28 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             }
 
             //Fill in missing data for properties that werent included in send.
-            FillMissingData(data, _targetData);
+            FillMissingData(ref data, _targetData);
 
-            /* If platform is valid then set the target transform
+            /* If attached is valid then set the target transform
             * to values received from the client. */
-            bool platformValid = UpdatePlatform(data.PlatformNetId);
+            bool attachedValid = UpdateAttached(data.Attached);
 
             ExtrapolationData extrapolation = null;
             MoveRateData moveRates;
 
             //If teleporting set move rates to be instantaneous.
-            if (ShouldTeleport(data, platformValid))
+            if (ShouldTeleport(ref data, attachedValid))
             {
                 moveRates = SetInstantMoveRates();
             }
             //If not teleporting calculate extrapolation and move rates.
             else
             {
-                extrapolation = SetExtrapolation(data, _targetData, platformValid);
-                moveRates = SetMoveRates(data, platformValid);
+                extrapolation = SetExtrapolation(ref data, _targetData, attachedValid);
+                moveRates = SetMoveRates(ref data, attachedValid);
             }
 
-            ApplyTransformSnapping(data, false, platformValid);
+            ApplyTransformSnapping(ref data, false, attachedValid);
             SetTargetSyncData(ref _targetData, data, moveRates, extrapolation);
         }
 
@@ -1503,28 +1547,27 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// Called on clients when server data is received.
         /// </summary>
         /// <param name="data"></param>
-        [Server]
         public void ClientDataReceived(TransformSyncData data)
         {
             //Sent to self.
-            if (NetworkHasAuthority())
+            if (this.ReturnHasAuthority())
                 return;
 
             //Fill in missing data for properties that werent included in send.
-            FillMissingData(data, _targetData);
+            FillMissingData(ref data, _targetData);
 
-            /* If platform is valid then set the target transform
+            /* If attached is valid then set the target transform
             * to values received from the client. */
-            bool platformValid = UpdatePlatform(data.PlatformNetId);
+            bool attachedValid = UpdateAttached(data.Attached);
 
             //Only build for event if there are listeners.
             if (OnClientDataReceived != null)
             {
-                ReceivedClientData rcd = new ReceivedClientData(ReceivedClientData.DataTypes.Interval, UseLocalSpace, data);
+                ReceivedClientData rcd = new ReceivedClientData(ReceivedClientData.DataTypes.Interval, UseLocalSpace, ref data);
                 OnClientDataReceived.Invoke(rcd);
 
                 //If data was nullified then do nothing.
-                if (rcd.Data == null || data == null)
+                if (!rcd.Data.Set || !data.Set)
                     return;
             }
 
@@ -1533,13 +1576,13 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
              * then I would need to move smoothly instead and
              * perform extrapolation
              * calculations. */
-            if (NetworkIsServerOnly())
+            if (this.ReturnIsServerOnly())
             {
-                ApplyTransformSnapping(data, true, platformValid);
-                /* If there is a platform then target data must
-                 * be set to keep object on platform. Otherwise
+                ApplyTransformSnapping(ref data, true, attachedValid);
+                /* If there is an attached then target data must
+                 * be set to keep object on attached. Otherwise
                  * targetdata can be nullified. */
-                if (platformValid)
+                if (attachedValid)
                     SetTargetSyncData(ref _targetData, data, SetInstantMoveRates(), null);
                 else
                     _targetData = null;
@@ -1551,17 +1594,17 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                 ExtrapolationData extrapolation = null;
                 MoveRateData moveRates;
                 //If teleporting set move rates to be instantaneous.
-                if (ShouldTeleport(data, platformValid))
+                if (ShouldTeleport(ref data, attachedValid))
                 {
                     moveRates = SetInstantMoveRates();
-                    ApplyTransformSnapping(data, true, platformValid);
+                    ApplyTransformSnapping(ref data, true, attachedValid);
                 }
                 //If not teleporting calculate extrapolation and move rates.
                 else
                 {
-                    extrapolation = SetExtrapolation(data, _targetData, platformValid);
-                    moveRates = SetMoveRates(data, platformValid);
-                    ApplyTransformSnapping(data, false, platformValid);
+                    extrapolation = SetExtrapolation(ref data, _targetData, attachedValid);
+                    moveRates = SetMoveRates(ref data, attachedValid);
+                    ApplyTransformSnapping(ref data, false, attachedValid);
                 }
 
                 SetTargetSyncData(ref _targetData, data, moveRates, extrapolation);
@@ -1579,24 +1622,21 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// <param name="position"></param>
         /// <param name="rotation"></param>
         /// <param name="scale"></param>
-        /// <param name="platformNetId"></param>
-        private void SetTransformSyncData(ref TransformSyncData data, SyncProperties sp, Vector3 position, Quaternion rotation, Vector3 scale, uint platformNetId)
+        /// <param name="attachedNetId"></param>
+        private void SetTransformSyncData(ref TransformSyncData data, SyncProperties sp, Vector3 position, Quaternion rotation, Vector3 scale, AttachedData? attached)
         {
-            if (data == null)
-                data = new TransformSyncData();
-
             //NetworkIdentity is always included so may as well put it in here.
             //Compress network identity.
-            uint networkidentity = base.netIdentity.netId;
+            uint networkidentity = this.ReturnNetId();
             if (networkidentity <= 255)
                 sp |= SyncProperties.Id1;
             else if (networkidentity <= 65535)
                 sp |= SyncProperties.Id2;
 
-            //Mirror stores the component index as an int but they serialize it as a byte, so I am going to do the same.
+            //Mirror stores the component index as an int but they serialize it as a byte.
             data.UpdateValues((byte)sp, networkidentity, CachedComponentIndex,
                 position, rotation, scale,
-                platformNetId
+                attached
                 );
         }
 
@@ -1629,12 +1669,12 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        private bool ShouldTeleport(TransformSyncData data, bool platformValid)
+        private bool ShouldTeleport(ref TransformSyncData data, bool attachedValid)
         {
             if (_teleportThresholdSquared <= 0f)
                 return false;
 
-            Vector3 position = (platformValid) ? GetTransformPosition(PlatformSpaces.Local) : GetTransformPosition(PlatformSpaces.Disabled);
+            Vector3 position = (attachedValid) ? GetTransformPosition(AttachedSpaces.Local) : GetTransformPosition(AttachedSpaces.Disabled);
 
             float dist = Vectors.FastSqrMagnitude(position - data.Position);
             return dist >= _teleportThresholdSquared;
@@ -1659,19 +1699,19 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// Sets MoveRates based on data, transform position, and synchronization interval.
         /// </summary>
         /// <param name="data"></param>
-        private MoveRateData SetMoveRates(TransformSyncData data, bool platformValid)
+        private MoveRateData SetMoveRates(ref TransformSyncData data, bool attachedValid)
         {
             float past = ReturnSyncInterval() + _interpolationFallbehind;
-            PlatformSpaces platformSpace = (platformValid) ? PlatformSpaces.Local : PlatformSpaces.Disabled;
+            AttachedSpaces attachedSpace = (attachedValid) ? AttachedSpaces.Local : AttachedSpaces.Disabled;
 
             MoveRateData moveRates = new MoveRateData();
             float distance;
             /* Position. */
-            Vector3 position = GetTransformPosition(platformSpace);
+            Vector3 position = GetTransformPosition(attachedSpace);
             distance = Vector3.Distance(position, data.Position);
             moveRates.Position = distance / past;
             /* Rotation. */
-            Quaternion rotation = GetTransformRotation(platformSpace);
+            Quaternion rotation = GetTransformRotation(attachedSpace);
             distance = Quaternion.Angle(rotation, data.Rotation);
             moveRates.Rotation = distance / past;
             /* Scale. */
@@ -1685,17 +1725,15 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// <summary>
         /// Sets ExtrapolationExtra using TransformSyncData.
         /// </summary>
-        /// <param name="extrapolation"></param>
-        /// <param name="data"></param>
-        private ExtrapolationData SetExtrapolation(TransformSyncData data, TargetSyncData previousTargetSyncData, bool platformValid)
+        private ExtrapolationData SetExtrapolation(ref TransformSyncData data, TargetSyncData previousTargetSyncData, bool attachedValid)
         {
-            //Feature: cannot extrapolate on platforms currently.
-            if (platformValid)
+            //Feature: cannot extrapolate on attached currently.
+            if (attachedValid)
                 return null;
-            /* If platform Id changed. 
-             * Cannot extrapolate when platform Ids change because
+            /* If attached Id changed. 
+             * Cannot extrapolate when attached Ids change because
              * the space used is changed. */
-            if (previousTargetSyncData != null && previousTargetSyncData.GoalData.PlatformNetId != data.PlatformNetId)
+            if (previousTargetSyncData != null && !AttachedData.Matches(ref previousTargetSyncData.GoalData.Attached, ref data.Attached))
                 return null;
             //No extrapolation.
             if (_extrapolationSpan == 0f || previousTargetSyncData == null)
@@ -1705,8 +1743,8 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                 return null;
 
             Vector3 positionDirection = (data.Position - previousTargetSyncData.GoalData.Position);
-            //Feature: need to use proper platform spaces if supporting extrapolation on platform.
-            Vector3 position = GetTransformPosition(PlatformSpaces.Disabled);
+            //Feature: need to use proper attached spaces if supporting extrapolation on attached.
+            Vector3 position = GetTransformPosition(AttachedSpaces.Disabled);
             Vector3 goalDirectionNormalzied = (data.Position - position).normalized;
             /* If direction to goal is different from extrapolation direction
              * then do not extrapolate. This can occur when the extrapolation
@@ -1729,18 +1767,18 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         /// <param name="data"></param>
         /// <param name="snapAll"></param>
-        private void ApplyTransformSnapping(TransformSyncData data, bool snapAll, bool platformValid)
+        private void ApplyTransformSnapping(ref TransformSyncData data, bool snapAll, bool attachedValid)
         {
-            //Snap platform, then snap transform to platform.
-            if (platformValid)
+            //Snap attached, then snap transform to attached.
+            if (attachedValid)
             {
-                ApplyTransformSnapping(Platform.Target, data, snapAll, true);
-                ApplyTransformSnapping(TargetTransform, (SyncProperties)data.SyncProperties, Platform.Target.position, Platform.Target.rotation, data.Scale, snapAll, false);
+                ApplyTransformSnapping(Attached.Target, ref data, snapAll, true);
+                ApplyTransformSnapping(TargetTransform, (SyncProperties)data.SyncProperties, Attached.Target.position, Attached.Target.rotation, data.Scale, snapAll, false);
             }
             //Just snap transform to data.
             else
             {
-                ApplyTransformSnapping(TargetTransform, data, snapAll, platformValid);
+                ApplyTransformSnapping(TargetTransform, ref data, snapAll, attachedValid);
             }
         }
         /// <summary>
@@ -1749,24 +1787,21 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// /// <param name="t"></param>
         /// <param name="data"></param>
         /// <param name="snapAll"></param>
-        /// <param name="platformSpace"></param>
-        private void ApplyTransformSnapping(Transform t, TransformSyncData data, bool snapAll, bool snappingPlatform)
+        private void ApplyTransformSnapping(Transform t, ref TransformSyncData data, bool snapAll, bool snappingAttached)
         {
-            ApplyTransformSnapping(t, (SyncProperties)data.SyncProperties, data.Position, data.Rotation, data.Scale, snapAll, snappingPlatform);
+            ApplyTransformSnapping(t, (SyncProperties)data.SyncProperties, data.Position, data.Rotation, data.Scale, snapAll, snappingAttached);
         }
         /// <summary>
         /// Snaps the transform to data where snapping is applicable.
         /// </summary>
         /// <param name="targetData">Data to snap from.</param>
-        private void ApplyTransformSnapping(Transform t, SyncProperties sp, Vector3 position, Quaternion rotation, Vector3 scale, bool snapAll, bool snappingPlatform)
+        private void ApplyTransformSnapping(Transform t, SyncProperties sp, Vector3 position, Quaternion rotation, Vector3 scale, bool snapAll, bool snappingAttached)
         {
             if (t == null)
                 return;
 
-            //If using local space or platform space is specified.
-            bool useLocalSpace = (UseLocalSpace || snappingPlatform);
-            /* //TODO allow passing in transform to snap. Allow snapping in world or local space.
-             * rework platform code in this method. its broken. */
+            //If using local space or attached space is specified.
+            bool useLocalSpace = (UseLocalSpace || snappingAttached);
             if (snapAll || EnumContains.SyncPropertiesContains(sp, SyncProperties.Position))
             {
                 //If to snap all.
@@ -1778,13 +1813,13 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                 else
                 {
                     //Snap X.
-                    if (EnumContains.AxesContains(_snapPosition, Axes.X))
+                    if (EnumContains.AxesContains(_snapPosition, SnappingAxes.X))
                         t.SetPosition(useLocalSpace, new Vector3(position.x, t.GetPosition(useLocalSpace).y, t.GetPosition(useLocalSpace).z));
                     //Snap Y.
-                    if (EnumContains.AxesContains(_snapPosition, Axes.Y))
+                    if (EnumContains.AxesContains(_snapPosition, SnappingAxes.Y))
                         t.SetPosition(useLocalSpace, new Vector3(t.GetPosition(useLocalSpace).x, position.y, t.GetPosition(useLocalSpace).z));
                     //Snap Z.
-                    if (EnumContains.AxesContains(_snapPosition, Axes.Z))
+                    if (EnumContains.AxesContains(_snapPosition, SnappingAxes.Z))
                         t.SetPosition(useLocalSpace, new Vector3(t.GetPosition(useLocalSpace).x, t.GetPosition(useLocalSpace).y, position.z));
                 }
             }
@@ -1809,13 +1844,13 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                         Vector3 startEuler = t.GetRotation(UseLocalSpace).eulerAngles;
                         Vector3 targetEuler = rotation.eulerAngles;
                         //Snap X.
-                        if (EnumContains.AxesContains(_snapRotation, Axes.X))
+                        if (EnumContains.AxesContains(_snapRotation, SnappingAxes.X))
                             startEuler.x = targetEuler.x;
                         //Snap Y.
-                        if (EnumContains.AxesContains(_snapRotation, Axes.Y))
+                        if (EnumContains.AxesContains(_snapRotation, SnappingAxes.Y))
                             startEuler.y = targetEuler.y;
                         //Snap Z.
-                        if (EnumContains.AxesContains(_snapRotation, Axes.Z))
+                        if (EnumContains.AxesContains(_snapRotation, SnappingAxes.Z))
                             startEuler.z = targetEuler.z;
 
                         //Rebuild into quaternion.
@@ -1825,9 +1860,9 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             }
 
             /* Scale.
-             * Only snap scale if not Platform Target
-             * as platform Target doesn't need scale. */
-            if (t != Platform.Target && snapAll || EnumContains.SyncPropertiesContains(sp, SyncProperties.Scale))
+             * Only snap scale if not Attached Target
+             * as Attached Target doesn't need scale. */
+            if (t != Attached.Target && snapAll || EnumContains.SyncPropertiesContains(sp, SyncProperties.Scale))
             {
                 //If to snap all.
                 if (snapAll || SnapAll(_snapScale))
@@ -1838,13 +1873,13 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                 else
                 {
                     //Snap X.
-                    if (EnumContains.AxesContains(_snapScale, Axes.X))
+                    if (EnumContains.AxesContains(_snapScale, SnappingAxes.X))
                         t.SetScale(new Vector3(scale.x, t.GetScale().y, t.GetScale().z));
                     //Snap Y.
-                    if (EnumContains.AxesContains(_snapScale, Axes.Y))
+                    if (EnumContains.AxesContains(_snapScale, SnappingAxes.Y))
                         t.SetPosition(UseLocalSpace, new Vector3(t.GetScale().x, scale.y, t.GetScale().z));
                     //Snap Z.
-                    if (EnumContains.AxesContains(_snapScale, Axes.Z))
+                    if (EnumContains.AxesContains(_snapScale, SnappingAxes.Z))
                         t.SetPosition(UseLocalSpace, new Vector3(t.GetScale().x, t.GetScale().y, scale.z));
                 }
             }
@@ -1854,7 +1889,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// Modifies values within goalData based on what data was included in the packet.
         /// For example, if rotation was not included in the packet then the last datas rotation will be used, or transforms current rotation if there is no previous packet.
         /// </summary>
-        private void FillMissingData(TransformSyncData data, TargetSyncData targetSyncData)
+        private void FillMissingData(ref TransformSyncData data, TargetSyncData targetSyncData)
         {
             SyncProperties sp = (SyncProperties)data.SyncProperties;
             /* Begin by setting goal data using what has been serialized
@@ -1884,73 +1919,10 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                     data.Scale = targetSyncData.GoalData.Scale;
             }
 
-            /* Platform data will always be included every packet
-             * if a platform is present. */
+            /* Attached data will always be included every packet
+             * if an attached is present. */
         }
-        #endregion
-
-        #region Network specific Support.
-        /// <summary>
-        /// Returns true if object has an owner.
-        /// </summary>
-        /// <returns></returns>
-        protected bool NetworkHasOwner()
-        {
-#if MIRROR
-            return (base.connectionToClient != null);
-#elif MIRRORNG
-            return (base.ConnectionToClient != null);
-#endif
-        }
-
-        /// <summary>
-        /// Returns if current client has authority.
-        /// </summary>
-        /// <returns></returns>
-        protected bool NetworkHasAuthority()
-        {
-#if MIRROR
-            return base.hasAuthority;
-#elif MIRRORNG
-            return base.HasAuthority;
-#endif
-        }
-        /// <summary>
-        /// Returns if is server.
-        /// </summary>
-        /// <returns></returns>
-        protected bool NetworkIsServer()
-        {
-#if MIRROR
-            return base.isServer;
-#elif MIRRORNG
-            return base.IsServer;
-#endif
-
-        }
-        protected bool NetworkIsServerOnly()
-        {
-#if MIRROR
-            return base.isServerOnly;
-#elif MIRRORNG
-            return base.IsServerOnly;
-#endif
-
-        }
-        /// <summary>
-        /// Returns if is client.
-        /// </summary>
-        /// <returns></returns>
-        protected bool NetworkIsClient()
-        {
-#if MIRROR
-            return base.isClient;
-#elif MIRRORNG
-            return base.IsClient;
-#endif
-
-        }
-        #endregion
+        #endregion    
 
         #region Editor.
         private void OnValidate()

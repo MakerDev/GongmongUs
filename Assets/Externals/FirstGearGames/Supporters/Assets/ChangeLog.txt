@@ -1,3 +1,35 @@
+2021/02/05
+	- FlexNetworkTransform
+		+ Zero garbage collection release! Performances improved by a minimum of 17%.
+		+ Bandwidth usage scales better. 500 objects now use roughly 4% less bandwidth.
+		+ MirrorNG officially supported again.
+
+	- FlexNetworkAnimator
+		+ Fixed NRE related to compressing large values.
+		+ Fixed not all cached data being reset when changing animator or controller.
+		+ MirrorNG officially supported again.
+		+ Garbage collection is still present in this release; FNA is receiving the same optimizations as FNT next release.
+
+2021/01/29
+	- FlexNetworkTransform
+		+ SetPlatform renamed to SetAttached; SetPlatform marked obsolete.
+		+ SetAttached can now be used to attach to child objects, such as picking up world objects in your players hand! View READ ME for more information.
+
+2021/01/17
+	- FlexNetworkTransform
+		+ Fixed server not sending updates when running as a server build while using timed interval while having a low tick rate.
+
+2021/01/09
+	- Improvements
+		+ Component scripts now have the FirstGearGames icon on them.
+
+	- FlexNetworkTransform
+		+ Improved tooltip text.
+	
+	- FlexNetworkAnimator
+		+ You may now set the animator and controller at runtime. You must manually synchronize these changes.
+		+ Added README for new API.
+
 2021/01/02
 	- FlexNetworkTransform
 		+ Set maximum MTU to 1200 for manager.

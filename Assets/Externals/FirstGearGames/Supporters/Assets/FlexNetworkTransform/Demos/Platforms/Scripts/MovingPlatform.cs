@@ -1,5 +1,4 @@
-﻿using FirstGearGames.Utilities.Networks;
-using Mirror;
+﻿using Mirror;
 using UnityEngine;
 
 
@@ -7,7 +6,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms.Demos
 {
 
 
-    public class MovingPlatform : NetworkBehaviour
+    public class MovingPlatform : MonoBehaviour
     {
         public float MaxChangeTime = 2f;
         public Vector3 _positionRange;
@@ -24,16 +23,16 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms.Demos
         private Vector3 _posGoal;
         private bool _useGoals = true;
 
-        public override void OnStartServer()
+        
+        private void Awake()
         {
-            base.OnStartServer();
             _startPos = transform.position;
         }
 
 
         private void Update()
         {
-            if (!base.isServer)
+            if (!NetworkServer.active)
                 return;
 
             if (Input.GetKeyDown(KeyCode.X))
@@ -55,18 +54,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms.Demos
 
             transform.position = Vector3.MoveTowards(transform.position, posGoal, Time.deltaTime * PosRate);
             transform.rotation = Quaternion.RotateTowards(transform.rotation, rotGoal, Time.deltaTime * RotRate);
-
-            //uint value = Quaternions.CompressQuaternion(transform.rotation);
-            //Quaternion r = Quaternions.DecompressQuaternion(value);
-            //Debug.Log("A " + ReturnRotationAsString(transform.rotation));
-            //Debug.Log("B " + ReturnRotationAsString(r));
         }
-
-        //private string ReturnRotationAsString(Quaternion rot)
-        //{
-        //    return (rot.w + ", " + rot.x + ", " + rot.y + ", " + rot.z);
-        //}
-
 
         private Vector3 RandomV3(Vector3 range)
         {

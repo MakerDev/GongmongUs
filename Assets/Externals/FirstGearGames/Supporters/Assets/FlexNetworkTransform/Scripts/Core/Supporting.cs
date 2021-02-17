@@ -1,6 +1,8 @@
 ﻿using Mirror;
 using FirstGearGames.Utilities.Networks;
 using UnityEngine;
+using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 
 namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
 {
@@ -17,7 +19,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         }
         #endregion
         public ReceivedClientData() { }
-        public ReceivedClientData(DataTypes dataType, bool localSpace, TransformSyncData data)
+        public ReceivedClientData(DataTypes dataType, bool localSpace, ref TransformSyncData data)
         {
             DataType = dataType;
             LocalSpace = localSpace;
@@ -29,14 +31,20 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         public TransformSyncData Data;
     }
 
+    /// <summary>
+    /// Possible axes to snap.
+    /// </summary>
     [System.Serializable, System.Flags]
-    public enum Axes : int
+    public enum SnappingAxes : int
     {
         X = 1,
         Y = 2,
         Z = 4
     }
 
+    /// <summary>
+    /// Indicates how each axes is compressed.
+    /// </summary>
     [System.Flags]
     public enum CompressedAxes : byte
     {
@@ -48,6 +56,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         ZPositive = 16,
         ZNegative = 32
     }
+
 
     /// <summary>
     /// Transform properties which need to be synchronized.
@@ -64,8 +73,8 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         Scale = 4,
         //Indicates transform did not move.
         Settled = 8,
-        //Indicates a networked platform is included.
-        Platform = 16,
+        //Indicates transform is attached to a network object.
+        Attached = 16,
         //Indicates to compress small values.
         CompressSmall = 32,
         //Indicates a compression level.
@@ -100,27 +109,70 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         {
             return (whole & part) == part;
         }
+
         /// <summary>
         /// Returns if a Axess Whole contains Part.
         /// </summary>
         /// <param name="whole"></param>
         /// <param name="part"></param>
         /// <returns></returns>
-        public static bool AxesContains(Axes whole, Axes part)
+        public static bool AxesContains(SnappingAxes whole, SnappingAxes part)
         {
             return (whole & part) == part;
         }
     }
 
+    /// <summary>
+    /// Data about what the transform is attached to.
+    /// </summary>
+    public struct AttachedData
+    {
+        /// <summary>
+        /// NetworkId for the attached.
+        /// </summary>
+        public uint NetId;
+        /// <summary>
+        /// ComponentIndex for the attached. Byte.MaxValue represents no ComponentIndex.
+        /// </summary>
+        public sbyte ComponentIndex;
+        /// <summary>
+        /// Sets the ComponentIndex value.
+        /// </summary>
+        /// <param name="componentIndex"></param>
+        public void SetData(uint netId, sbyte componentIndex)
+        {
+            NetId = netId;
+            ComponentIndex = componentIndex;
+        }
+
+        /// <summary>
+        /// Returns if an AttachedData matches another.
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        public static bool Matches(ref AttachedData? a, ref AttachedData? b)
+        {
+            //Both are null, therefor equal.
+            if (a == null && b == null)
+                return true;
+            //One is null, other is not.
+            if ((a == null) != (b == null))
+                return false;
+
+            /* If here neither is null. */
+            return (a.Value.NetId == b.Value.NetId && a.Value.ComponentIndex == b.Value.ComponentIndex);
+        }
+    }
 
     /// <summary>
     /// Container holding latest transform values.
     /// </summary>
     [System.Serializable]
-    public class TransformSyncData
+    //[StructLayout(LayoutKind.Auto)]
+    public struct TransformSyncData
     {
-        public TransformSyncData() { }
-        public void UpdateValues(byte syncProperties, uint networkIdentity, byte componentIndex, Vector3 position, Quaternion rotation, Vector3 scale, uint platformNetId)
+        public void UpdateValues(byte syncProperties, uint networkIdentity, byte componentIndex, Vector3 position, Quaternion rotation, Vector3 scale, AttachedData? attached)
         {
             SyncProperties = syncProperties;
             NetworkIdentity = networkIdentity;
@@ -128,7 +180,8 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             Position = position;
             Rotation = rotation;
             Scale = scale;
-            PlatformNetId = platformNetId;
+            Attached = attached;
+            Set = true;
         }
 
         public byte SyncProperties;
@@ -137,217 +190,31 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         public Vector3 Position;
         public Quaternion Rotation;
         public Vector3 Scale;
-        public uint PlatformNetId = 0;
+        public AttachedData? Attached;
+        [System.NonSerialized]
+        public bool Set;
     }
 
-    public static class FlexNetworkTransformSerializers
+    public static class Helpers
     {
-        private const float MAX_COMPRESSION_VALUE = 654f;
         /// <summary>
-        /// Writes TransformSyncData into a writer.
+        /// Returns the NetworkBehaviour for the specified NetworkIdentity and component index.
         /// </summary>
-        /// <param name="writer"></param>
-        /// <param name="syncData"></param>
-        public static void WriteTransformSyncData(this NetworkWriter writer, TransformSyncData syncData)
-        {
-            //SyncProperties.
-            SyncProperties sp = (SyncProperties)syncData.SyncProperties;
-            writer.WriteByte(syncData.SyncProperties);
-
-            //NetworkIdentity.
-            //Get compression level for netIdentity.
-            if (EnumContains.SyncPropertiesContains(sp, SyncProperties.Id1))
-                writer.WriteByte((byte)syncData.NetworkIdentity);
-            else if (EnumContains.SyncPropertiesContains(sp, SyncProperties.Id2))
-                writer.WriteUInt16((ushort)syncData.NetworkIdentity);
-            else
-                writer.WriteUInt32(syncData.NetworkIdentity);
-            //ComponentIndex.
-            writer.WriteByte(syncData.ComponentIndex);
-
-            //Position.
-            if (EnumContains.SyncPropertiesContains(sp, SyncProperties.Position))
-            {
-                if (EnumContains.SyncPropertiesContains(sp, SyncProperties.CompressSmall))
-                    WriteCompressedVector3(writer, syncData.Position);
-                else
-                    writer.WriteVector3(syncData.Position);
-            }
-            //Rotation.
-            if (EnumContains.SyncPropertiesContains(sp, SyncProperties.Rotation))
-                writer.WriteUInt32(Quaternions.CompressQuaternion(syncData.Rotation));
-            //Scale.
-            if (EnumContains.SyncPropertiesContains(sp, SyncProperties.Scale))
-            {
-                if (EnumContains.SyncPropertiesContains(sp, SyncProperties.CompressSmall))
-                    WriteCompressedVector3(writer, syncData.Scale);
-                else
-                    writer.WriteVector3(syncData.Scale);
-            }
-            //Platform.
-            if (EnumContains.SyncPropertiesContains(sp, SyncProperties.Platform))
-                writer.WriteUInt32(syncData.PlatformNetId);
-        }
-
-        /// <summary>
-        /// Converts reader data into a new TransformSyncData.
-        /// </summary>
-        /// <param name="reader"></param>
+        /// <param name="componentIndex"></param>
         /// <returns></returns>
-        public static TransformSyncData ReadTransformSyncData(this NetworkReader reader)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static NetworkBehaviour ReturnNetworkBehaviour(NetworkIdentity netIdentity, byte componentIndex)
         {
-            TransformSyncData syncData = new TransformSyncData();
+            if (netIdentity == null)
+                return null;
+            /* Networkbehaviours within the collection are the same order as compenent indexes.
+            * I can save several iterations by simply grabbing the index from the networkbehaviours collection rather than iterating
+            * it. */
+            //A network behaviour was removed or added at runtime, component counts don't match up.
+            if (componentIndex >= netIdentity.NetworkBehaviours.Length)
+                return null;
 
-            //Sync properties.
-            SyncProperties sp = (SyncProperties)reader.ReadByte();
-            syncData.SyncProperties = (byte)sp;
-
-            //NetworkIdentity.
-            if (EnumContains.SyncPropertiesContains(sp, SyncProperties.Id1))
-                syncData.NetworkIdentity = reader.ReadByte();
-            else if (EnumContains.SyncPropertiesContains(sp, SyncProperties.Id2))
-                syncData.NetworkIdentity = reader.ReadUInt16();
-            else
-                syncData.NetworkIdentity = reader.ReadUInt32();
-            //ComponentIndex.
-            syncData.ComponentIndex = reader.ReadByte();
-
-            //Position.
-            if (EnumContains.SyncPropertiesContains(sp, SyncProperties.Position))
-            {
-                if (EnumContains.SyncPropertiesContains(sp, SyncProperties.CompressSmall))
-                    syncData.Position = ReadCompressedVector3(reader);
-                else
-                    syncData.Position = reader.ReadVector3();
-            }
-            //Rotation.
-            if (EnumContains.SyncPropertiesContains(sp, SyncProperties.Rotation))
-                syncData.Rotation = Quaternions.DecompressQuaternion(reader.ReadUInt32());
-            //scale.
-            if (EnumContains.SyncPropertiesContains(sp, SyncProperties.Scale))
-            {
-                if (EnumContains.SyncPropertiesContains(sp, SyncProperties.CompressSmall))
-                    syncData.Scale = ReadCompressedVector3(reader);
-                else
-                    syncData.Scale = reader.ReadVector3();
-            }
-            //Platformed.
-            if (EnumContains.SyncPropertiesContains(sp, SyncProperties.Platform))
-                syncData.PlatformNetId = reader.ReadUInt32();
-
-            return syncData;
-        }
-
-        /// <summary>
-        /// Writes a compressed Vector3 to the writer.
-        /// </summary>
-        /// <param name="writer"></param>
-        /// <param name="ca"></param>
-        /// <param name="v"></param>
-        private static void WriteCompressedVector3(NetworkWriter writer, Vector3 v)
-        {
-            CompressedAxes ca = CompressedAxes.None;
-            //If can compress X.
-            float absX = Mathf.Abs(v.x);
-            if (absX <= MAX_COMPRESSION_VALUE)
-                ca |= (Mathf.Sign(v.x) > 0f) ? CompressedAxes.XPositive : CompressedAxes.XNegative;
-            //If can compress Y.
-            float absY = Mathf.Abs(v.y);
-            if (absY <= MAX_COMPRESSION_VALUE)
-                ca |= (Mathf.Sign(v.y) > 0f) ? CompressedAxes.YPositive : CompressedAxes.YNegative;
-            //If can compress Z.
-            float absZ = Mathf.Abs(v.z);
-            if (absZ <= MAX_COMPRESSION_VALUE)
-                ca |= (Mathf.Sign(v.z) > 0f) ? CompressedAxes.ZPositive : CompressedAxes.ZNegative;
-
-            //Write compresed axes.
-            writer.WriteByte((byte)ca);
-            //X
-            if (EnumContains.CompressedAxesContains(ca, CompressedAxes.XNegative) || EnumContains.CompressedAxesContains(ca, CompressedAxes.XPositive))
-                writer.WriteUInt16((ushort)Mathf.Round(absX * 100f));
-            else
-                writer.WriteSingle(v.x);
-            //Y
-            if (EnumContains.CompressedAxesContains(ca, CompressedAxes.YNegative) || EnumContains.CompressedAxesContains(ca, CompressedAxes.YPositive))
-                writer.WriteUInt16((ushort)Mathf.Round(absY * 100f));
-            else
-                writer.WriteSingle(v.y);
-            //Z
-            if (EnumContains.CompressedAxesContains(ca, CompressedAxes.ZNegative) || EnumContains.CompressedAxesContains(ca, CompressedAxes.ZPositive))
-                writer.WriteUInt16((ushort)Mathf.Round(absZ * 100f));
-            else
-                writer.WriteSingle(v.z);
-        }
-
-
-        /// <summary>
-        /// Reads a compressed Vector3.
-        /// </summary>
-        /// <param name="writer"></param>
-        /// <param name="ca"></param>
-        /// <param name="v"></param>
-        private static Vector3 ReadCompressedVector3(NetworkReader reader)
-        {
-            CompressedAxes ca = (CompressedAxes)reader.ReadByte();
-            //Sign of compressed axes. If 0f, no compression was used for the axes.
-            float sign;
-
-            //X
-            float x;
-            if (EnumContains.CompressedAxesContains(ca, CompressedAxes.XNegative))
-                sign = -1f;
-            else if (EnumContains.CompressedAxesContains(ca, CompressedAxes.XPositive))
-                sign = 1f;
-            else
-                sign = 0f;
-            //If there is compression.
-            if (sign != 0f)
-                x = (reader.ReadUInt16() / 100f) * sign;
-            else
-                x = reader.ReadSingle();
-
-            //Y
-            float y;
-            if (EnumContains.CompressedAxesContains(ca, CompressedAxes.YNegative))
-                sign = -1f;
-            else if (EnumContains.CompressedAxesContains(ca, CompressedAxes.YPositive))
-                sign = 1f;
-            else
-                sign = 0f;
-            //If there is compression.
-            if (sign != 0f)
-                y = (reader.ReadUInt16() / 100f) * sign;
-            else
-                y = reader.ReadSingle();
-
-            //Z
-            float z;
-            if (EnumContains.CompressedAxesContains(ca, CompressedAxes.ZNegative))
-                sign = -1f;
-            else if (EnumContains.CompressedAxesContains(ca, CompressedAxes.ZPositive))
-                sign = 1f;
-            else
-                sign = 0f;
-            //If there is compression.
-            if (sign != 0f)
-                z = (reader.ReadUInt16() / 100f) * sign;
-            else
-                z = reader.ReadSingle();
-
-            return new Vector3(x, y, z);
-        }
-
-        /// <summary>
-        /// Returns if a Vector3 can be compressed.
-        /// </summary>
-        /// <param name="v"></param>
-        /// <returns></returns>
-        public static bool CanCompressVector3(ref Vector3 v)
-        {
-            return
-                (v.x > -MAX_COMPRESSION_VALUE && v.x < MAX_COMPRESSION_VALUE) ||
-                (v.y > -MAX_COMPRESSION_VALUE && v.y < MAX_COMPRESSION_VALUE) ||
-                (v.z > -MAX_COMPRESSION_VALUE && v.z < MAX_COMPRESSION_VALUE);
+            return netIdentity.NetworkBehaviours[componentIndex];
         }
     }
 

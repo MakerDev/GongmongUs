@@ -68,6 +68,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 16
   MoveRate: 5
+  _usePlatforms: 1
 --- !u!114 &3331250267447188313
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -83,17 +84,16 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0.1
   _useLocalSpace: 0
-  _intervalType: 1
-  _favorPerformance: 1
-  _synchronizeInterval: 0.1
+  _intervalType: 0
+  _synchronizeInterval: 0.5
   _reliable: 0
-  _resendUnreliable: 1
-  _preciseSynchronization: 1
+  _resendUnreliable: 0
   _interpolationFallbehind: 0.06
   _extrapolationSpan: 0.1
   _teleportThreshold: 0
   _clientAuthoritative: 1
   _synchronizeToOwner: 1
+  _compressSmall: 1
   _synchronizePosition: 0
   _snapPosition: 0
   _synchronizeRotation: 0

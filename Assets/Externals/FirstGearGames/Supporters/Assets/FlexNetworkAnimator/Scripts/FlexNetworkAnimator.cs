@@ -1,3 +1,4 @@
+using FirstGearGames.Utilities.Networks;
 using Mirror;
 using System;
 using System.Collections.Generic;
@@ -22,21 +23,18 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
             public readonly float Rate;
             public readonly float Target;
         }
-        /// <summary>
-        /// A parameter which has changed since it's last value. Contains parameter details index and new value data.
-        /// </summary>
-        private struct ChangedParameter
+
+        private struct TriggerUpdate
         {
             public byte ParameterIndex;
-            public byte[] Data;
+            public bool Setting;
 
-            public ChangedParameter(byte parameterIndex, byte[] data)
+            public TriggerUpdate(byte parameterIndex, bool setting)
             {
                 ParameterIndex = parameterIndex;
-                Data = data;
+                Setting = setting;
             }
         }
-
         /// <summary>
         /// Details about an animator parameter.
         /// </summary>
@@ -149,7 +147,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
         /// <summary>
         /// Trigger values set by using SetTrigger and ResetTrigger.
         /// </summary>
-        private List<ChangedParameter> _triggerUpdates = new List<ChangedParameter>();
+        private List<TriggerUpdate> _triggerUpdates = new List<TriggerUpdate>();
         /// <summary>
         /// Returns if the animator is exist and is active.
         /// </summary>
@@ -169,13 +167,13 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
             get
             {
                 //Don't smooth on server only.
-                if (!base.isClient)
+                if (!this.ReturnIsClient())
                     return false;
                 //Smoothing is disabled.
                 if (!_smoothFloats)
                     return false;
                 //No reason to smooth for self.
-                if (base.hasAuthority && _clientAuthoritative)
+                if (this.ReturnHasAuthority() && _clientAuthoritative)
                     return false;
 
                 //Fall through.
@@ -187,7 +185,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
         /// </summary>
         private byte? _cachedComponentIndex = null;
         /// <summary>
-        /// Cached ComponentIndex for the NetworkBehaviour. This is because Mirror codes bad.
+        /// Cached ComponentIndex for the NetworkBehaviour this FNA is on. This is because Mirror codes bad.
         /// </summary>
         public byte CachedComponentIndex
         {
@@ -195,13 +193,17 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
             {
                 if (_cachedComponentIndex == null)
                 {
+                    //Exceeds value.
                     if (base.ComponentIndex > 255)
                     {
                         Debug.LogError("ComponentIndex is larger than supported type.");
-                        return 0;
+                        _cachedComponentIndex = 0;
                     }
-
-                    _cachedComponentIndex = (byte)Mathf.Abs(base.ComponentIndex);
+                    //Doesn't exceed value.
+                    else
+                    {
+                        _cachedComponentIndex = (byte)Mathf.Abs(base.ComponentIndex);
+                    }
                 }
 
                 return _cachedComponentIndex.Value;
@@ -215,6 +217,14 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
         /// Layers which need to have their state synchronized. Byte is the ParameterIndex.
         /// </summary>
         private HashSet<int> _unsynchronizedLayerStates = new HashSet<int>();
+        /// <summary>
+        /// Last animator set.
+        /// </summary>
+        private Animator _lastAnimator = null;
+        /// <summary>
+        /// Last Controller set.
+        /// </summary>
+        private RuntimeAnimatorController _lastController = null;
         #endregion
 
         #region Const.
@@ -234,7 +244,17 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
 
         private void Awake()
         {
-            FirstInitialize();
+            Initialize();
+#if MIRRORNG || MirrorNg
+            base.NetIdentity.OnStartServer.AddListener(StartServer);
+#endif
+        }
+
+        protected virtual void OnDestroy()
+        {
+#if MIRRORNG || MirrorNg
+            base.NetIdentity.OnStopServer.RemoveListener(StartServer);
+#endif            
         }
 
         #region OnSerialize/Deserialize.
@@ -261,15 +281,20 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
                 ApplyParametersUpdated(updatedParameters);
             }
 
-
             base.OnDeserialize(reader, initialState);
         }
         #endregion
 
-
+#if MIRROR
         public override void OnStartServer()
         {
             base.OnStartServer();
+            StartServer();
+        }
+
+#endif
+        private void StartServer()
+        {
             _networkVisibility = transform.root.GetComponent<NetworkVisibility>();
         }
 
@@ -284,12 +309,12 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
 
         public void ManualUpdate()
         {
-            if (base.isClient)
+            if (this.ReturnIsClient())
             {
                 CheckSendToServer();
                 SmoothFloats();
             }
-            if (base.isServer)
+            if (this.ReturnIsServer())
             {
                 CheckSendToClients();
             }
@@ -298,16 +323,19 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
         protected virtual void Reset()
         {
             if (_animator == null)
-                _animator = GetComponent<Animator>();
+                SetAnimator(GetComponent<Animator>());
         }
 
         /// <summary>
         /// Initializes this script for use. Should only be completed once.
         /// </summary>
-        private void FirstInitialize()
+        private void Initialize()
         {
             if (!_isActive)
+            {
+                Debug.LogWarning("Animator is null or not enabled; unable to initialize for animator. Use SetAnimator if animator was changed or enable the animator.");
                 return;
+            }
 
             //Speed.
             _speed = _animator.speed;
@@ -317,6 +345,10 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
             for (int i = 0; i < _layerWeights.Length; i++)
                 _layerWeights[i] = _animator.GetLayerWeight(i);
 
+            _parameterDetails.Clear();
+            _bools.Clear();
+            _floats.Clear();
+            _ints.Clear();
             //Create a parameter detail for each parameter that can be synchronized.
             foreach (AnimatorControllerParameter item in _animator.parameters)
             {
@@ -361,6 +393,35 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
             }
         }
 
+        /// <summary>
+        /// Sets which animator to use. You must call this with the appropriate animator on all clients and server. This change is not automatically synchronized.
+        /// </summary>
+        /// <param name="animator"></param>
+        public void SetAnimator(Animator animator)
+        {
+            //No update required.
+            if (animator == _lastAnimator)
+                return;
+
+            _animator = animator;
+            Initialize();
+            _lastAnimator = animator;
+        }
+
+        /// <summary>
+        /// Sets which controller to use. You must call this with the appropriate controller on all clients and server. This change is not automatically synchronized.
+        /// </summary>
+        /// <param name="controller"></param>        
+        public void SetController(RuntimeAnimatorController controller)
+        {
+            //No update required.
+            if (controller == _lastController)
+                return;
+
+            _animator.runtimeAnimatorController = controller;
+            Initialize();
+            _lastController = controller;
+        }
 
         /// <summary>
         /// Checks to send animator data from server to clients.
@@ -370,13 +431,13 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
             if (!_isActive)
                 return;
             //Cannot send to server if not client
-            if (!base.isClient)
+            if (!this.ReturnIsClient())
                 return;
             //Cannot send to server if not client authoritative.
             if (!_clientAuthoritative)
                 return;
             //Cannot send if don't have authority.
-            if (!base.hasAuthority)
+            if (!this.ReturnHasAuthority())
                 return;
 
             //Not enough time passed to send.
@@ -401,7 +462,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
             if (!_isActive)
                 return;
             //Cannot send to clients if not server.
-            if (!base.isServer)
+            if (!this.ReturnIsServer())
                 return;
             //Not enough time passed to send.
             if (Time.time < _nextServerSendTime)
@@ -412,7 +473,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
             if (_clientAuthoritative)
             {
                 //If no owner then send from server.
-                if (base.connectionToClient == null)
+                if (!this.ReturnHasOwner())
                 {
                     sendFromServer = true;
                 }
@@ -438,7 +499,6 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
                 return;
             _nextServerSendTime = Time.time + _synchronizeInterval;
 
-
             bool sendToAll = (_networkVisibility == null);
             /* If client authoritative then then what was received from clients
              * if data exist. */
@@ -452,8 +512,12 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
                     }
                     else
                     {
-                        foreach (KeyValuePair<int, NetworkConnection> item in _networkVisibility.netIdentity.observers)
-                            FlexNetworkAnimatorManager.SendToObserver(item.Value, _updatesFromClients[i]);
+#if MIRROR
+                foreach (NetworkConnection item in _networkVisibility.netIdentity.observers.Values)
+#elif MIRRORNG
+                        foreach (INetworkConnection item in _networkVisibility.NetIdentity.observers)
+#endif
+                            FlexNetworkAnimatorManager.SendToObserver(item, _updatesFromClients[i]);
                     }
                 }
                 _updatesFromClients.Clear();
@@ -469,8 +533,12 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
                     }
                     else
                     {
-                        foreach (KeyValuePair<int, NetworkConnection> item in _networkVisibility.netIdentity.observers)
-                            FlexNetworkAnimatorManager.SendToObserver(item.Value, ReturnAnimatorUpdate(updatedBytes));
+#if MIRROR
+                foreach (NetworkConnection item in _networkVisibility.netIdentity.observers.Values)
+#elif MIRRORNG
+                        foreach (INetworkConnection item in _networkVisibility.NetIdentity.observers)
+#endif
+                            FlexNetworkAnimatorManager.SendToObserver(item, ReturnAnimatorUpdate(updatedBytes));
                     }
                 }
             }
@@ -483,13 +551,12 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
         /// <returns></returns>
         private AnimatorUpdate ReturnAnimatorUpdate(byte[] data)
         {
-            return new AnimatorUpdate(CachedComponentIndex, base.netIdentity.netId, data);
+            return new AnimatorUpdate(CachedComponentIndex, this.ReturnNetId(), data);
         }
 
         /// <summary>
         /// Smooths floats on clients.
         /// </summary>
-        [Client]
         private void SmoothFloats()
         {
             //Don't need to smooth on authoritative client.
@@ -527,10 +594,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
         private bool AnimatorUpdated(out byte[] updatedBytes, bool forceAll = false)
         {
             updatedBytes = null;
-            List<ChangedParameter> cps = new List<ChangedParameter>();
-            //Bytes required to accomodate changed parameters.
-            int requiredBytes = 0;
-
+            PooledNetworkWriter writer = NetworkWriterPool.GetWriter();
             /* Every time a parameter is updated a byte is added
              * for it's index, this is why requiredBytes increases
              * by 1 when a value updates. ChangedParameter contains
@@ -539,9 +603,9 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
              * for the type which has changed. Some types use special parameter
              * detail indexes, such as layer weights; these can be found under const. */
 
-            for (byte i = 0; i < _parameterDetails.Count; i++)
+            for (byte parameterIndex = 0; parameterIndex < _parameterDetails.Count; parameterIndex++)
             {
-                ParameterDetail pd = _parameterDetails[i];
+                ParameterDetail pd = _parameterDetails[parameterIndex];
                 /* Bool. */
                 if (pd.ControllerParameter.type == AnimatorControllerParameterType.Bool)
                 {
@@ -549,10 +613,9 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
                     //If changed.
                     if (forceAll || _bools[pd.TypeIndex] != next)
                     {
-                        cps.Add(new ChangedParameter(i, BitConverter.GetBytes(next)));
+                        writer.WriteByte(parameterIndex);
+                        writer.WriteBoolean(next);
                         _bools[pd.TypeIndex] = next;
-                        //Parameter index + data.
-                        requiredBytes += (1 + 1);
                     }
                 }
                 /* Float. */
@@ -562,11 +625,9 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
                     //If changed.
                     if (forceAll || _floats[pd.TypeIndex] != next)
                     {
-                        byte[] data = Compression.ReturnCompressedFloat(next);
-                        cps.Add(new ChangedParameter(i, data));
+                        writer.WriteByte(parameterIndex);
+                        writer.WriteCompressedFloat(next);
                         _floats[pd.TypeIndex] = next;
-                        //Parameter index + data.
-                        requiredBytes += (1 + data.Length);
                     }
                 }
                 /* Int. */
@@ -576,27 +637,23 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
                     //If changed.
                     if (forceAll || _ints[pd.TypeIndex] != next)
                     {
-                        byte[] data = Compression.ReturnCompressedInteger(next);
-                        cps.Add(new ChangedParameter(i, data));
+                        writer.WriteByte(parameterIndex);
+                        writer.WriteCompressedInt(next);
                         _ints[pd.TypeIndex] = next;
-                        //Parameter index + data.
-                        requiredBytes += (1 + data.Length);
                     }
                 }
             }
 
-            /* Also add any trigger updates.
-             * Each trigger update will require
-             * 2 bytes, for the indicator and value.
-             * So add on two required bytes
-             * for every trigger update count. */
             /* Don't need to force trigger sends since
              * they're one-shots. */
-            requiredBytes += (_triggerUpdates.Count * 2);
-            cps.AddRange(_triggerUpdates);
+            for (int i = 0; i < _triggerUpdates.Count; i++)
+            {
+                writer.WriteByte(_triggerUpdates[i].ParameterIndex);
+                writer.WriteBoolean(_triggerUpdates[i].Setting);
+            }
             _triggerUpdates.Clear();
 
-            //States.
+            /* States. */
             if (forceAll)
             {
                 //Add all layers to layer states.
@@ -608,104 +665,43 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
             {
                 if (ReturnLayerState(out int stateHash, out float normalizedTime, layerIndex))
                 {
-                    int writeIndex = 0;
-                    //Cannot compress hash, it will always be too large.
-                    byte[] hashBytes = BitConverter.GetBytes(stateHash);
-                    byte[] time = Compression.ReturnCompressedFloat(normalizedTime);
-                    //Resize for layerindex, hash, and time.
-                    byte[] data = new byte[1 + hashBytes.Length + time.Length];
-                    //Layer index.
-                    data[0] = (byte)layerIndex;
-                    writeIndex++;
-                    //Hash.
-                    Array.Copy(hashBytes, 0, data, writeIndex, hashBytes.Length);
-                    writeIndex += hashBytes.Length;
-                    //Time.
-                    Array.Copy(time, 0, data, writeIndex, time.Length);
-                    _animator.Play(stateHash, layerIndex, normalizedTime);
-                    //1 for parameter index and then data.
-                    requiredBytes += (1 + data.Length);
-                    //Add to cps.
-                    cps.Add(new ChangedParameter(STATE, data));
+                    writer.WriteByte(STATE);
+                    writer.WriteByte((byte)layerIndex);
+                    //hashes will always be too large to compress.
+                    writer.WriteInt32(stateHash);
+                    writer.WriteCompressedFloat(normalizedTime);
                 }
             }
             _unsynchronizedLayerStates.Clear();
 
-            //Layer weights are added on as raw bytes
-            List<byte> layerBytes = null;
-            for (int i = 0; i < _layerWeights.Length; i++)
+            /* Layer weights. */
+            for (int layerIndex = 0; layerIndex < _layerWeights.Length; layerIndex++)
             {
-                float next = _animator.GetLayerWeight(i);
-                if (forceAll || _layerWeights[i] != next)
+                float next = _animator.GetLayerWeight(layerIndex);
+                if (forceAll || _layerWeights[layerIndex] != next)
                 {
-                    if (layerBytes == null)
-                        layerBytes = new List<byte>();
-                    //Layerweight indicator.
-                    layerBytes.Add(LAYER_WEIGHT);
-                    //Layer index.
-                    layerBytes.Add((byte)i);
-                    //Weight value.
-                    byte[] compressedWeight = Compression.ReturnCompressedFloat(next);
-                    layerBytes.AddRange(compressedWeight);
-                    //indicator, layer index, data.
-                    requiredBytes += (2 + compressedWeight.Length);
-
-                    _layerWeights[i] = next;
+                    writer.WriteByte(LAYER_WEIGHT);
+                    writer.WriteByte((byte)layerIndex);
+                    writer.WriteCompressedFloat(next);
+                    _layerWeights[layerIndex] = next;
                 }
             }
 
             /* Speed is similar to layer weights but we don't need the index,
              * only the indicator and value. */
-            byte[] speedBytes = null;
             float speedNext = _animator.speed;
             if (forceAll || _speed != speedNext)
             {
-                byte[] speedCompressed = Compression.ReturnCompressedFloat(speedNext);
-                //1 byte for speed indicator, rest for actual speed.
-                speedBytes = new byte[1 + speedCompressed.Length];
-                speedBytes[0] = SPEED;
-                Array.Copy(speedCompressed, 0, speedBytes, 1, speedCompressed.Length);
-                //Indicator + value.
-                requiredBytes += speedBytes.Length;
-
+                writer.WriteByte(SPEED);
+                writer.WriteCompressedFloat(speedNext);
                 _speed = speedNext;
             }
 
-            //If no bytes are required then there is nothing to update.
-            if (requiredBytes == 0)
+            //Nothing to update.
+            if (writer.Length == 0)
                 return false;
 
-            //Current write index for byte array.
-            int updateWriteIndex = 0;
-            updatedBytes = new byte[requiredBytes];
-
-            //If speed change exist.
-            if (speedBytes != null)
-            {
-                Array.Copy(speedBytes, 0, updatedBytes, updateWriteIndex, speedBytes.Length);
-                updateWriteIndex += speedBytes.Length;
-            }
-            //If there are layer weights to add.
-            if (layerBytes != null)
-            {
-                byte[] layersArray = layerBytes.ToArray();
-                Array.Copy(layersArray, 0, updatedBytes, updateWriteIndex, layersArray.Length);
-                updateWriteIndex += layersArray.Length;
-            }
-
-            //If there are changed parameters.
-            if (cps.Count > 0)
-            {
-                //Build into byte array.
-                foreach (ChangedParameter cp in cps)
-                {
-                    updatedBytes[updateWriteIndex] = cp.ParameterIndex;
-                    Array.Copy(cp.Data, 0, updatedBytes, updateWriteIndex + 1, cp.Data.Length);
-                    //Increase index.
-                    updateWriteIndex += (1 + cp.Data.Length);
-                }
-            }
-
+            updatedBytes = writer.ToArray();
             return true;
         }
 
@@ -717,55 +713,55 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
         {
             if (!_isActive)
                 return;
+            if (updatedParameters == null || updatedParameters.Length == 0)
+                return;
 
-            if (updatedParameters.Length > 0)
+            PooledNetworkReader reader = NetworkReaderPool.GetReader(updatedParameters);
+
+            while (reader.Position < reader.Length)
             {
-                int readIndex = 0;
-                while (readIndex < updatedParameters.Length)
-                {
-                    byte parameterIndex = updatedParameters[readIndex];
-                    readIndex++;
+                byte parameterIndex = reader.ReadByte();
 
-                    //Layer weight.
-                    if (parameterIndex == LAYER_WEIGHT)
+                //Layer weight preset.
+                if (parameterIndex == LAYER_WEIGHT)
+                {
+                    byte layerIndex = reader.ReadByte();
+                    float value = reader.ReadCompressedFloat();
+                    _animator.SetLayerWeight((int)layerIndex, value);
+                }
+                //Speed preset.
+                else if (parameterIndex == SPEED)
+                {
+                    float value = reader.ReadCompressedFloat();
+                    _animator.speed = value;
+                }
+                //State preset.
+                else if (parameterIndex == STATE)
+                {
+                    byte layerIndex = reader.ReadByte();
+                    //Hashes will always be too large to compress.
+                    int hash = reader.ReadInt32();
+                    float time = reader.ReadCompressedFloat();
+                    _animator.Play(hash, layerIndex, time);
+                }
+                //Not a preset index, is an actual parameter.
+                else
+                {
+                    AnimatorControllerParameterType acpt = _parameterDetails[parameterIndex].ControllerParameter.type;
+                    if (acpt == AnimatorControllerParameterType.Bool)
                     {
-                        byte layerIndex = updatedParameters[readIndex];
-                        readIndex += 1;
-                        float value = Compression.ReturnDecompressedFloat(updatedParameters, ref readIndex);
-                        _animator.SetLayerWeight((int)layerIndex, value);
-                    }
-                    //Speed.
-                    else if (parameterIndex == SPEED)
-                    {
-                        float value = Compression.ReturnDecompressedFloat(updatedParameters, ref readIndex);
-                        _animator.speed = value;
-                    }
-                    //State.
-                    else if (parameterIndex == STATE)
-                    {
-                        byte layerIndex = updatedParameters[readIndex];
-                        readIndex++;
-                        int hash = BitConverter.ToInt32(updatedParameters, readIndex);
-                        readIndex += 4;
-                        float time = Compression.ReturnDecompressedFloat(updatedParameters, ref readIndex);
-                        _animator.Play(hash, layerIndex, time);
-                    }
-                    //Bool.
-                    else if (_parameterDetails[parameterIndex].ControllerParameter.type == AnimatorControllerParameterType.Bool)
-                    {
-                        bool value = BitConverter.ToBoolean(updatedParameters, readIndex);
-                        readIndex += 1;
+                        bool value = reader.ReadBoolean();
                         _animator.SetBool(_parameterDetails[parameterIndex].Hash, value);
                     }
                     //Float.
-                    else if (_parameterDetails[parameterIndex].ControllerParameter.type == AnimatorControllerParameterType.Float)
+                    else if (acpt == AnimatorControllerParameterType.Float)
                     {
-                        float value = Compression.ReturnDecompressedFloat(updatedParameters, ref readIndex);
+                        float value = reader.ReadCompressedFloat();
                         //If able to smooth floats.
                         if (_canSmoothFloats)
                         {
                             float currentValue = _animator.GetFloat(_parameterDetails[parameterIndex].Hash);
-                            float past = base.syncInterval + _interpolationFallbehind;
+                            float past = _synchronizeInterval + _interpolationFallbehind;
                             float rate = Mathf.Abs(currentValue - value) / past;
                             _smoothedFloats[_parameterDetails[parameterIndex].Hash] = new SmoothedFloat(rate, value);
                         }
@@ -775,16 +771,15 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
                         }
                     }
                     //Integer.
-                    else if (_parameterDetails[parameterIndex].ControllerParameter.type == AnimatorControllerParameterType.Int)
+                    else if (acpt == AnimatorControllerParameterType.Int)
                     {
-                        int value = Compression.ReturnDecompressedInteger(updatedParameters, ref readIndex);
+                        int value = reader.ReadCompressedInt();
                         _animator.SetInteger(_parameterDetails[parameterIndex].Hash, value);
                     }
                     //Trigger.
-                    else if (_parameterDetails[parameterIndex].ControllerParameter.type == AnimatorControllerParameterType.Trigger)
+                    else if (acpt == AnimatorControllerParameterType.Trigger)
                     {
-                        bool value = BitConverter.ToBoolean(updatedParameters, readIndex);
-                        readIndex += 1;
+                        bool value = reader.ReadBoolean();
                         if (value)
                             _animator.SetTrigger(_parameterDetails[parameterIndex].Hash);
                         else
@@ -792,6 +787,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
                     }
                 }
             }
+
         }
 
         /// <summary>
@@ -956,11 +952,15 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
         /// <param name="set"></param>
         private void UpdateTrigger(int hash, bool set)
         {
-            //Not using client authority and not server.
-            if (!_clientAuthoritative && !base.isServer)
-                return;
+            /* Allow triggers to run on owning client if using client authority,
+             * as well when not using client authority but also not using synchronize to owner.
+             * This allows clients to run animations locally while maintaining server authority. */
             //Using client authority but not owner.
-            if (_clientAuthoritative && !base.hasAuthority)
+            if (_clientAuthoritative && !this.ReturnHasAuthority())
+                return;
+
+            //Also block if not using client authority, synchronizing to owner, and not server.
+            if (!_clientAuthoritative && _synchronizeToOwner && !this.ReturnIsServer())
                 return;
 
             //Update locally.
@@ -969,24 +969,30 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
             else
                 _animator.ResetTrigger(hash);
 
-            for (byte i = 0; i < _parameterDetails.Count; i++)
+            /* Can send if not client auth but is server,
+            * or if client auth and owner. */
+            bool canSend = (!_clientAuthoritative && this.ReturnIsServer()) ||
+                (_clientAuthoritative && this.ReturnHasAuthority());
+            //Only queue a send if proper side.
+            if (canSend)
             {
-                if (_parameterDetails[i].Hash == hash)
+                for (byte i = 0; i < _parameterDetails.Count; i++)
                 {
-                    _triggerUpdates.Add(new ChangedParameter(i, BitConverter.GetBytes(set)));
-                    return;
+                    if (_parameterDetails[i].Hash == hash)
+                    {
+                        _triggerUpdates.Add(new TriggerUpdate(i, set));
+                        return;
+                    }
                 }
+                //Fall through, hash not found.
+                Debug.LogWarning("Hash " + hash + " not found while trying to update a trigger.");
             }
-
-            //Fall through, hash not found.
-            Debug.LogWarning("Hash " + hash + " not found while trying to update a trigger.");
         }
 
         /// <summary>
         /// Called on server when client data is received.
         /// </summary>
         /// <param name="data"></param>
-        [Server]
         public void ClientDataReceived(AnimatorUpdate au)
         {
             if (!_isActive)
@@ -1003,18 +1009,17 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkAnimators
         /// Called on clients when server data is received.
         /// </summary>
         /// <param name="data"></param>
-        [Client]
         public void ServerDataReceived(AnimatorUpdate au)
         {
             if (!_isActive)
                 return;
 
             //If also server, client host, then do nothing. Animations already ran on server.
-            if (base.isServer)
+            if (this.ReturnIsServer())
                 return;
 
             //If has authority.
-            if (base.hasAuthority)
+            if (this.ReturnHasAuthority())
             {
                 //No need to sync to self if client authoritative.
                 if (_clientAuthoritative)
