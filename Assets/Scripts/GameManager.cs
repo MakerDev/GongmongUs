@@ -323,7 +323,7 @@ namespace Assets.Scripts
 
             GameStarted = true;
 
-            SoundManager.Instance.PlayeBGM("SoYoung");
+            SoundManager.Instance.SetBGM("SoYoung");
 
             Debug.Log($"You're {Player.LocalPlayer.State}");
             EnablePlayerControl();
