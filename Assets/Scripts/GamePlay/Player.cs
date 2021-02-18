@@ -514,6 +514,15 @@ namespace Assets.Scripts
         {
             PlayerName = newName;
             RoomUIManager.Instance.RefreshList(GameManager.Instance.Players.Values);
+
+            if (isLocalPlayer)
+            {
+                //HACK
+                PlayerSetup.PlayerUI?.SetLocalPlayerName(newName);
+            }
+
+            _playerInfo.SetPlayer(this);
+            GameManager.Instance.RefreshPlayerList();
         }
 
         public void SetupPlayer()
