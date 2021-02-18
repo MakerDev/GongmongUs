@@ -69,10 +69,6 @@ public class SoundManager : MonoBehaviour
             var backgroundMusicObject = new GameObject($"BGM");
             _backgroundMusic = backgroundMusicObject.AddComponent<AudioSource>();
         }
-        else
-        {
-            _backgroundMusic.Stop();
-        }
 
         _backgroundMusic.clip = audioClip;
         _backgroundMusic.loop = true;

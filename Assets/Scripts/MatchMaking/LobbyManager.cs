@@ -57,6 +57,8 @@ namespace Assets.Scripts.Networking
             _requestResultText.text = "";
 
             FetchRecursive();
+
+            SoundManager.Instance.SetBGM("SweetCampusLobbyBGM");
         }
 
         //TODO : implement cancellation
