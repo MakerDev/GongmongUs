@@ -72,7 +72,12 @@ public class SoundManager : MonoBehaviour
 
         _backgroundMusic.clip = audioClip;
         _backgroundMusic.loop = true;
-        _backgroundMusic.volume = 0.2f;
+        _backgroundMusic.volume = 0.1f;
+
+        if (IsPlayingBGM)
+        {
+            _backgroundMusic.Play();
+        }
     }
 
     public void PlayeBGM()
