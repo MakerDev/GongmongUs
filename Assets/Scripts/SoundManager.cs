@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class SoundManager : MonoBehaviour
@@ -8,6 +9,13 @@ public class SoundManager : MonoBehaviour
 
     [SerializeField]
     private AudioSource _backgroundMusic;
+
+    [SerializeField]
+    private List<AudioClip> _audioClips = new List<AudioClip>();
+    [SerializeField]
+    private List<AudioClip> _sfxClips = new List<AudioClip>();
+
+    public bool IsPlayingBGM { get; private set; } = true;
 
     private void Awake()
     {
@@ -19,7 +27,7 @@ public class SoundManager : MonoBehaviour
         else
         {
             Destroy(gameObject);
-        }       
+        }
     }
 
     private void Start()
@@ -27,11 +35,30 @@ public class SoundManager : MonoBehaviour
         _backgroundMusic.Play();
     }
 
-    public void PlayeBGM(AudioClip audioClip)
+    private void Update()
     {
+        if (Input.GetKeyDown(KeyCode.M))
+        {
+            if (IsPlayingBGM)
+            {
+                _backgroundMusic.Stop();
+            }
+            else
+            {
+                _backgroundMusic.Play();
+            }
+
+            IsPlayingBGM = !IsPlayingBGM;
+        }
+    }
+
+    public void PlayeBGM(string name)
+    {
+        var audioClip = _audioClips.FirstOrDefault(x => x.name == name);
+
         if (_backgroundMusic == null)
         {
-            var backgroundMusicObject = new GameObject($"BGM");           
+            var backgroundMusicObject = new GameObject($"BGM");
             _backgroundMusic = backgroundMusicObject.AddComponent<AudioSource>();
         }
         else
@@ -41,6 +68,7 @@ public class SoundManager : MonoBehaviour
 
         _backgroundMusic.clip = audioClip;
         _backgroundMusic.loop = true;
+        _backgroundMusic.volume = 0.7f;
         _backgroundMusic.Play();
     }
 
