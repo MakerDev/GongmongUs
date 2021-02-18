@@ -30,6 +30,9 @@ namespace Assets.Scripts
                     break;
             }
 
+            SoundManager.Instance.StopBGM();
+            //TODO : Play SFX
+
             BackToGameScene();
         }
 
