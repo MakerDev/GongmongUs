@@ -119,6 +119,9 @@ namespace Assets.Scripts
             _matchNameText.text = $"<{MatchManager.Instance.Match.Name}>";
 
             _readyButton.gameObject.SetActive(true);
+
+            //TODO : change this to another BGM.
+            SoundManager.Instance.StopBGM();
         }
 
         public void DisableMove()
