@@ -68,8 +68,10 @@ public class SoundManager : MonoBehaviour
 
         _backgroundMusic.clip = audioClip;
         _backgroundMusic.loop = true;
-        _backgroundMusic.volume = 0.7f;
+        _backgroundMusic.volume = 0.4f;
         _backgroundMusic.Play();
+
+        IsPlayingBGM = true;
     }
 
     public void StopBGM()
@@ -80,6 +82,8 @@ public class SoundManager : MonoBehaviour
         }
 
         _backgroundMusic.Stop();
+
+        IsPlayingBGM = false;
     }
 
     public void SFXPlay(string sfxName, AudioClip audioClip)
