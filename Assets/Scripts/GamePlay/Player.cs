@@ -1,4 +1,5 @@
 ﻿using Assets.Scripts.MatchMaking;
+using Assets.Scripts.MiniGames;
 using Assets.Scripts.Networking;
 using BattleCampusMatchServer.Models;
 using cakeslice;
@@ -326,7 +327,8 @@ namespace Assets.Scripts
                 PlayTransitionEffect();
                 GameManager.Instance.EnablePlayerControl();
 
-                //MissionManager.Instance.OnPlayerCaught(PlayerId);
+                //미니게임하던 중간에 잡히면, 컨트롤이 이상해짐
+                Interactable.EnteredInteractable?.MiniGame?.CancelMiniGame();
                 MissionManager.Instance.RemovePlayer(PlayerId);
             }
             else
