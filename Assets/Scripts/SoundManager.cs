@@ -15,7 +15,24 @@ public class SoundManager : MonoBehaviour
     [SerializeField]
     private List<AudioClip> _sfxClips = new List<AudioClip>();
 
-    public bool IsPlayingBGM { get; private set; } = true;
+    private bool _isPlayingBGM = true;
+    public bool IsPlayingBGM
+    {
+        get { return _isPlayingBGM; }
+        private set
+        {
+            _isPlayingBGM = value;
+
+            if (_isPlayingBGM)
+            {
+                _backgroundMusic.Play();
+            }
+            else
+            {
+                _backgroundMusic.Stop();
+            }
+        }
+    }
 
     private void Awake()
     {
@@ -39,20 +56,11 @@ public class SoundManager : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.M))
         {
-            if (IsPlayingBGM)
-            {
-                _backgroundMusic.Stop();
-            }
-            else
-            {
-                _backgroundMusic.Play();
-            }
-
             IsPlayingBGM = !IsPlayingBGM;
         }
     }
 
-    public void PlayeBGM(string name)
+    public void SetBGM(string name)
     {
         var audioClip = _audioClips.FirstOrDefault(x => x.name == name);
 
@@ -68,9 +76,11 @@ public class SoundManager : MonoBehaviour
 
         _backgroundMusic.clip = audioClip;
         _backgroundMusic.loop = true;
-        _backgroundMusic.volume = 0.4f;
-        _backgroundMusic.Play();
+        _backgroundMusic.volume = 0.2f;
+    }
 
+    public void PlayeBGM()
+    {       
         IsPlayingBGM = true;
     }
 
@@ -80,8 +90,6 @@ public class SoundManager : MonoBehaviour
         {
             return;
         }
-
-        _backgroundMusic.Stop();
 
         IsPlayingBGM = false;
     }
