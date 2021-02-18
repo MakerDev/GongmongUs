@@ -1082,8 +1082,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e13a3707905bec42b074f14c25ffb64, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _xOffset: 77.8
-  _zOffset: 58.7
+  _xOffset: 110.8
+  _zOffset: 78.3
   _isStatic: 0
   _floorImage: {fileID: 1261216748}
   _floorSprites:
@@ -20576,8 +20576,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e13a3707905bec42b074f14c25ffb64, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _xOffset: 62.3
-  _zOffset: 194.2
+  _xOffset: 87
+  _zOffset: 276.5
   _isStatic: 1
   _floorImage: {fileID: 135413502}
   _floorSprites:

@@ -48,8 +48,10 @@ public class MiniMap : MonoBehaviour
     [SerializeField]
     private Text _currentFloorText;
 
-    private const float REAL_WIDTH = 63f;
-    private const float REAL_HEIGHT = 74f;
+    [SerializeField]
+    private const float REAL_WIDTH = 100f;
+    [SerializeField]
+    private const float REAL_HEIGHT = 110f;
 
     private float _xMultiplier = 1f;
     private float _zMultiplier = 1f;
