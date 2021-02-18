@@ -150,12 +150,17 @@ namespace Assets.Scripts
 
         private void Update()
         {
-            if (GameStarted == false || isServer)
+            if (isServer)
             {
                 return;
             }
 
             HandleChat();
+
+            if (GameStarted == false)
+            {
+                return;
+            }
 
             if (Input.GetKeyDown(MENU_KEY))
             {
@@ -317,6 +322,8 @@ namespace Assets.Scripts
             ExitedStudents = 0;
 
             GameStarted = true;
+
+            SoundManager.Instance.PlayeBGM("SoYoung");
 
             Debug.Log($"You're {Player.LocalPlayer.State}");
             EnablePlayerControl();
