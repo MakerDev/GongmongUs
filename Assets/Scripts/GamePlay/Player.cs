@@ -53,7 +53,7 @@ namespace Assets.Scripts
 
         public bool HasExited { get; private set; } = false;
 
-        [SyncVar]
+        [SyncVar(hook = nameof(OnReady))]
         private bool _isReady = false;
         public bool IsReady { get { return _isReady; } private set { _isReady = value; } }
         /// <summary>
@@ -115,7 +115,6 @@ namespace Assets.Scripts
         [TargetRpc]
         private async void TargetGetConnectionID(int netId)
         {
-            GameManager.Instance.PrintMessage($"Server netid {netId} NetID {base.netId}", "SYSTEM");
             var success = await BCNetworkManager.Instance.NotifyUserConnect(netId, UserManager.Instance.User);
 
             //If fails to connect, disconnect.
