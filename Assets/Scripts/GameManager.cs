@@ -112,6 +112,7 @@ namespace Assets.Scripts
             base.OnStartClient();
 
             _menuCanvas.SetActive(false);
+            _gameLobbyUI.SetActive(true);
 
             //At first, mouse needs to be enabled to press start button.
             DisablePlayerControl();

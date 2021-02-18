@@ -142,7 +142,7 @@ namespace Assets.Scripts
 
                 SetName(newName);
 
-                RoomUIManager.Instance.RefreshList(GameManager.Instance.Players.Values);
+                RoomUIManager.Instance?.RefreshList(GameManager.Instance.Players.Values);
 
                 CmdSetMatchChecker(MatchManager.Instance.Match.MatchID.ToGuid());
             }

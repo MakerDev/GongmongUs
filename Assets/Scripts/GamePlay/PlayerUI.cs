@@ -13,16 +13,20 @@ namespace Assets.Scripts
         private RectTransform _thrusterFuelFill;
 
         [SerializeField]
-        private Text _playerNameText;
-
-        [SerializeField]
         private Image _crossHairImage;
         [SerializeField]
         private Sprite _crossHairDefault;
         [SerializeField]
         private Sprite _crossHairOnTarget;
         [SerializeField]
-        private Text _stateText;
+        private Image _stateImage;
+
+        [SerializeField]
+        private Sprite _professorStateSprite;
+        [SerializeField]
+        private Sprite _assistantStateSprite;
+        [SerializeField]
+        private Sprite _studentStateSprite;
 
         [SerializeField]
         private Text _leftMissionsText;
@@ -39,6 +43,7 @@ namespace Assets.Scripts
         private bool _wasOnTarget = false;
 
         private CooltimeAction _cooltimeAction;
+        private string _localPlayerName;
 
         private void Start()
         {
@@ -94,7 +99,7 @@ namespace Assets.Scripts
 
         public void SetLocalPlayerName(string name)
         {
-            _playerNameText.text = name;
+            _localPlayerName = name;
         }
 
         public void SetController(PlayerController playerController)
@@ -109,7 +114,23 @@ namespace Assets.Scripts
 
         public void SetState()
         {
-            _stateText.text = _player.State.ToString();
+            switch (_player.State)
+            {
+                case PlayerState.Professor:
+                    _stateImage.sprite = _professorStateSprite;
+                    break;
+
+                case PlayerState.Assistant:
+                    _stateImage.sprite = _assistantStateSprite;
+                    break;
+
+                case PlayerState.Student:
+                    _stateImage.sprite = _studentStateSprite;
+                    break;
+
+                default:
+                    break;
+            }
         }
 
         public void SetPlayerMissionProgress(int missionsCount, int completedMissionsCount)
