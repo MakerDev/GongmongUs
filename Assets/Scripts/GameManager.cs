@@ -493,7 +493,7 @@ namespace Assets.Scripts
             Debug.Log($"Client : {playerId} is registered. Now {Players.Count} players");
         }
 
-        public void UnRegisterPlayer(string playerId)
+        public async void UnRegisterPlayer(string playerId)
         {
             var player = Players[playerId];
             Players.Remove(playerId);
@@ -506,23 +506,32 @@ namespace Assets.Scripts
             _minimapOnTab.RemovePlayer(player);
             _staticMinimap.RemovePlayer(player);
 
-            Debug.Log($"Client : {playerId} is removed. Now {Players.Count} players");
+            Debug.Log($"{playerId} is removed. Now {Players.Count} players");
 
-            if (isServer)
+            if (isClient)
             {
-                var hasMatch = ServerPlayersOfMatch.TryGetValue(player.MatchID, out var matchInfo);
+                return;
+            }
 
-                if (hasMatch == false)
-                {
-                    return;
-                }
+            //If Server
+            var hasMatch = ServerPlayersOfMatch.TryGetValue(player.MatchID, out var matchInfo);
 
-                matchInfo.Players.Remove(player);
+            if (hasMatch == false)
+            {
+                return;
+            }
 
-                if (matchInfo.Players.Count <= 0)
-                {
-                    ServerPlayersOfMatch.Remove(player.MatchID);
-                }
+            matchInfo.Players.Remove(player);
+
+            if (matchInfo.Players.Count <= 0)
+            {
+                ServerPlayersOfMatch.Remove(player.MatchID);
+            }
+
+            if (ServerCanStartGame(player.MatchID))
+            {
+                await matchInfo.Players[0].StartGameByServerAsync(player.MatchID);
+                Debug.Log("Start by exiting.");
             }
         }
 

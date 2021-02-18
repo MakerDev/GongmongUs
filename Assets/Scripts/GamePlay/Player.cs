@@ -179,7 +179,7 @@ namespace Assets.Scripts
 
         #region GAME SETUP
         [ClientRpc]
-        private void RpcStartGame(string professorId)
+        public void RpcStartGame(string professorId)
         {
             GameManager.Instance.ConfigureGameOnStart(professorId);
         }
@@ -203,25 +203,26 @@ namespace Assets.Scripts
 
             if (toStartGame)
             {
-                var professorID = GameManager.Instance.GetRandomPlayerIdForMatch(matchID);
-                await GameManager.Instance.ServerStartMatchAsync(matchID, professorID);
-
-                RpcStartGame(professorID);
+                await StartGameByServerAsync(matchID);
             }
         }
 
+        [Server]
+        public async UniTask StartGameByServerAsync(string matchID)
+        {
+            var professorID = GameManager.Instance.GetRandomPlayerIdForMatch(matchID);
+            await GameManager.Instance.ServerStartMatchAsync(matchID, professorID);
+
+            RpcStartGame(professorID);
+        }
+
         [ClientRpc]
-        private void RpcGetReady(bool startGame)
+        public void RpcGetReady(bool startGame)
         {
             MatchID = MatchManager.Instance.Match.MatchID;
             IsReady = true;
 
-            GameManager.Instance.PrintMessage($"{PlayerName} is now ready!", "SYSTEM", ChatType.Info);
-
-            if (startGame)
-            {
-
-            }
+            //GameManager.Instance.PrintMessage($"{PlayerName} is now ready!", "SYSTEM", ChatType.Info);
 
             //TODO : Update RoomPlayerUI
         }
@@ -489,6 +490,14 @@ namespace Assets.Scripts
 
             _playerInfo.SetPlayer(this);
             GameManager.Instance.RefreshPlayerList();
+        }
+
+        public void OnReady(bool _, bool isReady)
+        {
+            if (isReady)
+            {
+                GameManager.Instance.PrintMessage($"{PlayerName} is now ready", "SYSTEM", ChatType.Info);
+            }
         }
 
         public void SetName(string newName)
