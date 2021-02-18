@@ -34,7 +34,7 @@ namespace Assets.Scripts.MatchMaking
     public class MatchServer
     {
 #if UNITY_STANDALONE_LINUX || UNITY_WEBGL
-        private const string BASE_ADDRESS = "https://battlecampusmatchserver.azurewebsites.net/api/";
+        private const string BASE_ADDRESS = "https://battlecampusmatchserverlinux.azurewebsites.net/api/";
 #else
         private const string BASE_ADDRESS = "https://localhost:4001/api/";
 #endif
