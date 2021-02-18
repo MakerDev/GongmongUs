@@ -28,6 +28,11 @@ public class LessonRegisterMiniGame : MiniGame
 
     private void FixedUpdate()
     {
+        if (MiniGameResult.Passed)
+        {
+            return;
+        }
+
         if (_timesLeft > 0)
             _timesLeft -= Time.fixedDeltaTime;
 
