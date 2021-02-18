@@ -143,12 +143,6 @@ namespace Assets.Scripts
 
                 CmdSetMatchChecker(MatchManager.Instance.Match.MatchID.ToGuid());
             }
-
-            //HACK : 호스트가 소환하는 거였는데, 이제 호스트 없어
-            if (GameManager.Instance.Players.Count <= 1 && isLocalPlayer)
-            {
-                CmdSpawnChatHub(MatchManager.Instance.Match.MatchID.ToGuid());
-            }
         }
 
         public override void OnStopServer()
@@ -184,21 +178,6 @@ namespace Assets.Scripts
         #endregion
 
         #region GAME SETUP
-        //public void StartGame()
-        //{
-        //    CmdStartGame(GameManager.Instance.GetRandomPlayerId(), MatchManager.Instance.Match.MatchID);
-        //}
-
-        //[Command]
-        //private async void CmdStartGame(string professorID, string matchId)
-        //{
-        //    var serverMissionManager = BCNetworkManager.Instance.SpawnMissionManager(matchId);
-        //    serverMissionManager.ConfigureForServer(matchId, professorID);
-        //    await BCNetworkManager.Instance.NotifyStartGame(matchId);
-
-        //    RpcStartGame(professorID);
-        //}
-
         [ClientRpc]
         private void RpcStartGame(string professorId)
         {
@@ -491,16 +470,8 @@ namespace Assets.Scripts
             }
         }
         #endregion
-        #region SETTINGS
-        [Command]
-        public void CmdSpawnChatHub(Guid matchGuid)
-        {
-            Debug.Log($"Spawning hub for {matchGuid}");
-            var chatHub = Instantiate(_chatHubPrefab);
-            NetworkServer.Spawn(chatHub);
-            chatHub.GetComponent<NetworkMatchChecker>().matchId = matchGuid;
-        }
 
+        #region SETTINGS
         [Command]
         public void CmdSetMatchChecker(Guid matchGuid)
         {

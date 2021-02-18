@@ -11,12 +11,10 @@ namespace Assets.Scripts.Networking
 {
     public class BCNetworkManager : NetworkManager
     {
-        [SerializeField]
-        private GameObject _gamePlayerPrefab;
-
         public static BCNetworkManager Instance { get; private set; }
 
         public Dictionary<string, GameObject> MissionManagers { get; private set; } = new Dictionary<string, GameObject>();
+        public Dictionary<string, GameObject> ChatHubs { get; private set; } = new Dictionary<string, GameObject>();
 
         private string _serverName = null;
 
@@ -123,20 +121,30 @@ namespace Assets.Scripts.Networking
             base.OnServerDisconnect(conn);
         }
 
-        //Don't reset MatchManager, UserManager
-        //리셋하면 게임 재시작이 불가능해짐
-        public override void OnClientDisconnect(NetworkConnection conn)
-        {
-            base.OnClientDisconnect(conn);
-            //UserManager.Instance.ResetMatchInfo();
-            //MatchManager.Instance.ResetMatchInfo();
-        }
-
         public override async void OnStopServer()
         {
             await MatchServer.Instance.TurnOffServerAsync(_ipPortInfo);
 
             base.OnStopServer();
+        }
+
+        [Server]
+        public bool SpawnChatHubIfNotExists(string matchID)
+        {
+            if (ChatHubs.ContainsKey(matchID))
+            {
+                return false;
+            }
+
+            var chatHub = Instantiate(spawnPrefabs[0]);
+            NetworkServer.Spawn(chatHub);
+            chatHub.GetComponent<NetworkMatchChecker>().matchId = matchID.ToGuid();
+
+            ChatHubs.Add(matchID, chatHub);
+
+            Debug.Log($"Spawning hub for {matchID}");
+
+            return true;
         }
 
         [Server]
@@ -162,6 +170,12 @@ namespace Assets.Scripts.Networking
         [Server]
         public async void CompleteMatch(string matchId)
         {
+            if (matchId == null)
+            {
+                Debug.LogError("Null matchId on complete");
+                return;
+            }
+
             await MatchServer.Instance.NotifyMatchCompleteAsync(_ipPortInfo, matchId);
 
             //Destroy MissionManager
@@ -171,6 +185,15 @@ namespace Assets.Scripts.Networking
             {
                 MissionManagers.Remove(matchId);
                 Destroy(missionManager);
+            }
+
+            var hasChatHub = ChatHubs.TryGetValue(matchId, out var chathub);
+
+            if (hasChatHub)
+            {
+                Debug.Log($"Destroy chathub for {matchId}");
+                Destroy(chathub);
+                ChatHubs.Remove(matchId);
             }
         }
 

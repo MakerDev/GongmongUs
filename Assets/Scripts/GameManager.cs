@@ -282,6 +282,9 @@ namespace Assets.Scripts
             }
 
             serverMatchInfo.Players.Add(player);
+
+            BCNetworkManager.Instance.SpawnChatHubIfNotExists(matchID);
+
             return true;
         }
 
