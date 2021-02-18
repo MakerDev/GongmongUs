@@ -95,19 +95,34 @@ namespace Assets.Scripts
         {
             base.OnStartLocalPlayer();
 
-            CmdGetConnectionID();
+            CmdGetConnectionID(MatchManager.Instance.Match.MatchID);
         }
 
         [Command]
-        private void CmdGetConnectionID()
+        private void CmdGetConnectionID(string matchID)
         {
-            TargetGetConnectionID(connectionToClient.connectionId);
+            MatchID = matchID;
+            var successConnect = GameManager.Instance.ServerOnPlayerConnect(matchID, PlayerId);
+
+            //TargetRpc에서 NotifyUserConnect를 하므로, 만약 ServerOnPlayerconnect에서 Disconnect가 되면, 
+            //선 disconnect -> 후 connect가 되어 버그. 따라서, Disconnect안 된 경우에만 Notify하자
+            if (successConnect)
+            {
+                TargetGetConnectionID((int)netId);
+            }
         }
 
         [TargetRpc]
-        private void TargetGetConnectionID(int connectionID)
+        private async void TargetGetConnectionID(int netId)
         {
-            BCNetworkManager.Instance.NotifyUserConnect(connectionID, UserManager.Instance.User);
+            GameManager.Instance.PrintMessage($"Server netid {netId} NetID {base.netId}", "SYSTEM");
+            var success = await BCNetworkManager.Instance.NotifyUserConnect(netId, UserManager.Instance.User);
+
+            //If fails to connect, disconnect.
+            if (success == false)
+            {
+                connectionToServer.Disconnect();
+            }
         }
 
         public override void OnStartClient()
@@ -123,6 +138,7 @@ namespace Assets.Scripts
                 string userName = UserManager.Instance.User.Name;
                 string netId = GetComponent<NetworkIdentity>().netId.ToString();
                 var newName = $"{userName}{netId}";
+
                 SetName(newName);
 
                 CmdSetMatchChecker(MatchManager.Instance.Match.MatchID.ToGuid());
@@ -168,20 +184,20 @@ namespace Assets.Scripts
         #endregion
 
         #region GAME SETUP
-        public void StartGame()
-        {
-            CmdStartGame(GameManager.Instance.GetRandomPlayerId(), MatchManager.Instance.Match.MatchID);
-        }
+        //public void StartGame()
+        //{
+        //    CmdStartGame(GameManager.Instance.GetRandomPlayerId(), MatchManager.Instance.Match.MatchID);
+        //}
 
-        [Command]
-        private async void CmdStartGame(string professorID, string matchId)
-        {
-            var serverMissionManager = BCNetworkManager.Instance.SpawnMissionManager(matchId);
-            serverMissionManager.ConfigureForServer(matchId, professorID);
-            await BCNetworkManager.Instance.NotifyStartGame(matchId);
+        //[Command]
+        //private async void CmdStartGame(string professorID, string matchId)
+        //{
+        //    var serverMissionManager = BCNetworkManager.Instance.SpawnMissionManager(matchId);
+        //    serverMissionManager.ConfigureForServer(matchId, professorID);
+        //    await BCNetworkManager.Instance.NotifyStartGame(matchId);
 
-            RpcStartGame(professorID);
-        }
+        //    RpcStartGame(professorID);
+        //}
 
         [ClientRpc]
         private void RpcStartGame(string professorId)
@@ -196,21 +212,37 @@ namespace Assets.Scripts
         }
 
         [Command]
-        private void CmdGetReady(string matchID)
+        private async void CmdGetReady(string matchID)
         {
             //Store match id for retrieving proper MissionManager on server.
             MatchID = matchID;
             IsReady = true;
-            RpcGetReady();
+
+            var toStartGame = GameManager.Instance.OnPlayerReady(matchID, this);
+
+            RpcGetReady(toStartGame);
+
+            if (toStartGame)
+            {
+                var professorID = GameManager.Instance.GetRandomPlayerIdForMatch(matchID);
+                await GameManager.Instance.ServerStartMatchAsync(matchID, professorID);
+
+                RpcStartGame(professorID);
+            }
         }
 
         [ClientRpc]
-        private void RpcGetReady()
+        private void RpcGetReady(bool startGame)
         {
             MatchID = MatchManager.Instance.Match.MatchID;
             IsReady = true;
 
             GameManager.Instance.PrintMessage($"{PlayerName} is now ready!", "SYSTEM", ChatType.Info);
+
+            if (startGame)
+            {
+
+            }
 
             //TODO : Update RoomPlayerUI
         }

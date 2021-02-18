@@ -153,8 +153,10 @@ namespace Assets.Scripts
         [Server]
         public void ServerCompleteMatch(MatchResult matchResult, string matchID)
         {
-            RpcCompleteMatch(matchResult);
             BCNetworkManager.Instance.CompleteMatch(matchID);
+            GameManager.Instance.ServerCompleteMatch(matchID);
+
+            RpcCompleteMatch(matchResult);
         }
 
         [ClientRpc]

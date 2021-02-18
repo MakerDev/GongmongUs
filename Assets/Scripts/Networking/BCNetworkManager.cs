@@ -95,11 +95,11 @@ namespace Assets.Scripts.Networking
         }
 
         [Client]
-        public async void NotifyUserConnect(int connectionId, GameUser user)
+        public async UniTask<bool> NotifyUserConnect(int netId, GameUser user)
         {
-            user.ConnectionID = connectionId;
-
-            await MatchServer.Instance.NotifyUserConnect(MatchManager.Instance.Match.IpPortInfo, connectionId, user);
+            user.ConnectionID = netId;
+            Debug.Log($"Notify User of netID : {netId}");
+            return await MatchServer.Instance.NotifyUserConnect(_ipPortInfo, netId, user);
         }
 
         public override void OnClientConnect(NetworkConnection conn)
@@ -116,8 +116,9 @@ namespace Assets.Scripts.Networking
         //This is called on server. 
         public override async void OnServerDisconnect(NetworkConnection conn)
         {
-            await MatchServer.Instance.NotifyUserDisconnect(_ipPortInfo, conn.connectionId);
-            Debug.Log($"Disconnected user {conn.connectionId}");
+            var nedId = conn.identity.netId;
+            await MatchServer.Instance.NotifyUserDisconnect(_ipPortInfo, (int)nedId);
+            Debug.Log($"Disconnected user {nedId}");
 
             base.OnServerDisconnect(conn);
         }

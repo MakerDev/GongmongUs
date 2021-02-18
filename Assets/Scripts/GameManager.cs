@@ -1,4 +1,6 @@
 ﻿using Assets.Scripts.MatchMaking;
+using Assets.Scripts.Networking;
+using Cysharp.Threading.Tasks;
 using Mirror;
 using System;
 using System.Collections;
@@ -7,9 +9,16 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Video;
 
 namespace Assets.Scripts
 {
+    public class ServerMatchInfo
+    {
+        public bool Started { get; set; } = false;
+        public List<Player> Players { get; set; } = new List<Player>();
+    }
+
     public class GameManager : NetworkBehaviour
     {
         public static GameManager Instance;
@@ -62,6 +71,11 @@ namespace Assets.Scripts
         public bool GameStarted { get; private set; } = false;
 
         public Dictionary<string, Player> Players { get; private set; } = new Dictionary<string, Player>();
+
+        /// <summary>
+        /// Key : match ID
+        /// </summary>
+        public Dictionary<string, ServerMatchInfo> ServerPlayersOfMatch { get; private set; } = new Dictionary<string, ServerMatchInfo>();
 
         /// <summary>
         /// The number of remaining students;
@@ -167,44 +181,111 @@ namespace Assets.Scripts
             }
         }
 
-        public bool CanStartGame()
-        {
-            if (Players.Count < 3)
-            {
-                return false;
-            }
-
-            foreach (var player in Players.Values)
-            {
-                if (player.isLocalPlayer)
-                {
-                    continue;
-                }
-
-                if (player.IsReady == false)
-                {
-                    return false;
-                }
-            }
-
-            //_readyButtonText.text = "Start";
-
-            return true;
-        }
-
         public void ReadyGame()
         {
             Player.LocalPlayer.GetReady();
             _readyButton.enabled = false;
             _readyButton.interactable = false;
 
-            if (CanStartGame())
-            {
-                //If all ready, start game
-                Player.LocalPlayer.StartGame();
-            }
+            //if (CanStartGame())
+            //{
+            //    //If all ready, start game
+            //    Player.LocalPlayer.StartGame();
+            //}
         }
 
+        private bool ServerCanStartGame(string matchId)
+        {
+            var hasMatch = ServerPlayersOfMatch.TryGetValue(matchId, out var matchInfo);
+
+            if (hasMatch == false)
+            {
+                return false;
+            }
+
+            if (matchInfo.Players.Count < 3)
+            {
+                return false;
+            }
+
+            foreach (var player in matchInfo.Players)
+            {
+                if (player.IsReady == false)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Notify when player is ready
+        /// </summary>
+        /// <param name="matchID"></param>
+        /// <param name="player"></param>
+        /// <returns>Whether to start game</returns>
+        [Server]
+        public bool OnPlayerReady(string matchID, Player player)
+        {
+            var hasMatch = ServerPlayersOfMatch.TryGetValue(matchID, out var players);
+
+            if (hasMatch == false)
+            {
+                //TODO : 플레이어 다 내쫓아..?
+                return false;
+            }
+
+            return ServerCanStartGame(matchID);
+        }
+
+        [Server]
+        public void ServerCompleteMatch(string matchId)
+        {
+            ServerPlayersOfMatch.Remove(matchId);
+        }
+
+        public async UniTask ServerStartMatchAsync(string matchID, string professorID)
+        {
+            var serverInfo = ServerPlayersOfMatch[matchID];
+
+            serverInfo.Started = true;
+
+            var serverMissionManager = BCNetworkManager.Instance.SpawnMissionManager(matchID);
+            serverMissionManager.ConfigureForServer(matchID, professorID);
+            await BCNetworkManager.Instance.NotifyStartGame(matchID);
+        }
+
+        [Server]
+        public bool ServerOnPlayerConnect(string matchID, string playerId)
+        {
+            ServerMatchInfo serverMatchInfo;
+
+            if (ServerPlayersOfMatch.ContainsKey(matchID) == false)
+            {
+                serverMatchInfo = new ServerMatchInfo();
+                ServerPlayersOfMatch.Add(matchID, serverMatchInfo);
+            }
+            else
+            {
+                serverMatchInfo = ServerPlayersOfMatch[matchID];
+            }
+
+            var player = GetPlayer(playerId);
+
+            //If this match has already started, disconnect this player.
+            if (serverMatchInfo.Started)
+            {
+                Debug.LogError($"Disconnect {playerId} as match already started.");
+                player.connectionToClient.Disconnect();
+                return false;
+            }
+
+            serverMatchInfo.Players.Add(player);
+            return true;
+        }
+
+        [Client]
         public void ConfigureGameOnStart(string professorId)
         {
             _startGameUI.SetActive(false);
@@ -377,6 +458,15 @@ namespace Assets.Scripts
             return Players.Values.ToArray()[index].PlayerId;
         }
 
+        public string GetRandomPlayerIdForMatch(string matchId)
+        {
+            var players = ServerPlayersOfMatch[matchId].Players;
+
+            var index = UnityEngine.Random.Range(0, players.Count);
+
+            return players[index].PlayerId;
+        }
+
         #region PLAYER TRACKING
         public const string PLAYER_ID_PREFIX = "Player";
 
@@ -411,6 +501,23 @@ namespace Assets.Scripts
             _staticMinimap.RemovePlayer(player);
 
             Debug.Log($"Client : {playerId} is removed. Now {Players.Count} players");
+
+            if (isServer)
+            {
+                var hasMatch = ServerPlayersOfMatch.TryGetValue(player.MatchID, out var matchInfo);
+
+                if (hasMatch == false)
+                {
+                    return;
+                }
+
+                matchInfo.Players.Remove(player);
+
+                if (matchInfo.Players.Count <= 0)
+                {
+                    ServerPlayersOfMatch.Remove(player.MatchID);
+                }
+            }
         }
 
         public void RefreshPlayerList()
@@ -439,6 +546,11 @@ namespace Assets.Scripts
             }
 
             throw new System.Exception($"No player with ID {playerId} is found");
+        }
+
+        private void OnDestroy()
+        {
+            DisablePlayerControl();
         }
         #endregion
     }

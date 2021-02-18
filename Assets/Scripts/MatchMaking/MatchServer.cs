@@ -150,9 +150,9 @@ namespace Assets.Scripts.MatchMaking
             return JsonConvert.DeserializeObject<MatchJoinResultDTO>(matchJoinResultString);
         }
 
-        public async UniTask NotifyUserConnect(IpPortInfo ipPortInfo, int connectionID, GameUser user)
+        public async UniTask<bool> NotifyUserConnect(IpPortInfo ipPortInfo, int netId, GameUser user)
         {
-            user.ConnectionID = connectionID;
+            user.ConnectionID = netId;
 
             var serverUser = new ServerUserDTO
             {
@@ -161,12 +161,19 @@ namespace Assets.Scripts.MatchMaking
             };
 
             var serverUserJson = JsonConvert.SerializeObject(serverUser);
-            var request = UnityWebRequest.Post($"{BASE_ADDRESS}matches/notify/connect?connectionID={connectionID}", "");
+            var request = UnityWebRequest.Post($"{BASE_ADDRESS}matches/notify/connect?connectionID={netId}", "");
             request.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(serverUserJson));
             request.uploadHandler.contentType = "application/json";
             request.SetRequestHeader("Content-Type", "application/json");
 
             await request.SendWebRequest();
+
+            if (request.isNetworkError || request.isHttpError || request.responseCode == 400)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         public async UniTask<bool> LoginPortal(LoginForm loginForm)
@@ -189,9 +196,9 @@ namespace Assets.Scripts.MatchMaking
             }
         }
         //This also acts as notification of player exiting game.
-        public async UniTask NotifyUserDisconnect(IpPortInfo ipPortInfo, int connectionID)
+        public async UniTask NotifyUserDisconnect(IpPortInfo ipPortInfo, int netId)
         {
-            var request = UnityWebRequest.Post($"{BASE_ADDRESS}matches/notify/disconnect?connectionID={connectionID}", "");
+            var request = UnityWebRequest.Post($"{BASE_ADDRESS}matches/notify/disconnect?connectionID={netId}", "");
             request.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(ipPortInfo)));
             request.uploadHandler.contentType = "application/json";
             request.SetRequestHeader("Content-Type", "application/json");
