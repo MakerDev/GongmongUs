@@ -14,17 +14,23 @@ namespace Assets.Scripts
     public class MatchResultSceneManager : MonoBehaviour
     {
         [SerializeField]
-        private Text _matchResultText;
+        private Image _resultImage;
+
+        [SerializeField]
+        private Sprite _professorWinSprite;
+        [SerializeField]
+        private Sprite _professorLoseSprite;
 
         private void Start()
         {
             switch (MatchManager.Instance.MatchResult)
             {
                 case MatchResult.ProfessorWins:
-                    _matchResultText.text = "교수님이.. 승리하였습니다..";
+                    _resultImage.sprite = _professorWinSprite;
                     break;
+
                 case MatchResult.StudentsWin:
-                    _matchResultText.text = "학생들이.. 승리하였습니다..!";
+                    _resultImage.sprite = _professorLoseSprite;
                     break;
                 default:
                     break;
