@@ -14,6 +14,30 @@ namespace Assets.Scripts.RoomManagement
 
         [SerializeField]
         private Text _localPlayerName;
+        [SerializeField]
+        private GameObject _roomPlayerUIPrefab;
+        [SerializeField]
+        private GameObject _roomPlayerUIListPanel;
+
+        private List<GameObject> _roomPlayerUIList = new List<GameObject>();
+
+        public void RefreshList(IEnumerable<Player> players)
+        {
+            foreach (var playerUIObject in _roomPlayerUIList)
+            {
+                Destroy(playerUIObject);
+            }
+
+            _roomPlayerUIList.Clear();
+
+            foreach (var player in players)
+            {
+                var roomPlayerItem = Instantiate(_roomPlayerUIPrefab, _roomPlayerUIListPanel.transform);
+                _roomPlayerUIList.Add(roomPlayerItem);
+                var roomPlayerUI = roomPlayerItem.GetComponent<RoomPlayerUI>();
+                roomPlayerUI.SetPlayer(player);
+            }
+        }
 
         private void Awake()
         {

@@ -187,6 +187,12 @@ namespace Assets.Scripts.Networking
                 Destroy(missionManager);
             }
 
+            TryRemoveChatHub(matchId);
+        }
+
+        [Server]
+        public void TryRemoveChatHub(string matchId)
+        {
             var hasChatHub = ChatHubs.TryGetValue(matchId, out var chathub);
 
             if (hasChatHub)

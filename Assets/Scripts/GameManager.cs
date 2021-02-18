@@ -1,5 +1,6 @@
 ﻿using Assets.Scripts.MatchMaking;
 using Assets.Scripts.Networking;
+using Assets.Scripts.RoomManagement;
 using Cysharp.Threading.Tasks;
 using Mirror;
 using System;
@@ -379,9 +380,17 @@ namespace Assets.Scripts
 
         public void RenameLocalPlayer()
         {
-            if (string.IsNullOrEmpty(_renameInputField.text) || _renameInputField.text.Length >= 10)
+            var newName = _renameInputField.text;
+
+            if (string.IsNullOrEmpty(newName) || newName.Length >= 10)
             {
                 PrintMessage("이름은 빈칸이거나 10자 이상이어서는 안됩니다.", "SYSTEM");
+                return;
+            }
+
+            if (Player.LocalPlayer.PlayerName == newName)
+            {
+                PrintMessage("이미 이 이름입니다.", "SYSTEM");
                 return;
             }
 
@@ -495,6 +504,7 @@ namespace Assets.Scripts
             if (isClient)
             {
                 RefreshPlayerList();
+                RoomUIManager.Instance?.RefreshList(Players.Values);
             }
 
             Debug.Log($"Client : {playerId} is registered. Now {Players.Count} players");
@@ -508,6 +518,7 @@ namespace Assets.Scripts
             if (isClient)
             {
                 RefreshPlayerList();
+                RoomUIManager.Instance?.RefreshList(Players.Values);
             }
 
             _minimapOnTab.RemovePlayer(player);
@@ -533,6 +544,7 @@ namespace Assets.Scripts
             if (matchInfo.Players.Count <= 0)
             {
                 ServerPlayersOfMatch.Remove(player.MatchID);
+                BCNetworkManager.Instance.TryRemoveChatHub(player.MatchID);
             }
 
             if (ServerCanStartGame(player.MatchID))

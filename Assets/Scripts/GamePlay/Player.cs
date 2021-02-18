@@ -1,6 +1,7 @@
 ﻿using Assets.Scripts.MatchMaking;
 using Assets.Scripts.MiniGames;
 using Assets.Scripts.Networking;
+using Assets.Scripts.RoomManagement;
 using BattleCampusMatchServer.Models;
 using cakeslice;
 using Cysharp.Threading.Tasks;
@@ -141,6 +142,8 @@ namespace Assets.Scripts
 
                 SetName(newName);
 
+                RoomUIManager.Instance.RefreshList(GameManager.Instance.Players.Values);
+
                 CmdSetMatchChecker(MatchManager.Instance.Match.MatchID.ToGuid());
             }
         }
@@ -224,15 +227,7 @@ namespace Assets.Scripts
             MatchID = MatchManager.Instance.Match.MatchID;
             IsReady = true;
 
-            foreach (var player in GameManager.Instance.Players.Values)
-            {
-                if (player.IsReady)
-                {
-                    GameManager.Instance.PrintMessage($"{player.PlayerName} is now ready!", "SYSTEM", ChatType.Info);
-                }
-            }
-
-            //TODO : Update RoomPlayerUI for all..
+            RoomUIManager.Instance?.RefreshList(GameManager.Instance.Players.Values);
         }
         #endregion
 
@@ -503,6 +498,7 @@ namespace Assets.Scripts
 
         public void SetName(string newName)
         {
+            PlayerName = newName;
             CmdChangePlayerName(newName);
         }
 
@@ -510,6 +506,14 @@ namespace Assets.Scripts
         public void CmdChangePlayerName(string newName)
         {
             PlayerName = newName;
+            RpcChangePlayerName(newName);
+        }
+
+        [ClientRpc]
+        public void RpcChangePlayerName(string newName)
+        {
+            PlayerName = newName;
+            RoomUIManager.Instance.RefreshList(GameManager.Instance.Players.Values);
         }
 
         public void SetupPlayer()
