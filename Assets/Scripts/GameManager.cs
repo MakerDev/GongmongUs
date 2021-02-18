@@ -379,6 +379,12 @@ namespace Assets.Scripts
 
         public void RenameLocalPlayer()
         {
+            if (string.IsNullOrEmpty(_renameInputField.text) || _renameInputField.text.Length >= 10)
+            {
+                PrintMessage("이름은 빈칸이거나 10자 이상이어서는 안됩니다.", "SYSTEM");
+                return;
+            }
+
             Player.LocalPlayer.SetName(_renameInputField.text);
         }
 
