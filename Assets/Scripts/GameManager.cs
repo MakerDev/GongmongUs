@@ -194,12 +194,6 @@ namespace Assets.Scripts
             Player.LocalPlayer.GetReady();
             _readyButton.enabled = false;
             _readyButton.interactable = false;
-
-            //if (CanStartGame())
-            //{
-            //    //If all ready, start game
-            //    Player.LocalPlayer.StartGame();
-            //}
         }
 
         private bool ServerCanStartGame(string matchId)

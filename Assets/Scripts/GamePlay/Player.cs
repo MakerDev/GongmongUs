@@ -53,7 +53,7 @@ namespace Assets.Scripts
 
         public bool HasExited { get; private set; } = false;
 
-        [SyncVar(hook = nameof(OnReady))]
+        [SyncVar]
         private bool _isReady = false;
         public bool IsReady { get { return _isReady; } private set { _isReady = value; } }
         /// <summary>
@@ -185,6 +185,7 @@ namespace Assets.Scripts
 
         public void GetReady()
         {
+            IsReady = true;
             MatchID = MatchManager.Instance.Match.MatchID;
             CmdGetReady(MatchID);
         }
@@ -194,6 +195,7 @@ namespace Assets.Scripts
         {
             //Store match id for retrieving proper MissionManager on server.
             MatchID = matchID;
+            //Hook이 순서대로 불려서 넣어야함
             IsReady = true;
 
             var toStartGame = GameManager.Instance.OnPlayerReady(matchID, this);
@@ -221,9 +223,15 @@ namespace Assets.Scripts
             MatchID = MatchManager.Instance.Match.MatchID;
             IsReady = true;
 
-            //GameManager.Instance.PrintMessage($"{PlayerName} is now ready!", "SYSTEM", ChatType.Info);
+            foreach (var player in GameManager.Instance.Players.Values)
+            {
+                if (player.IsReady)
+                {
+                    GameManager.Instance.PrintMessage($"{player.PlayerName} is now ready!", "SYSTEM", ChatType.Info);
+                }
+            }
 
-            //TODO : Update RoomPlayerUI
+            //TODO : Update RoomPlayerUI for all..
         }
         #endregion
 
@@ -491,14 +499,6 @@ namespace Assets.Scripts
             GameManager.Instance.RefreshPlayerList();
         }
 
-        public void OnReady(bool _, bool isReady)
-        {
-            if (isReady)
-            {
-                GameManager.Instance.PrintMessage($"{PlayerName} is now ready", "SYSTEM", ChatType.Info);
-            }
-        }
-
         public void SetName(string newName)
         {
             CmdChangePlayerName(newName);
@@ -507,7 +507,7 @@ namespace Assets.Scripts
         [Command]
         public void CmdChangePlayerName(string newName)
         {
-            _playerName = newName;
+            PlayerName = newName;
         }
 
         public void SetupPlayer()
