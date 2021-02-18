@@ -20,6 +20,18 @@ public class EmailMiniGame : MiniGame
     public GameObject Third;
     public GameObject Fourth;
 
+    public override void ResetGame()
+    {
+        base.ResetGame();
+
+        Fail_text.SetActive(false);
+        Success_text.SetActive(false);
+
+        First.SetActive(true);
+        Second.SetActive(false);
+        Third.SetActive(false);
+        Fourth.SetActive(false);
+    }
 
     public void Cancel()
     {
