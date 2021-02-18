@@ -32,7 +32,6 @@ namespace Assets.Scripts
             _matchNameText.text = match.Name;
             _currentPlayerInfoText.text = $"{match.CurrentPlayersCount}/{match.MaxPlayers}";
 
-
             _joinButton.enabled = match.CanJoin;
             _joinButton.interactable = match.CanJoin;
             _joinShield.enabled = !match.CanJoin;
