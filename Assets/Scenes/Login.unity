@@ -691,6 +691,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _backgroundMusic: {fileID: 1964775385}
+  _audioClips:
+  - {fileID: 8300000, guid: 006a940a583d5ce4498c7d2b29087450, type: 3}
+  - {fileID: 8300000, guid: 697453862e25e3940bc038a60266653c, type: 3}
 --- !u!4 &620710402
 Transform:
   m_ObjectHideFlags: 0
