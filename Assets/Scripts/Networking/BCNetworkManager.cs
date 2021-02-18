@@ -97,7 +97,7 @@ namespace Assets.Scripts.Networking
         {
             user.ConnectionID = netId;
             Debug.Log($"Notify User of netID : {netId}");
-            return await MatchServer.Instance.NotifyUserConnect(_ipPortInfo, netId, user);
+            return await MatchServer.Instance.NotifyUserConnect(MatchManager.Instance.Match.IpPortInfo, netId, user);
         }
 
         public override void OnClientConnect(NetworkConnection conn)
