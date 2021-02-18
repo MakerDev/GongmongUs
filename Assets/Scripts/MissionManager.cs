@@ -53,21 +53,9 @@ namespace Assets.Scripts
         //랜덤 Guid로 플레이어들을 정렬해서 미션을 분배하는 방식을 선택
         private void AssignMissions(Guid orderId)
         {
-            var players = GameManager.Instance.Players.Values.OrderBy(p => p.PlayerId).ToList();
-
-            for (int i = 0; i < players.Count; i++)
-            {
-                Player player = players[i];
-                //PlayerState might not be updated here. However, Missions assigned to Profesor has no meaning.
-                if (player.State != PlayerState.Student)
-                {
-                    continue;
-                }
-
-                PlayerMissionsProgress.Add(player.PlayerId, false);
-
-                player.AssignMissions(AllMissions.Skip(i * MissionsPerPlayer).Take(MissionsPerPlayer));
-            }
+            //어차피 클라이언트에서 하는 거니까, 다른 유저에게 미션을 Assign할 필요가 없다!
+            var skipNum = UnityEngine.Random.Range(0, AllMissions.Count - MissionsPerPlayer);
+            Player.LocalPlayer.AssignMissions(AllMissions.Skip(skipNum).Take(MissionsPerPlayer));
         }
 
         /// <summary>
