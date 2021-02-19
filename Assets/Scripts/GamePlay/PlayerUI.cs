@@ -136,7 +136,7 @@ namespace Assets.Scripts
         public void SetPlayerMissionProgress(int missionsCount, int completedMissionsCount)
         {
             _leftMissionsText.text = $"{completedMissionsCount}/{missionsCount}";
-            _progressImage.localScale = new Vector3(completedMissionsCount / missionsCount, 1);
+            _progressImage.localScale = new Vector3(completedMissionsCount*1.0f / missionsCount, 1, 1);
         }
 
         void SetFuelAmout(float amount)
