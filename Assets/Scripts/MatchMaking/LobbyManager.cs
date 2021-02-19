@@ -35,8 +35,6 @@ namespace Assets.Scripts.Networking
 
         [SerializeField]
         private Button _createMatchButton;
-        [SerializeField]
-        private MatchManager _matchManager;
 
         [SerializeField]
         private Canvas _loadingCanvas;
