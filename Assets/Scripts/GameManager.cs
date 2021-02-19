@@ -383,15 +383,15 @@ namespace Assets.Scripts
         {
             var newName = _renameInputField.text;
 
-            if (string.IsNullOrEmpty(newName) || newName.Length >= 10)
+            if (string.IsNullOrEmpty(newName) || newName.Length >= 8)
             {
-                PrintMessage("이름은 빈칸이거나 10자 이상이어서는 안됩니다.", "SYSTEM");
+                PrintMessage("이름은 빈칸이거나 8자 이상이어서는 안됩니다.", "SYSTEM");
                 return;
             }
 
             if (Player.LocalPlayer.PlayerName == newName)
             {
-                PrintMessage("이미 이 이름입니다.", "SYSTEM");
+                PrintMessage("현재 이름입니다.", "SYSTEM");
                 return;
             }
 
