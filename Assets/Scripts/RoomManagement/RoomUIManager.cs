@@ -23,6 +23,11 @@ namespace Assets.Scripts.RoomManagement
 
         public void RefreshList(IEnumerable<Player> players)
         {
+            if (players == null)
+            {
+                return;
+            }
+
             foreach (var playerUIObject in _roomPlayerUIList)
             {
                 Destroy(playerUIObject);
