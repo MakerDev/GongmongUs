@@ -41,7 +41,7 @@ public class LessonRegisterMiniGame : MiniGame
         if (_timesLeft <= 0)
         {
             _failText.gameObject.SetActive(true);
-            Invoke(nameof(CancelMiniGame), 1.5f);
+            Invoke(nameof(CancelMiniGame), _offTime);
         }
     }
 
@@ -70,7 +70,7 @@ public class LessonRegisterMiniGame : MiniGame
         {
             MiniGameResult.Passed = true;
             _successText.gameObject.SetActive(true);
-            Invoke(nameof(CompleteMission), 1.5f);
+            Invoke(nameof(CompleteMission), _offTime);
         }
     }
 

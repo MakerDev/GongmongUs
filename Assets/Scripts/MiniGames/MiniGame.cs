@@ -29,6 +29,7 @@ public abstract class MiniGame : MonoBehaviour
 
     public Guid Id { get; private set; } = Guid.NewGuid();
 
+    protected float _offTime = 1.0f;
     public Player AssignedPlayer { get; private set; } = null;
 
     [SerializeField]

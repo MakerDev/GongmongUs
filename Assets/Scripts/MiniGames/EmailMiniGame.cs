@@ -64,13 +64,13 @@ public class EmailMiniGame : MiniGame
         Fourth.SetActive(false);
         answer.sprite = step5;
         Success_text.SetActive(true);
-        Invoke("Complete", 2);
+        Invoke("Complete", _offTime);
     }
 
     public void Fail()
     {
         Fail_text.SetActive(true);
-        Invoke("Cancel", 2);
+        Invoke("Cancel", _offTime);
     }
 
     public void Complete()

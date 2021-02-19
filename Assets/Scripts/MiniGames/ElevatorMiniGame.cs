@@ -48,14 +48,14 @@ public class ElevatorMiniGame : MiniGame
     public void Fail()
     {
         _fail.text = "Fail";
-        Invoke(nameof(CancelMiniGame), 2);
+        Invoke(nameof(CancelMiniGame), _offTime);
     }
 
     public void Success()
     {
         _success.text = "Success";
         MiniGameResult.Passed = true;
-        Invoke(nameof(CallCompleteMiniGame), 1);
+        Invoke(nameof(CallCompleteMiniGame), _offTime);
     }
 
     private void CallCompleteMiniGame()
