@@ -85,7 +85,7 @@ public class SoundManager : MonoBehaviour
         IsPlayingBGM = true;
     }
 
-    public void StopBGM()
+    public void MuteSound()
     {
         if (_backgroundMusic == null)
         {
@@ -93,6 +93,11 @@ public class SoundManager : MonoBehaviour
         }
 
         IsPlayingBGM = false;
+    }
+
+    public void StopBGM()
+    {
+        _backgroundMusic.Stop();
     }
 
     public void SFXPlay(string sfxName, AudioClip audioClip)

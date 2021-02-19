@@ -141,6 +141,8 @@ namespace Assets.Scripts
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             DisableControl = true;
+
+            //TODO : Set mouse pointer poinsion to the center of screen.
         }
 
         public void EnablePlayerControl()
