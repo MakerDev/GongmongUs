@@ -8,7 +8,7 @@ using UnityEngine;
 namespace Assets.Scripts
 {
     [RequireComponent(typeof(PlayerMotor))]
-    public class PlayerController : MonoBehaviour
+    public class PlayerController : NetworkBehaviour
     {
         public const int STUN_AMOUNT_SEC = 3;
 
