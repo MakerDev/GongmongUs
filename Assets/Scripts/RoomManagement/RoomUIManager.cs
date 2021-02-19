@@ -23,7 +23,7 @@ namespace Assets.Scripts.RoomManagement
 
         public void RefreshList(IEnumerable<Player> players)
         {
-            if (players == null)
+            if (_roomPlayerUIListPanel == null || _roomPlayerUIPrefab == null)
             {
                 return;
             }

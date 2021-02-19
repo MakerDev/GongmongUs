@@ -297,8 +297,8 @@ namespace Assets.Scripts
         [Client]
         public void ConfigureGameOnStart(string professorId)
         {
-            _startGameUI.SetActive(false);
-            _gameLobbyUI.SetActive(false);
+            _startGameUI?.SetActive(false);
+            _gameLobbyUI?.SetActive(false);
             Destroy(_gameLobbyUI);
 
             _minimapOnTab.ReigsterPlayerObjects(Players.Values);
