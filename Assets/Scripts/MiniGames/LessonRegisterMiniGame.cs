@@ -47,8 +47,6 @@ public class LessonRegisterMiniGame : MiniGame
 
     public override void ResetGame()
     {
-        base.ResetGame();
-
         _registeredCount = 0;
         _timesLeft = 10;
         _successText.gameObject.SetActive(false);

@@ -36,8 +36,6 @@ public class ElevatorMiniGame : MiniGame
 
     public override void ResetGame()
     {
-        base.ResetGame();
-
         _fail.text = "";
         _success.text = "";
         _danbeg.GetComponent<RectTransform>().anchoredPosition = new Vector3(300, 0, 0);

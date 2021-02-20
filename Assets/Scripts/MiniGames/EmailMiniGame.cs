@@ -22,8 +22,6 @@ public class EmailMiniGame : MiniGame
 
     public override void ResetGame()
     {
-        base.ResetGame();
-
         Fail_text.SetActive(false);
         Success_text.SetActive(false);
 
