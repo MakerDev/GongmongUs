@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657898, g: 0.4964133, b: 0.5748178, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -229,11 +229,11 @@ RectTransform:
   m_Father: {fileID: 782940652}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 1, y: 1}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -150, y: -180}
+  m_AnchorMin: {x: 1, y: 0.5}
+  m_AnchorMax: {x: 1, y: 0.5}
+  m_AnchoredPosition: {x: -75, y: 20}
   m_SizeDelta: {x: 150, y: 200}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_Pivot: {x: 1, y: 0.5}
 --- !u!114 &126420683
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -726,16 +726,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 1}
   m_RaycastTarget: 1
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 12800000, guid: 0c203bc374236144ebcf850605d7c8db, type: 3}
+    m_Font: {fileID: 12800000, guid: bf6a7b176c5bccf4cb18f17f160f40e3, type: 3}
     m_FontSize: 20
-    m_FontStyle: 1
+    m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 2
     m_MaxSize: 40
@@ -913,16 +913,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 1}
   m_RaycastTarget: 1
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 12800000, guid: 0c203bc374236144ebcf850605d7c8db, type: 3}
+    m_Font: {fileID: 12800000, guid: bf6a7b176c5bccf4cb18f17f160f40e3, type: 3}
     m_FontSize: 20
-    m_FontStyle: 1
+    m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 2
     m_MaxSize: 40
@@ -932,7 +932,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\uC5F0\uC138\uB300\uD559\uAD50_\uACF5\uD559\uBB3C\uB9AC_\uC608\uBE44\uB808\uD3EC\uB4DC.pdf"
+  m_Text: "\uC5F0\uC138\uB300\uD559\uAD50_\uACF5\uD559\uBB3C\uB9AC_\uC608\uBE44\uB808\uD3EC\uD2B8.pdf"
 --- !u!222 &597519285
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1080,7 +1080,7 @@ GameObject:
   - component: {fileID: 695420348}
   - component: {fileID: 695420347}
   m_Layer: 5
-  m_Name: UploadSubMission
+  m_Name: CompressMission
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1098,12 +1098,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 74ed83dbcad30ce42ab2ec8217351511, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Toggle1: {fileID: 1107907469}
-  Toggle2: {fileID: 472801489}
-  Toggle3: {fileID: 987950684}
-  Toggle4: {fileID: 1277028385}
-  Toggle5: {fileID: 1978430553}
-  Toggle6: {fileID: 1472981273}
+  _outline: {fileID: 545356805}
+  _toggles:
+  - {fileID: 1107907469}
+  - {fileID: 472801489}
+  - {fileID: 987950684}
+  - {fileID: 1277028385}
+  - {fileID: 1978430553}
+  - {fileID: 1472981273}
 --- !u!114 &695420348
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1222,11 +1224,11 @@ RectTransform:
   m_Father: {fileID: 782940652}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 1, y: 0}
-  m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: -150, y: 75}
+  m_AnchorMin: {x: 1, y: 0.5}
+  m_AnchorMax: {x: 1, y: 0.5}
+  m_AnchoredPosition: {x: -90, y: -124}
   m_SizeDelta: {x: 120, y: 30}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_Pivot: {x: 1, y: 0.5}
 --- !u!114 &722349771
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1788,7 +1790,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 10, y: 0}
-  m_SizeDelta: {x: 160, y: 100}
+  m_SizeDelta: {x: 160, y: 196.58}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1002315480
 MonoBehaviour:
@@ -1810,9 +1812,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 12800000, guid: 0c203bc374236144ebcf850605d7c8db, type: 3}
-    m_FontSize: 12
-    m_FontStyle: 1
+    m_Font: {fileID: 12800000, guid: bf6a7b176c5bccf4cb18f17f160f40e3, type: 3}
+    m_FontSize: 16
+    m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 1
     m_MaxSize: 40
@@ -1821,7 +1823,7 @@ MonoBehaviour:
     m_RichText: 1
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
-    m_LineSpacing: 1.2
+    m_LineSpacing: 1.5
   m_Text: "\uACB0\uACFC\uB808\uD3EC\uD2B8\uB294 \uCD94\uD6C4\n\uC2E4\uD5D8\uC774
     \uB05D\uB09C \uB4A4 \uC81C\uCD9C\uD558\uC138\uC694.\n\uBAA8\uB4E0 \uD30C\uC77C\uC740
     pdf \uD615\uC2DD\uC73C\uB85C\n\uC81C\uCD9C\uD574\uC57C \uD569\uB2C8\uB2E4!"
@@ -1884,16 +1886,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 1}
   m_RaycastTarget: 1
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 12800000, guid: 0c203bc374236144ebcf850605d7c8db, type: 3}
+    m_Font: {fileID: 12800000, guid: bf6a7b176c5bccf4cb18f17f160f40e3, type: 3}
     m_FontSize: 20
-    m_FontStyle: 1
+    m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 2
     m_MaxSize: 40
@@ -1903,7 +1905,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\uC5F0\uC138\uB300\uD559\uAD50_\uACF5\uD559\uBB3C\uB9AC_\uC608\uBE44\uB808\uD3EC\uB4DC.hwp"
+  m_Text: "\uC5F0\uC138\uB300\uD559\uAD50_\uACF5\uD559\uBB3C\uB9AC_\uC608\uBE44\uB808\uD3EC\uD2B8.hwp"
 --- !u!222 &1015459404
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2171,7 +2173,7 @@ GameObject:
   - component: {fileID: 1308323928}
   - component: {fileID: 1308323927}
   m_Layer: 0
-  m_Name: UploadSubMissionInteractable
+  m_Name: CompressMissionInteractable
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2538,11 +2540,11 @@ RectTransform:
   m_Father: {fileID: 695420351}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 285, y: 165}
-  m_SizeDelta: {x: -630, y: -390}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: -30, y: -30}
+  m_SizeDelta: {x: 40, y: 30}
+  m_Pivot: {x: 1, y: 1}
 --- !u!114 &1509990727
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2685,16 +2687,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 1}
   m_RaycastTarget: 1
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 12800000, guid: 0c203bc374236144ebcf850605d7c8db, type: 3}
+    m_Font: {fileID: 12800000, guid: bf6a7b176c5bccf4cb18f17f160f40e3, type: 3}
     m_FontSize: 20
-    m_FontStyle: 1
+    m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 2
     m_MaxSize: 40
@@ -2913,16 +2915,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 1}
   m_RaycastTarget: 1
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 12800000, guid: 0c203bc374236144ebcf850605d7c8db, type: 3}
+    m_Font: {fileID: 12800000, guid: bf6a7b176c5bccf4cb18f17f160f40e3, type: 3}
     m_FontSize: 20
-    m_FontStyle: 1
+    m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 2
     m_MaxSize: 40
@@ -3066,16 +3068,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 1}
   m_RaycastTarget: 1
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 12800000, guid: 0c203bc374236144ebcf850605d7c8db, type: 3}
+    m_Font: {fileID: 12800000, guid: bf6a7b176c5bccf4cb18f17f160f40e3, type: 3}
     m_FontSize: 20
-    m_FontStyle: 1
+    m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 2
     m_MaxSize: 40
