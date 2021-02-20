@@ -609,6 +609,11 @@ namespace Assets.Scripts
                 _playerListItems.Add(playerListItem);
                 var playerListItemText = playerListItem.GetComponent<Text>();
                 playerListItemText.text = player.PlayerName;
+
+                if (player.isLocalPlayer)
+                {
+                    playerListItemText.color = Color.blue;
+                }
             }
         }
 
