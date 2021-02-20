@@ -1291,7 +1291,6 @@ MonoBehaviour:
   _createMatchCanvas: {fileID: 1076831816}
   _newMatchNameInputField: {fileID: 1358954884}
   _createMatchButton: {fileID: 867508364}
-  _matchManager: {fileID: 1173437716}
   _loadingCanvas: {fileID: 1711259811}
   _requestResultText: {fileID: 3272732}
 --- !u!4 &717795337
@@ -1962,18 +1961,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: -116.4}
   m_SizeDelta: {x: 700, y: 332.78122}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1173437716 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 5952198958299592603, guid: 803784eac3d053840b85bf9cbfefb0dd,
-    type: 3}
-  m_PrefabInstance: {fileID: 5952198959275739791}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 15dd869f64368cf41be213378cebc67f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1245056928
 GameObject:
   m_ObjectHideFlags: 0
