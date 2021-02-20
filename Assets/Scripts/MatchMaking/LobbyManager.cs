@@ -56,6 +56,7 @@ namespace Assets.Scripts.Networking
 
             FetchRecursive();
 
+            Debug.Log("Bgm setting");
             SoundManager.Instance.SetBGM("SweetCampusLobbyBGM");
         }
 

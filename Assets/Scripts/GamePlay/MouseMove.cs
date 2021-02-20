@@ -15,7 +15,7 @@ namespace Assets.Scripts
 
         void Update()
         {
-            if (GameManager.DisableControl)
+            if (GameManager.Instance.DisableControl)
             {
                 return;
             }

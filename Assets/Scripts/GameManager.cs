@@ -82,9 +82,16 @@ namespace Assets.Scripts
         public int StudentCount { get; private set; }
         public int ExitedStudents { get; private set; } = 0;
 
-        public static bool DisableControl { get; private set; } = true;
+        private bool _disableControl = true;
+        public bool DisableControl { get { return _disableControl || IsChating; } private set { _disableControl = value; } }
         public bool IsMenuOpen { get; private set; } = false;
-
+        public bool IsChating
+        {
+            get
+            {
+                return _chatInputField != null && _chatInputField.isFocused;
+            }
+        }
 
 #if UNITY_WEBGL
         private const KeyCode MENU_KEY = KeyCode.LeftControl;
@@ -163,7 +170,7 @@ namespace Assets.Scripts
             var connectionIds = Players.Values.Select(p => p.netId).ToList();
 
             await BCNetworkManager.Instance.SyncConnectionIdsAsync(connectionIds);
-            UniTask.Delay(30000).ContinueWith(()=>SyncConnectionsToMatchServer());
+            UniTask.Delay(30000).ContinueWith(() => SyncConnectionsToMatchServer());
         }
 
         private void Update()
@@ -433,9 +440,11 @@ namespace Assets.Scripts
         #region CHAT
         private void HandleChat()
         {
+            var enterDown = Input.GetKeyDown(KeyCode.Return);
+
             if (_chatInputField.text != "")
             {
-                if (Input.GetKeyDown(KeyCode.Return))
+                if (enterDown)
                 {
                     if (ChatHub.Instance != null)
                     {
@@ -448,11 +457,19 @@ namespace Assets.Scripts
             }
             else
             {
-                if (!_chatInputField.isFocused && Input.GetKeyDown(KeyCode.Return))
+
+                if (!_chatInputField.isFocused && enterDown)
                 {
                     _chatInputField.ActivateInputField();
                 }
             }
+
+            if (_chatInputField.isFocused && enterDown)
+            {
+                _chatInputField.DeactivateInputField();
+            }
+
+            //만약 isFocus인데 아무것도 입력안하면? -> Deactivate
         }
 
         [Client]

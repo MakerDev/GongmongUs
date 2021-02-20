@@ -98,14 +98,14 @@ namespace Assets.Scripts
 
         private void FixedUpdate()
         {
-            if (GameManager.DisableControl)
+            if (GameManager.Instance.DisableControl)
             {
                 return;
             }
 
             if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
             {
-                _motor.SetSpeed(RUN_SPEED);                
+                _motor.SetSpeed(RUN_SPEED);
             }
             else
             {

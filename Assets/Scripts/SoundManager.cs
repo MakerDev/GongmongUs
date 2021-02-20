@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using Assets.Scripts;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -54,6 +55,11 @@ public class SoundManager : MonoBehaviour
 
     private void Update()
     {
+        if (GameManager.Instance != null && GameManager.Instance.IsChating)
+        {
+            return;
+        }
+        
         if (Input.GetKeyDown(KeyCode.M))
         {
             IsPlayingBGM = !IsPlayingBGM;

@@ -68,7 +68,7 @@ namespace Assets.Scripts
 
         private void Update()
         {
-            if (GameManager.DisableControl || _mainFireAction == null)
+            if (GameManager.Instance.DisableControl || _mainFireAction == null)
             {
                 return;
             }

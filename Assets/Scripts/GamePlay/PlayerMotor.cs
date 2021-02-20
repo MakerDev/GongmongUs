@@ -80,7 +80,7 @@ public class PlayerMotor : NetworkBehaviour
 
     private void FixedUpdate()
     {
-        if (GameManager.DisableControl || (!isLocalPlayer && !gameObject.activeSelf) || _isPlayingMiniGame)
+        if (GameManager.Instance.DisableControl || (!isLocalPlayer && !gameObject.activeSelf) || _isPlayingMiniGame)
         {
             return;
         }
