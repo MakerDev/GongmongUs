@@ -54,8 +54,30 @@ namespace Assets.Scripts
         private void AssignMissions(Guid orderId)
         {
             //어차피 클라이언트에서 하는 거니까, 다른 유저에게 미션을 Assign할 필요가 없다!
-            var skipNum = UnityEngine.Random.Range(0, AllMissions.Count - MissionsPerPlayer);
-            Player.LocalPlayer.AssignMissions(AllMissions.Skip(skipNum).Take(MissionsPerPlayer));
+            var selectedMissionNumbers = new List<int>();
+            var i = 0;
+            var randomIndex = UnityEngine.Random.Range(0, AllMissions.Count - MissionsPerPlayer);
+
+            while (i < MissionsPerPlayer)
+            {
+                if (selectedMissionNumbers.Contains(randomIndex))
+                {
+                    randomIndex = UnityEngine.Random.Range(0, AllMissions.Count - MissionsPerPlayer);
+                }
+                else
+                {
+                    selectedMissionNumbers.Add(randomIndex);
+                    i++;
+                }
+            }
+
+            var assignedMissions = new List<MiniGame>();
+            foreach (var index in selectedMissionNumbers)
+            {
+                assignedMissions.Add(AllMissions[index]);
+            }
+
+            Player.LocalPlayer.AssignMissions(assignedMissions);
         }
 
         /// <summary>
