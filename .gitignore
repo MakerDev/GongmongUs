@@ -398,3 +398,7 @@ sysinfo.txt
 crashlytics-build.properties
 /Build-linux-server
 /Assets/Models/VeritasA-old
+/Assets/Models/final
+/Assets/Models/Materials
+/Assets/Models/VeritasA
+/Assets/Models/VeritasA/**/*
