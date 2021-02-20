@@ -207,6 +207,13 @@ namespace Assets.Scripts
                 return false;
             }
 
+            //Can not double start.
+            //This happens when late joiner is kicked out.
+            if (matchInfo.Started)
+            {
+                return false;
+            }
+
             if (matchInfo.Players.Count < 3)
             {
                 return false;
@@ -295,6 +302,15 @@ namespace Assets.Scripts
         [Client]
         public void ConfigureGameOnStart(string professorId)
         {
+            //이건 이미 한 번 이게 실행되고 또 실행됐다는 거니까 뭔가 문제있음
+            if (GameStarted || _gameLobbyUI == null)
+            {
+                Debug.LogError("Game lobby manager is null");
+                return;
+            }
+
+            Debug.Log("Proper execution");
+
             _startGameUI.SetActive(false);
             _gameLobbyUI.SetActive(false);
             Destroy(_gameLobbyUI);
@@ -526,8 +542,8 @@ namespace Assets.Scripts
             _staticMinimap.RemovePlayer(player);
 
             Debug.Log($"{playerId} is removed. Now {Players.Count} players");
-
-            if (isClient)
+            
+            if (isServer == false)
             {
                 return;
             }
