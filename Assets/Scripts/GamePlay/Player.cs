@@ -122,6 +122,7 @@ namespace Assets.Scripts
             //If fails to connect, disconnect.
             if (success == false)
             {
+                Debug.LogError("Disconnect from server");
                 connectionToServer.Disconnect();
             }
         }

@@ -72,8 +72,8 @@ namespace Assets.Scripts.Networking
             Debug.Log("IP : " + serverIpPortInfo.IpAddress);
 
             var name = _serverName == null ? $"Server:{serverIpPortInfo.IpAddress}" : _serverName;
-
-            var result = await MatchServer.Instance.RegisterServerAsync(name, serverIpPortInfo);
+            var maxMatches = maxConnections / 6;
+            var result = await MatchServer.Instance.RegisterServerAsync(name, serverIpPortInfo, maxMatches);
             //TODO : do proper error handling
             if (result == false)
             {
@@ -126,6 +126,12 @@ namespace Assets.Scripts.Networking
             await MatchServer.Instance.TurnOffServerAsync(_ipPortInfo);
 
             base.OnStopServer();
+        }
+
+        [Server]
+        public async UniTask SyncConnectionIdsAsync(IEnumerable<uint> connectionIds) 
+        {
+            await MatchServer.Instance.SyncUserConnections(_ipPortInfo, connectionIds);
         }
 
         [Server]

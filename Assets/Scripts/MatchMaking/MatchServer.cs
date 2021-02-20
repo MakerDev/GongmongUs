@@ -4,29 +4,37 @@ using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.VR;
 
 namespace Assets.Scripts.MatchMaking
 {
-    public class ServerUserDTO
+    public struct ServerUserDTO
     {
         public IpPortInfo IpPortInfo { get; set; }
         public GameUser User { get; set; }
     }
 
-    public class ServerMatchDTO
+    public struct ServerMatchDTO
     {
         public IpPortInfo IpPortInfo { get; set; }
         public string MatchID { get; set; }
     }
 
-    public class LoginForm
+    public struct LoginForm
     {
         public string UserId { get; set; }
         public string Password { get; set; }
     }
+
+    public struct ConnectionSyncDTO
+    {
+        public IpPortInfo IpPortInfo { get; set; }
+        public List<uint> ConnectionIDs { get; set; }
+    }
+
 
     /// <summary>
     /// Hub for Match API Server
@@ -200,6 +208,22 @@ namespace Assets.Scripts.MatchMaking
         {
             var request = UnityWebRequest.Post($"{BASE_ADDRESS}matches/notify/disconnect?connectionID={netId}", "");
             request.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(ipPortInfo)));
+            request.uploadHandler.contentType = "application/json";
+            request.SetRequestHeader("Content-Type", "application/json");
+            await request.SendWebRequest();
+        }
+
+        public async UniTask SyncUserConnections(IpPortInfo ipPortInfo, IEnumerable<uint> connections)
+        {
+            var request = UnityWebRequest.Post($"{BASE_ADDRESS}matches/sync/", "");
+
+            var connectionSyncDTO = new ConnectionSyncDTO
+            {
+                IpPortInfo = ipPortInfo,
+                ConnectionIDs = connections.ToList()
+            };
+
+            request.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(connectionSyncDTO)));
             request.uploadHandler.contentType = "application/json";
             request.SetRequestHeader("Content-Type", "application/json");
             await request.SendWebRequest();

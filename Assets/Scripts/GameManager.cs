@@ -124,6 +124,13 @@ namespace Assets.Scripts
             SoundManager.Instance.StopBGM();
         }
 
+        public override void OnStartServer()
+        {
+            base.OnStartServer();
+
+            SyncConnectionsToMatchServer();
+        }
+
         public void DisableMove()
         {
             DisableControl = true;
@@ -148,6 +155,15 @@ namespace Assets.Scripts
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
             DisableControl = false;
+        }
+
+        [Server]
+        private async void SyncConnectionsToMatchServer()
+        {
+            var connectionIds = Players.Values.Select(p => p.netId).ToList();
+
+            await BCNetworkManager.Instance.SyncConnectionIdsAsync(connectionIds);
+            UniTask.Delay(30000).ContinueWith(()=>SyncConnectionsToMatchServer());
         }
 
         private void Update()
@@ -529,7 +545,14 @@ namespace Assets.Scripts
 
         public async void UnRegisterPlayer(string playerId)
         {
-            var player = Players[playerId];
+            var hasPlayer = Players.TryGetValue(playerId, out var player);
+
+            if (hasPlayer == false)
+            {
+                Debug.LogError($"Failed to unregister {playerId} as it doesn't exist");
+                return;
+            }
+
             Players.Remove(playerId);
 
             if (isClient)
@@ -542,7 +565,7 @@ namespace Assets.Scripts
             _staticMinimap.RemovePlayer(player);
 
             Debug.Log($"{playerId} is removed. Now {Players.Count} players");
-            
+
             if (isServer == false)
             {
                 return;
