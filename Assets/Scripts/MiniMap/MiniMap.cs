@@ -114,6 +114,8 @@ public class MiniMap : MonoBehaviour
             }
         }
 
+        mob.GetComponent<MiniMapMob>().SetPlayer(player);
+
         _minimapMobs.Add(player, mob);
     }
 
@@ -140,9 +142,25 @@ public class MiniMap : MonoBehaviour
         RemoveMinimabMob(player);
     }
 
-    private int GetCurrentFloor(float y)
+    public static int GetCurrentFloor(float y)
     {
-        if (y >= 3.2)
+        if (y >= 30.15)
+        {
+            return 6;
+        }
+        else if (y >= 25.15)
+        {
+            return 5;
+        }
+        else if (y >= 18.75f)
+        {
+            return 4;
+        }
+        else if (y >= 12.5)
+        {
+            return 3;
+        }
+        else if (y >= 4.88)
         {
             return 2;
         }

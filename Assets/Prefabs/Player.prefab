@@ -314,11 +314,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 085c07d14de492145a1a1bc9b33951a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
   _speed: 9
   _lookSensitivity: 10
   _thrusterForce: 1100
   _thrusterFuelBurnSpeed: 0.5
-  _thrusterFuelRegenSpeed: 0.9
+  _thrusterFuelRegenSpeed: 0.3
   _animator: {fileID: 4176975670685707686}
   _bodyRenderer: {fileID: 2134257987367310384}
   _assistantMaterial: {fileID: 2100000, guid: 18d97d1ae0590564daa2cc67a1097a0c, type: 2}
