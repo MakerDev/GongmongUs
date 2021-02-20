@@ -223,6 +223,7 @@ namespace Assets.Scripts
         /// This is called by server on command.
         /// </summary>
         /// <param name="playerId"></param>
+        [Server]
         public void ServerNotifyPlayerCompleteMissions(string playerId)
         {
             //Check whether all missions are completed.
@@ -245,6 +246,11 @@ namespace Assets.Scripts
             foreach (var openableDoor in OpenableDoors)
             {
                 openableDoor.OpenDoor();
+            }
+
+            if (Player.LocalPlayer.State == PlayerState.Student)
+            {
+                PlayerSetup.PlayerUI.OnExitDoorOpen();
             }
         }
     }

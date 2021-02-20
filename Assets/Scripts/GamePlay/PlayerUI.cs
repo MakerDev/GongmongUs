@@ -69,6 +69,11 @@ namespace Assets.Scripts
             _animator.Play("MissionComplete");
         }
 
+        public void OnExitDoorOpen()
+        {
+            _animator.Play("GoExitHere");
+        }
+
         public void SetCooltimeAction(CooltimeAction cooltimeAction)
         {
             _cooltimeAction = cooltimeAction;
