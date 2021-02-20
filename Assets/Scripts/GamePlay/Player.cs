@@ -319,6 +319,8 @@ namespace Assets.Scripts
 
             if (isLocalPlayer)
             {
+                PlayerSetup.PlayerUI?.OnCaughtByProfessor();
+
                 GameManager.Instance.DisablePlayerControl();
                 PlayTransitionEffect();
                 GameManager.Instance.EnablePlayerControl();

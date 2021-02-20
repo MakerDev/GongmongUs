@@ -38,12 +38,16 @@ namespace Assets.Scripts
         [SerializeField]
         private RectTransform _coolDownImage;
 
+        [SerializeField]
+        private Animator _animator;
+
         private PlayerController _controller;
         private Player _player;
         private bool _wasOnTarget = false;
 
         private CooltimeAction _cooltimeAction;
         private string _localPlayerName;
+
 
         private void Start()
         {
@@ -53,6 +57,16 @@ namespace Assets.Scripts
         private void Update()
         {
             SetFuelAmout(_controller.GetThrusterFuelAmount());
+        }
+
+        public void OnCaughtByProfessor()
+        {
+            _animator.Play("CaughtByProfessor");
+        }
+
+        public void OnMissionsComplete()
+        {
+            _animator.Play("MissionComplete");
         }
 
         public void SetCooltimeAction(CooltimeAction cooltimeAction)
@@ -137,6 +151,12 @@ namespace Assets.Scripts
         {
             _leftMissionsText.text = $"{completedMissionsCount}/{missionsCount}";
             _progressImage.localScale = new Vector3(completedMissionsCount*1.0f / missionsCount, 1, 1);
+
+            //If all missions are done.
+            if (missionsCount == completedMissionsCount)
+            {
+                OnMissionsComplete();
+            }
         }
 
         void SetFuelAmout(float amount)
