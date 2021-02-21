@@ -9,7 +9,7 @@ namespace Assets.Scripts.GamePlay.PlayerActions
 {
     public class CooltimeAction : IPlayerAction
     {
-        public float RechargeSpeed { get; private set; } = 0.1f;
+        public float RechargeSpeed { get; private set; } = 1.0f/15;
         public float ChargeAmount { get; private set; } = 1f;
         private string _skillName = "MainAction";
 
