@@ -562,6 +562,11 @@ namespace Assets.Scripts
 
         public async void UnRegisterPlayer(string playerId)
         {
+            if (playerId == null)
+            {
+                return;
+            }
+
             var hasPlayer = Players.TryGetValue(playerId, out var player);
 
             if (hasPlayer == false)
