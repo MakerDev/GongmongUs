@@ -74,6 +74,16 @@ namespace Assets.Scripts
             _animator.Play("GoExitHere");
         }
 
+        public void OnMissionSuccess()
+        {
+            _animator.Play("MissionSuccess");
+        }
+
+        public void OnMissionFail()
+        {
+            _animator.Play("MissionFail");
+        }
+
         public void SetCooltimeAction(CooltimeAction cooltimeAction)
         {
             _cooltimeAction = cooltimeAction;
@@ -157,10 +167,20 @@ namespace Assets.Scripts
             _leftMissionsText.text = $"{completedMissionsCount}/{missionsCount}";
             _progressImage.localScale = new Vector3(completedMissionsCount*1.0f / missionsCount, 1, 1);
 
+            //This happens on assigning missions.
+            if (completedMissionsCount == 0)
+            {
+                return;
+            }
+
             //If all missions are done.
             if (missionsCount == completedMissionsCount)
             {
                 OnMissionsComplete();
+            }
+            else
+            {
+                OnMissionSuccess();
             }
         }
 

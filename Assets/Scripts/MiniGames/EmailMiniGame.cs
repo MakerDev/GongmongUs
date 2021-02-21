@@ -68,7 +68,7 @@ public class EmailMiniGame : MiniGame
     public void Fail()
     {
         Fail_text.SetActive(true);
-        Invoke("Cancel", _offTime);
+        Invoke(nameof(FailMiniGame), _offTime);
     }
 
     public void Complete()

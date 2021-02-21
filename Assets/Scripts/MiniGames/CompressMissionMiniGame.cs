@@ -31,7 +31,7 @@ public class CompressMissionMiniGame : MiniGame
             if (_toggles[i].isOn != _answers[i])
             {
                 Debug.Log("Fail");
-                Cancle();
+                FailMiniGame();
                 return;
             }
         }

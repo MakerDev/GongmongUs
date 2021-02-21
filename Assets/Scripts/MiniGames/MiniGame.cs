@@ -83,6 +83,12 @@ public abstract class MiniGame : MonoBehaviour
         TurnOffGame();
     }
 
+    protected void FailMiniGame()
+    {
+        CancelMiniGame();
+        PlayerSetup.PlayerUI?.OnMissionFail();
+    }
+
     public void CompleteMiniGame(MiniGameResult miniGameResult)
     {
         MiniGameResult = miniGameResult;
