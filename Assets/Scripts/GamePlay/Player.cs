@@ -98,33 +98,14 @@ namespace Assets.Scripts
             base.OnStartLocalPlayer();
 
             CmdGetConnectionID(MatchManager.Instance.Match.MatchID);
+            BCNetworkManager.Instance.SendUser();
         }
 
         [Command]
         private void CmdGetConnectionID(string matchID)
         {
             MatchID = matchID;
-            var successConnect = GameManager.Instance.ServerOnPlayerConnect(matchID, PlayerId);
-
-            //TargetRpc에서 NotifyUserConnect를 하므로, 만약 ServerOnPlayerconnect에서 Disconnect가 되면, 
-            //선 disconnect -> 후 connect가 되어 버그. 따라서, Disconnect안 된 경우에만 Notify하자
-            if (successConnect)
-            {
-                TargetGetConnectionID((int)netId);
-            }
-        }
-
-        [TargetRpc]
-        private async void TargetGetConnectionID(int netId)
-        {
-            var success = await BCNetworkManager.Instance.NotifyUserConnect(netId, UserManager.Instance.User);
-
-            //If fails to connect, disconnect.
-            if (success == false)
-            {
-                Debug.LogError("Disconnect from server");
-                connectionToServer.Disconnect();
-            }
+            var success = GameManager.Instance.ServerOnPlayerConnect(matchID, PlayerId);
         }
 
         public override void OnStartClient()
@@ -205,7 +186,7 @@ namespace Assets.Scripts
 
             var toStartGame = GameManager.Instance.OnPlayerReady(matchID, this);
 
-            RpcGetReady(toStartGame);
+            RpcGetReady();
 
             if (toStartGame)
             {
@@ -223,7 +204,7 @@ namespace Assets.Scripts
         }
 
         [ClientRpc]
-        public void RpcGetReady(bool startGame)
+        public void RpcGetReady()
         {
             MatchID = MatchManager.Instance.Match.MatchID;
             IsReady = true;
@@ -298,6 +279,13 @@ namespace Assets.Scripts
         #region CaughtBy
         public void CaughtByProfessor()
         {
+            //To avoid double send.
+            if (State != PlayerState.Student)
+            {
+                return;
+            }
+
+            State = PlayerState.Assistant;
             CmdCaughByProfessor();
         }
 
@@ -374,7 +362,7 @@ namespace Assets.Scripts
         {
             GameObject effectObject = Instantiate(_deatchEffect, transform.position, Quaternion.identity);
             Destroy(effectObject, 1.5f);
-            _playerController.TransformToAssistant();
+            _playerController?.TransformToAssistant();
         }
 
 

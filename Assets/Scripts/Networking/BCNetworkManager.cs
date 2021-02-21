@@ -79,6 +79,62 @@ namespace Assets.Scripts.Networking
             {
                 Debug.LogError("Failed to register to match server");
             }
+
+            NetworkServer.RegisterHandler<ClientUserConnectMessage>(OnClientNotifyUser);
+        }
+
+        private async void OnClientNotifyUser(NetworkConnection conn, ClientUserConnectMessage message)
+        {
+            var user = message.User;
+
+            if (_connections.ContainsKey(message.NetId) == false)
+            {
+                Debug.LogError($"{message.NetId} is not registerd on server");
+                conn.Disconnect();
+            }
+
+            var success = await ServerNotifyUserConnect(_ipPortInfo, (int)conn.identity.netId, user);
+
+            //If fails to connect, disconnect.
+            if (success == false)
+            {
+                Debug.LogError("Disconnect from server");
+                conn.Disconnect();
+            }
+        }
+
+        private Dictionary<uint, bool> _connections = new Dictionary<uint, bool>();
+
+        public override void OnServerAddPlayer(NetworkConnection conn)
+        {
+            base.OnServerAddPlayer(conn);
+
+            //여기서는 player identity가 유효.
+            _connections.Add(conn.identity.netId, true);
+        }
+
+        //This is called on server. 
+        public override async void OnServerDisconnect(NetworkConnection conn)
+        {
+            var nedId = conn.identity.netId;
+            var result = _connections.Remove(nedId);
+
+            await MatchServer.Instance.NotifyUserDisconnect(_ipPortInfo, (int)nedId);
+            Debug.Log($"Disconnected user {nedId}");
+
+            base.OnServerDisconnect(conn);
+        }
+
+        [Client]
+        public void SendUser()
+        {
+            var msg = new ClientUserConnectMessage
+            {
+                NetId = Player.LocalPlayer.netId,
+                User = UserManager.Instance.User
+            };
+
+            NetworkClient.Send(msg);
         }
 
         public MissionManager GetMissionManager(string matchID)
@@ -100,25 +156,17 @@ namespace Assets.Scripts.Networking
             return await MatchServer.Instance.NotifyUserConnect(MatchManager.Instance.Match.IpPortInfo, netId, user);
         }
 
-        public override void OnClientConnect(NetworkConnection conn)
+        [Server]
+        public async UniTask<bool> ServerNotifyUserConnect(IpPortInfo ipPortInfo, int netId, GameUser user)
         {
-            //반드시 불러줘야한다!!
-            base.OnClientConnect(conn);
+            user.ConnectionID = netId;
+            Debug.Log($"Notify User of netID : {netId}");
+            return await MatchServer.Instance.NotifyUserConnect(ipPortInfo, netId, user);
         }
 
         public async UniTask NotifyStartGame(string matchID)
         {
             await MatchServer.Instance.NotifyMatchStarted(_ipPortInfo, matchID);
-        }
-
-        //This is called on server. 
-        public override async void OnServerDisconnect(NetworkConnection conn)
-        {
-            var nedId = conn.identity.netId;
-            await MatchServer.Instance.NotifyUserDisconnect(_ipPortInfo, (int)nedId);
-            Debug.Log($"Disconnected user {nedId}");
-
-            base.OnServerDisconnect(conn);
         }
 
         public override async void OnStopServer()
@@ -129,7 +177,7 @@ namespace Assets.Scripts.Networking
         }
 
         [Server]
-        public async UniTask SyncConnectionIdsAsync(IEnumerable<uint> connectionIds) 
+        public async UniTask SyncConnectionIdsAsync(IEnumerable<uint> connectionIds)
         {
             await MatchServer.Instance.SyncUserConnections(_ipPortInfo, connectionIds);
         }
