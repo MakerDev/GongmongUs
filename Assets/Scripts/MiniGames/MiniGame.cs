@@ -74,6 +74,7 @@ public abstract class MiniGame : MonoBehaviour
         this.gameObject.SetActive(false);
         this.enabled = false;
         IsPlaying = false;
+        GameManager.Instance.EnablePlayerControl();
         ResetGame();
     }
 
