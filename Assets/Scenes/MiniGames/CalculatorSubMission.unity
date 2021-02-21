@@ -429,10 +429,5 @@ PrefabInstance:
       propertyPath: m_Name
       value: CalculatorSubMissionInteractable
       objectReference: {fileID: 0}
-    - target: {fileID: 2744518159933961695, guid: 7cbcdbadff15955488944942aa9da454,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 7cbcdbadff15955488944942aa9da454, type: 3}
