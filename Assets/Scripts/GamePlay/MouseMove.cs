@@ -20,11 +20,6 @@ namespace Assets.Scripts
                 return;
             }
 
-            if (GameManager.Instance.IsMenuOpen || MiniGame.IsPlaying)
-            {
-                return;
-            }
-
             float mouseX = Input.GetAxis("Mouse X") * MouseSensitivity * Time.fixedDeltaTime;
             float mouseY = Input.GetAxis("Mouse Y") * MouseSensitivity * Time.fixedDeltaTime;
 
