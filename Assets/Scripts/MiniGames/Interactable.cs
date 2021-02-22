@@ -18,7 +18,7 @@ namespace Assets.Scripts.MiniGames
         private GameObject _highlight;
 
         private Outline _outlineComponent;
-        public MiniGame MiniGame { get; private set; }
+        public MiniGame MiniGame { get; private set; } = null;
 
         private int _localPlayerLayer;
         public bool Highlighted
