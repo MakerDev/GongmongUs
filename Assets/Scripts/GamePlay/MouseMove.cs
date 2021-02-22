@@ -32,6 +32,7 @@ namespace Assets.Scripts
             _xRotation = Mathf.Clamp(_xRotation, -_maxRotation, _maxRotation);
 
             transform.localRotation = Quaternion.Euler(_xRotation, 0, 0);
+
             PlayerBody.Rotate(Vector3.up * mouseX);
         }
     }
