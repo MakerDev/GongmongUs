@@ -57,6 +57,7 @@ public abstract class MiniGame : MonoBehaviour
     {
         OnTurnOffMiniGame?.Invoke(MiniGameResult);
         OnGameCompleted?.Invoke(MiniGameResult);
+        IsPlaying = false;
         GameManager.Instance?.EnablePlayerControl();
     }
 
