@@ -10,7 +10,7 @@ namespace Assets.Scripts
     [RequireComponent(typeof(PlayerMotor))]
     public class PlayerController : NetworkBehaviour
     {
-        public const int STUN_AMOUNT_SEC = 3;
+        public const int STUN_AMOUNT_SEC = 5;
 
         private const float WALK_SPEED = 5.0f;
         private const float RUN_SPEED = 10.0f;
