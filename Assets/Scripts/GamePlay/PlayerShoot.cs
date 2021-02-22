@@ -41,17 +41,21 @@ namespace Assets.Scripts
         {
             if (state == PlayerState.Professor)
             {
-                //ChatHub.Instance.PrintMessage("I'm professor", Player.LocalPlayer.PlayerName, ChatType.Player);
                 _mainFireAction = new CatchAction(_raycastTransform, _remotePlayerLayer, _playerController);                
             }
             else if (state == PlayerState.Student)
             {
-                //ChatHub.Instance.PrintMessage("I'm Student", Player.LocalPlayer.PlayerName, ChatType.Player);
                 _mainFireAction = new StartMiniGameAction();
             }
             else
             {
                 _mainFireAction = new StunByAssignmentAction(_raycastTransform, _remotePlayerLayer, _playerController);
+
+                if (_player == null)
+                {
+                    _player = GetComponent<Player>();
+                }
+
                 GameManager.Instance.PrintMessage($"{_player.PlayerName} is now assistant.", "SYSTEM", ChatType.Info);
             }
 
@@ -68,7 +72,7 @@ namespace Assets.Scripts
 
         private void Update()
         {
-            if (GameManager.Instance.DisableControl || _mainFireAction == null)
+            if (GameManager.Instance.DisableControl || _mainFireAction == null || isServer)
             {
                 return;
             }
