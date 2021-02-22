@@ -371,8 +371,6 @@ namespace Assets.Scripts
 
             EnablePlayerControl();
 
-            Interactable.EnteredInteractable?.MiniGame?.CancelMiniGame();
-
             Debug.Log($"You're {Player.LocalPlayer.State}");
         }
 
