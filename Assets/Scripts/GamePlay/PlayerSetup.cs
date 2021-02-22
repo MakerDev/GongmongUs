@@ -56,10 +56,6 @@ namespace Assets.Scripts
 
                 Debug.Log("PlayerSetUp: Called player setup on server? " + isServer);
             }
-
-
-            Player player = GetComponent<Player>();
-            GameManager.Instance.RegisterPlayer(player);
         }
 
         private void ConfigurePlayerUI()
@@ -85,7 +81,7 @@ namespace Assets.Scripts
 
             if (isLocalPlayer)
             {
-                GameManager.Instance.SetSceneCameraActive(true);
+                GameManager.Instance.SetEscapedLocalPlayerActive(true);
             }
         }
     }

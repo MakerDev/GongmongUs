@@ -85,34 +85,23 @@ namespace Assets.Scripts
             _playerInfo.SetPlayer(this);
             _playerShootComponent = GetComponent<PlayerShoot>();
             _playerController = GetComponent<PlayerController>();
-
-            GameManager.Instance.RegisterPlayer(this);
         }
 
         #region CONNECTIONS
+        /// <summary>
+        /// Network Callback이 Start보다 더 빨라서 여기에 배치
+        /// </summary>
         public override void OnStartServer()
         {
             base.OnStartServer();
-        }
 
-        public override void OnStartLocalPlayer()
-        {
-            base.OnStartLocalPlayer();
-
-            CmdGetConnectionID(MatchManager.Instance.Match.MatchID);
-            BCNetworkManager.Instance.SendUser();
-        }
-
-        [Command]
-        private void CmdGetConnectionID(string matchID)
-        {
-            MatchID = matchID;
-            var success = GameManager.Instance.ServerOnPlayerConnect(matchID, PlayerId);
+            GameManager.Instance.RegisterPlayer(this);
         }
 
         public override void OnStartClient()
         {
             base.OnStartClient();
+            GameManager.Instance.RegisterPlayer(this);
 
             //If this is local player, set player name manually because this script being called 'Start'
             //means that this is joining the existing room and other players' name will be automatically synced.
@@ -130,6 +119,22 @@ namespace Assets.Scripts
 
                 CmdSetMatchChecker(MatchManager.Instance.Match.MatchID.ToGuid());
             }
+        }
+
+        public override void OnStartLocalPlayer()
+        {
+            base.OnStartLocalPlayer();
+
+            BCNetworkManager.Instance.SendUser();
+            CmdGetConnectionID(MatchManager.Instance.Match.MatchID);
+        }
+
+        [Command]
+        private void CmdGetConnectionID(string matchID)
+        {
+            //TODO : 이것도 BCNetworkManager의 OnClientNotifyUser로 옮기기.
+            MatchID = matchID;
+            GameManager.Instance.ServerOnPlayerConnect(matchID, PlayerId);
         }
 
         public override void OnStopServer()

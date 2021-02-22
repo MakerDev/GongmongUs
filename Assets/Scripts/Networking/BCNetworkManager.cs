@@ -128,10 +128,13 @@ namespace Assets.Scripts.Networking
         [Client]
         public void SendUser()
         {
+            var user = UserManager.Instance.User;
+            user.MatchID = MatchManager.Instance.Match.MatchID;
+
             var msg = new ClientUserConnectMessage
             {
                 NetId = Player.LocalPlayer.netId,
-                User = UserManager.Instance.User
+                User = user
             };
 
             NetworkClient.Send(msg);
