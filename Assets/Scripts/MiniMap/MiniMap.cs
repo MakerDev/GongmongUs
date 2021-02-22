@@ -22,7 +22,7 @@ public class MiniMap : MonoBehaviour
     [SerializeField]
     private bool _isStatic = false;
 
-    private int _floor = 1;
+    private int _floor = 0;
 
     [SerializeField]
     private Image _floorImage;
