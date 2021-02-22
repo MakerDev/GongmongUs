@@ -39,7 +39,7 @@ namespace Assets.Scripts
         #endregion
 
         [SerializeField]
-        public GameObject _chatHubPrefab;
+        private GameObject _chatHubPrefab;
 
         public string PlayerId { get { return $"{GameManager.PLAYER_ID_PREFIX}{netId}"; } }
 
@@ -85,6 +85,8 @@ namespace Assets.Scripts
             _playerInfo.SetPlayer(this);
             _playerShootComponent = GetComponent<PlayerShoot>();
             _playerController = GetComponent<PlayerController>();
+
+            GameManager.Instance.RegisterPlayer(this);
         }
 
         #region CONNECTIONS
@@ -148,17 +150,20 @@ namespace Assets.Scripts
             }
 
             missionManager.OnPlayerDisconnectGame(this);
-        }
-
-        private void OnDisable()
-        {
             GameManager.Instance.UnRegisterPlayer(PlayerId);
+
         }
 
+        //private void OnDestroy()
+        //{
+        //    GameManager.Instance.UnRegisterPlayer(PlayerId);
+        //}
+        
         public override void OnStopClient()
         {
             base.OnStopClient();
             GameManager.Instance.PrintMessage($"{PlayerName} leaved", null, ChatType.Info);
+            GameManager.Instance.UnRegisterPlayer(PlayerId);
         }
         #endregion
 
@@ -429,6 +434,7 @@ namespace Assets.Scripts
             }
         }
 
+        //Called on client local player
         private void SuccessExit()
         {
             HasExited = true;
@@ -461,8 +467,11 @@ namespace Assets.Scripts
 
             if (isLocalPlayer)
             {
-                GameManager.Instance.SetSceneCameraActive(true);
+                //GameManager.Instance.SetSceneCameraActive(true);
+                GameManager.Instance.SetEscapedLocalPlayerActive(true);
+                //TODO : 성공 표시로 바꾸기. 끄지 말고
                 GetComponent<PlayerSetup>().PlayerUIInstance.SetActive(false);
+                GameManager.Instance.SetExitDoorIndicator(false);
             }
         }
         #endregion
@@ -520,7 +529,7 @@ namespace Assets.Scripts
         {
             if (isLocalPlayer)
             {
-                GameManager.Instance.SetSceneCameraActive(false);
+                GameManager.Instance.SetEscapedLocalPlayerActive(false);
                 GetComponent<PlayerSetup>().PlayerUIInstance.SetActive(true);
             }
 
@@ -532,11 +541,11 @@ namespace Assets.Scripts
         [Command(ignoreAuthority = true)]
         private void CmdBroadCastNewPlayerSetUp()
         {
-            RpcSetupPlayeronAllClients();
+            RpcSetupPlayerOnAllClients();
         }
 
         [ClientRpc]
-        private void RpcSetupPlayeronAllClients()
+        private void RpcSetupPlayerOnAllClients()
         {
             if (_isFirstSetup)
             {

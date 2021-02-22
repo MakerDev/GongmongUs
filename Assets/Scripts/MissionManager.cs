@@ -251,6 +251,7 @@ namespace Assets.Scripts
             if (Player.LocalPlayer.State == PlayerState.Student)
             {
                 PlayerSetup.PlayerUI.OnExitDoorOpen();
+                GameManager.Instance.SetExitDoorIndicator(true);
             }
         }
     }

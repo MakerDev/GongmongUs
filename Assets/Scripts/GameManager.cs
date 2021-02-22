@@ -30,7 +30,7 @@ namespace Assets.Scripts
 
         #region SCENE UIs
         [SerializeField]
-        private GameObject _sceneCamera;
+        private GameObject _escapedLocalPlayer;
         [SerializeField]
         private GameObject _menuCanvas;
         [SerializeField]
@@ -44,6 +44,8 @@ namespace Assets.Scripts
         private InputField _chatInputField;
         [SerializeField]
         private Text _matchNameText;
+        [SerializeField]
+        private Text _gameInfoMatchNameText;
 
         [SerializeField]
         private GameObject _playerListPanel;
@@ -65,6 +67,9 @@ namespace Assets.Scripts
 
         [SerializeField]
         private GameObject _gameLobbyUI;
+
+        [SerializeField]
+        private GameObject _exitDoorIndicator;
 
         private List<GameObject> _playerListItems = new List<GameObject>();
         public bool GameStarted { get; private set; } = false;
@@ -124,6 +129,7 @@ namespace Assets.Scripts
             GameStarted = false;
 
             _matchNameText.text = $"<{MatchManager.Instance.Match.Name}>";
+            _gameInfoMatchNameText.text = $"<{MatchManager.Instance.Match.Name}>";
 
             _readyButton.gameObject.SetActive(true);
 
@@ -408,14 +414,15 @@ namespace Assets.Scripts
 
             EnablePlayerControl();
         }
-        public void SetSceneCameraActive(bool isActive)
+
+        public void SetEscapedLocalPlayerActive(bool isActive)
         {
-            if (_sceneCamera == null)
+            if (_escapedLocalPlayer == null)
             {
                 return;
             }
 
-            _sceneCamera.SetActive(isActive);
+            _escapedLocalPlayer.SetActive(isActive);
         }
 
         public void RenameLocalPlayer()
@@ -470,6 +477,15 @@ namespace Assets.Scripts
             }
 
             //만약 isFocus인데 아무것도 입력안하면? -> Deactivate
+        }
+
+        [Client]
+        public void SetExitDoorIndicator(bool isActive)
+        {
+            if (_exitDoorIndicator != null)
+            {
+                _exitDoorIndicator.SetActive(isActive);
+            }
         }
 
         [Client]
@@ -594,6 +610,12 @@ namespace Assets.Scripts
             }
 
             //If Server
+            if (player.MatchID == null)
+            {
+                Debug.LogError($"Player NetID : {netId} | PlayerID : {playerId} had null match ID.");
+                return;
+            }
+
             var hasMatch = ServerPlayersOfMatch.TryGetValue(player.MatchID, out var matchInfo);
 
             if (hasMatch == false)
