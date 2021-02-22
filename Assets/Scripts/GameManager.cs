@@ -1,4 +1,5 @@
 ﻿using Assets.Scripts.MatchMaking;
+using Assets.Scripts.MiniGames;
 using Assets.Scripts.Networking;
 using Assets.Scripts.RoomManagement;
 using Cysharp.Threading.Tasks;
@@ -276,6 +277,8 @@ namespace Assets.Scripts
                 return false;
             }
 
+            Debug.Log($"Player {player.PlayerId} is ready for {matchID}");
+
             return ServerCanStartGame(matchID);
         }
 
@@ -366,8 +369,11 @@ namespace Assets.Scripts
 
             SoundManager.Instance.SetBGM("SoYoung");
 
-            Debug.Log($"You're {Player.LocalPlayer.State}");
             EnablePlayerControl();
+
+            Interactable.EnteredInteractable?.MiniGame?.CancelMiniGame();
+
+            Debug.Log($"You're {Player.LocalPlayer.State}");
         }
 
         public void NofityPlayerStateChanged(Player player)
