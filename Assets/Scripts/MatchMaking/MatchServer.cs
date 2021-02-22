@@ -244,7 +244,7 @@ namespace Assets.Scripts.MatchMaking
 
         public async UniTask TurnOffServerAsync(IpPortInfo ipPortInfo)
         {
-            var request = UnityWebRequest.Delete($"{BASE_ADDRESS}server/turnoff/{ipPortInfo}");
+            var request = UnityWebRequest.Delete($"{BASE_ADDRESS}server/turnoff");
             request.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(ipPortInfo)));
             request.uploadHandler.contentType = "application/json";
             request.SetRequestHeader("Content-Type", "application/json");
