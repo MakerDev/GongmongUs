@@ -155,20 +155,17 @@ namespace Assets.Scripts
             }
 
             missionManager.OnPlayerDisconnectGame(this);
-            GameManager.Instance.UnRegisterPlayer(PlayerId);
-
         }
 
-        //private void OnDestroy()
-        //{
-        //    GameManager.Instance.UnRegisterPlayer(PlayerId);
-        //}
-        
+        private void OnDestroy()
+        {
+            GameManager.Instance.UnRegisterPlayer(PlayerId);
+        }
+
         public override void OnStopClient()
         {
             base.OnStopClient();
             GameManager.Instance.PrintMessage($"{PlayerName} leaved", null, ChatType.Info);
-            GameManager.Instance.UnRegisterPlayer(PlayerId);
         }
         #endregion
 
@@ -324,7 +321,11 @@ namespace Assets.Scripts
                 GameManager.Instance.EnablePlayerControl();
 
                 //미니게임하던 중간에 잡히면, 컨트롤이 이상해짐
-                Interactable.EnteredInteractable?.MiniGame?.CancelMiniGame();
+                if (Interactable.EnteredInteractable != null && Interactable.EnteredInteractable.MiniGame != null)
+                {
+                    Interactable.EnteredInteractable.MiniGame.CancelMiniGame();
+                }
+
                 MissionManager.Instance.RemovePlayer(PlayerId);
             }
             else
