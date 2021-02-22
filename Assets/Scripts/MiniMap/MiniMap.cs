@@ -152,15 +152,15 @@ public class MiniMap : MonoBehaviour
         {
             return 5;
         }
-        else if (y >= 18.75f)
+        else if (y >= 18.74)
         {
             return 4;
         }
-        else if (y >= 12.5)
+        else if (y >= 12.09)
         {
             return 3;
         }
-        else if (y >= 4.88)
+        else if (y >= 5.2)
         {
             return 2;
         }
@@ -175,6 +175,7 @@ public class MiniMap : MonoBehaviour
         _floor = floor;
         _floorImage.sprite = _floorSprites[floor - 1];
         _currentFloorText.text = $"{floor}층";
+        BuildingLightController.Instance?.SetPlayerFloor(floor);
     }
 
     public void ShowNextFloor()
@@ -231,7 +232,7 @@ public class MiniMap : MonoBehaviour
         {
             var player = _allPlayers[i];
 
-            if (player == null || GetCurrentFloor(player.transform.position.y) != floor)
+            if (player == null)
             {
                 continue;
             }
