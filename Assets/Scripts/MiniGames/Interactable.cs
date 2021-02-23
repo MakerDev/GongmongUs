@@ -21,23 +21,6 @@ namespace Assets.Scripts.MiniGames
         public MiniGame MiniGame { get; private set; } = null;
 
         private int _localPlayerLayer;
-        public bool Highlighted
-        {
-            get
-            {
-                if (_highlight != null)
-                {
-                    return _highlight.activeSelf;
-                }
-
-                if (_outlineComponent != null)
-                {
-                    return _outlineComponent.enabled;
-                }
-
-                return false;
-            }
-        }
 
         private void Start()
         {
