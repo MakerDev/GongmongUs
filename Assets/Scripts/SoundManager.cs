@@ -86,7 +86,7 @@ public class SoundManager : MonoBehaviour
         }
     }
 
-    public void PlayeBGM()
+    public void PlayBGM()
     {       
         IsPlayingBGM = true;
     }
