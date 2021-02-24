@@ -104,6 +104,7 @@ namespace Assets.Scripts
         [Server]
         public void OnPlayerDisconnectGame(Player player)
         {
+            Debug.Log($"Server missionManager disconnect {player.PlayerId}");
             PlayerMissionsProgress.Remove(player.PlayerId);
 
             if (player.State == PlayerState.Professor)
@@ -248,6 +249,8 @@ namespace Assets.Scripts
                 openableDoor.OpenDoor();
             }
 
+            //여기서 제대로 State가 싱크가 안 되는 경우가 있는듯. 교수가 마지막 학생을 잡아서 조교가 된 경우에 이런 현상이 생기는
+            //것으로 보임.
             if (Player.LocalPlayer.State == PlayerState.Student)
             {
                 PlayerSetup.PlayerUI.OnExitDoorOpen();
