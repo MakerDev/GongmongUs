@@ -43,6 +43,9 @@ namespace Assets.Scripts.Networking
         [SerializeField]
         private Text _requestResultText;
 
+        [SerializeField]
+        private GameObject _menuObject;
+
         private List<GameObject> _matchUIs = new List<GameObject>();
 
         private UniTask _fetchTask;
@@ -64,6 +67,40 @@ namespace Assets.Scripts.Networking
         private void OnDestroy()
         {
             _fetchRecursively = false;
+        }
+
+        #region MENU
+        public void SetBGMOnOff(bool isOn)
+        {
+            if (isOn)
+            {
+                SoundManager.Instance.PlayBGM();
+            }
+            else
+            {
+                SoundManager.Instance.MuteSound();
+            }
+        }
+
+        public void SetFullScreen(bool _)
+        {
+            if (Screen.fullScreen)
+            {
+                Screen.fullScreenMode = FullScreenMode.Windowed;
+            }
+            else
+            {
+                Screen.fullScreenMode = FullScreenMode.ExclusiveFullScreen;
+            }
+        }
+        #endregion
+
+        private void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                _menuObject.SetActive(!_menuObject.activeSelf);
+            }
         }
 
         private async void FetchRecursive()
@@ -163,7 +200,7 @@ namespace Assets.Scripts.Networking
             catch (Exception)
             {
                 _requestResultText.text = "ERROR : Server might be down";
-            }            
+            }
         }
 
         public void MoveToMatch(MatchDTO match)

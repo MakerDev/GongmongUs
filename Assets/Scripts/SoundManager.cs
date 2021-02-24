@@ -53,19 +53,6 @@ public class SoundManager : MonoBehaviour
         _backgroundMusic.Play();
     }
 
-    private void Update()
-    {
-        if (GameManager.Instance != null && GameManager.Instance.IsChating)
-        {
-            return;
-        }
-        
-        if (Input.GetKeyDown(KeyCode.M))
-        {
-            IsPlayingBGM = !IsPlayingBGM;
-        }
-    }
-
     public void SetBGM(string name)
     {
         var audioClip = _audioClips.FirstOrDefault(x => x.name == name);
