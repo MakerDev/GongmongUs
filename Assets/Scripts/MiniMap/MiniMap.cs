@@ -44,16 +44,16 @@ public class MiniMap : MonoBehaviour
     private GameObject _localPlayerPrefab;
 
     [SerializeField]
-    private GameObject _mobSpawnPoint;
+    private RectTransform _mobSpawnPoint;
     [SerializeField]
     private Text _currentFloorText;
 
-    [SerializeField]
     private const float REAL_WIDTH = 100f;
-    [SerializeField]
     private const float REAL_HEIGHT = 110f;
 
+    [SerializeField]
     private float _xMultiplier = 1f;
+    [SerializeField]
     private float _zMultiplier = 1f;
 
     [SerializeField]
@@ -242,9 +242,8 @@ public class MiniMap : MonoBehaviour
             var z = (playerPosition.z + _zOffset) * _zMultiplier;
 
             var playerMob = _minimapMobs[player];
-
-            //z goes to y transform as playerMob is RectTransform.
-            playerMob.transform.position = new Vector3(x, z, 0);
+            var localPosition = new Vector3(x, z, 0);
+            playerMob.transform.localPosition = localPosition;
         }
     }
 }
