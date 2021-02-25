@@ -72,6 +72,12 @@ namespace Assets.Scripts
             GameManager.Instance.NofityPlayerStateChanged(this);
             _playerShootComponent.NotifyStateChanged(newState);
             _playerController.SetStateMaterial(newState);
+
+            if (isLocalPlayer)
+            {
+                _playerController.OnPlayerStateChange(newState);
+            }
+
             PlayerSetup.PlayerUI.SetState();
 
             if (newState != PlayerState.Student)
@@ -174,6 +180,26 @@ namespace Assets.Scripts
         public void RpcStartGame(string professorId)
         {
             GameManager.Instance.ConfigureGameOnStart(professorId);
+        }
+
+        public void UnReady()
+        {
+            IsReady = false;
+            CmdUnReady();
+        }
+
+        [Command]
+        private void CmdUnReady()
+        {
+            IsReady = false;
+            RpcUnReady();
+        }
+
+        [ClientRpc]
+        public void RpcUnReady()
+        {
+            IsReady = false;
+            RoomUIManager.Instance?.RefreshList(GameManager.Instance.Players.Values);
         }
 
         public void GetReady()
