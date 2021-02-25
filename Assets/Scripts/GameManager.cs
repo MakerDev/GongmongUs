@@ -9,6 +9,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Video;
@@ -44,9 +45,9 @@ namespace Assets.Scripts
         [SerializeField]
         private InputField _chatInputField;
         [SerializeField]
-        private Text _matchNameText;
+        private TextMeshProUGUI _matchNameText;
         [SerializeField]
-        private Text _gameInfoMatchNameText;
+        private TextMeshProUGUI _gameInfoMatchNameText;
 
         [SerializeField]
         private GameObject _playerListPanel;
@@ -65,6 +66,12 @@ namespace Assets.Scripts
         #endregion
         [SerializeField]
         private Button _readyButton;
+        [SerializeField]
+        private Button _unreadyButton;
+        [SerializeField]
+        private Toggle _bgmToggle;
+        [SerializeField]
+        private Toggle _fullscreenToggle;
 
         [SerializeField]
         private GameObject _gameLobbyUI;
@@ -133,6 +140,9 @@ namespace Assets.Scripts
             _gameInfoMatchNameText.text = $"<{MatchManager.Instance.Match.Name}>";
 
             _readyButton.gameObject.SetActive(true);
+
+            _bgmToggle.isOn = SoundManager.Instance.IsPlayingBGM;
+            _fullscreenToggle.isOn = Screen.fullScreenMode == FullScreenMode.FullScreenWindow;
 
             //TODO : change this to another BGM.
             SoundManager.Instance.StopBGM();
@@ -226,6 +236,20 @@ namespace Assets.Scripts
             Player.LocalPlayer.GetReady();
             _readyButton.enabled = false;
             _readyButton.interactable = false;
+            _readyButton.gameObject.SetActive(false);
+            _unreadyButton.gameObject.SetActive(true);
+            _unreadyButton.interactable = true;
+        }
+
+        public void UnReadyGame()
+        {
+            Player.LocalPlayer.UnReady();
+            _readyButton.gameObject.SetActive(true);
+            _readyButton.enabled = true;
+            _readyButton.interactable = true;
+
+            _unreadyButton.interactable = false;
+            _unreadyButton.gameObject.SetActive(false);
         }
 
         private bool ServerCanStartGame(string matchId)
@@ -385,6 +409,8 @@ namespace Assets.Scripts
             }
         }
 
+
+        #region MENU
         public void OpenMenu()
         {
             if (_menuCanvas != null)
@@ -395,13 +421,31 @@ namespace Assets.Scripts
             }
         }
 
-        private void OpenMiniMap()
+        public void SetBGMOnOff(bool _)
         {
-            _minimapUI.SetActive(true);
-
-            DisablePlayerControl();
+            if (SoundManager.Instance.IsPlayingBGM == false)
+            {
+                SoundManager.Instance.PlayBGM();
+            }
+            else
+            {
+                SoundManager.Instance.MuteSound();
+            }
         }
 
+        public void SetFullScreen(bool _)
+        {
+            if (Screen.fullScreen)
+            {
+                Screen.fullScreenMode = FullScreenMode.Windowed;
+            }
+            else
+            {
+                Screen.fullScreenMode = FullScreenMode.ExclusiveFullScreen;
+            }
+        }
+
+        #endregion
         public void Resume()
         {
             if (_menuCanvas != null)
@@ -416,7 +460,17 @@ namespace Assets.Scripts
                 _minimapUI.SetActive(false);
             }
 
-            EnablePlayerControl();
+            if (GameStarted)
+            {
+                EnablePlayerControl();
+            }
+        }
+
+        private void OpenMiniMap()
+        {
+            _minimapUI.SetActive(true);
+
+            DisablePlayerControl();
         }
 
         public void SetEscapedLocalPlayerActive(bool isActive)

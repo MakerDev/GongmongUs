@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,7 +14,7 @@ namespace Assets.Scripts.RoomManagement
         public static RoomUIManager Instance { get; private set; }
 
         [SerializeField]
-        private Text _localPlayerName;
+        private TextMeshProUGUI _localPlayerName;
         [SerializeField]
         private GameObject _roomPlayerUIPrefab;
         [SerializeField]
