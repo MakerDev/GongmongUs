@@ -3,6 +3,7 @@ using Mirror;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices.ComTypes;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -46,7 +47,7 @@ public class MiniMap : MonoBehaviour
     [SerializeField]
     private RectTransform _mobSpawnPoint;
     [SerializeField]
-    private Text _currentFloorText;
+    private TextMeshProUGUI _currentFloorText;
 
     private const float REAL_WIDTH = 100f;
     private const float REAL_HEIGHT = 110f;
