@@ -5,6 +5,7 @@ using Mirror;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -41,7 +42,7 @@ namespace Assets.Scripts.Networking
 
         [Header("Debug")]
         [SerializeField]
-        private Text _requestResultText;
+        private TextMeshProUGUI _requestResultText;
 
         [SerializeField]
         private GameObject _menuObject;
@@ -70,9 +71,9 @@ namespace Assets.Scripts.Networking
         }
 
         #region MENU
-        public void SetBGMOnOff(bool isOn)
+        public void SetBGMOnOff(bool _)
         {
-            if (isOn)
+            if (SoundManager.Instance.IsPlayingBGM == false)
             {
                 SoundManager.Instance.PlayBGM();
             }
@@ -90,7 +91,7 @@ namespace Assets.Scripts.Networking
             }
             else
             {
-                Screen.fullScreenMode = FullScreenMode.ExclusiveFullScreen;
+                Screen.fullScreenMode = FullScreenMode.FullScreenWindow;
             }
         }
         #endregion
@@ -101,6 +102,11 @@ namespace Assets.Scripts.Networking
             {
                 _menuObject.SetActive(!_menuObject.activeSelf);
             }
+        }
+
+        public void TurnOffMenu()
+        {
+            _menuObject.SetActive(false);
         }
 
         private async void FetchRecursive()
