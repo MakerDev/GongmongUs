@@ -558,7 +558,7 @@ namespace Assets.Scripts
             var chatMessage = new ChatMessage();
             chatMessage.Message = message;
             chatMessage.Sender = sender;
-            chatMessage.TextObject = Instantiate(_textObjectPrefab, _chatPanel.transform).GetComponent<Text>();
+            chatMessage.TextObject = Instantiate(_textObjectPrefab, _chatPanel.transform).GetComponent<TextMeshProUGUI>();
 
             var hasSender = string.IsNullOrEmpty(sender);
 
@@ -709,7 +709,7 @@ namespace Assets.Scripts
             {
                 var playerListItem = Instantiate(_playerListItemPrefab, _playerListPanel.transform);
                 _playerListItems.Add(playerListItem);
-                var playerListItemText = playerListItem.GetComponent<Text>();
+                var playerListItemText = playerListItem.GetComponent<TextMeshProUGUI>();
                 playerListItemText.text = player.PlayerName;
 
                 if (player.isLocalPlayer)

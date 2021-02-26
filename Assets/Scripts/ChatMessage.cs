@@ -1,4 +1,5 @@
 ﻿using System;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,7 +18,7 @@ namespace Assets.Scripts
     {
         public string Message;
         public string Sender;
-        public Text TextObject;
+        public TextMeshProUGUI TextObject;
 
         public ChatType ChatType = ChatType.Info;
     }

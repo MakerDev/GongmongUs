@@ -108,6 +108,7 @@ namespace Assets.Scripts
         {
             base.OnStartClient();
             GameManager.Instance.RegisterPlayer(this);
+            MatchID = MatchManager.Instance.Match.MatchID;
 
             //If this is local player, set player name manually because this script being called 'Start'
             //means that this is joining the existing room and other players' name will be automatically synced.
@@ -205,7 +206,6 @@ namespace Assets.Scripts
         public void GetReady()
         {
             IsReady = true;
-            MatchID = MatchManager.Instance.Match.MatchID;
             CmdGetReady(MatchID);
         }
 

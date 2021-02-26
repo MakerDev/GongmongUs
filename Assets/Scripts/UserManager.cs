@@ -4,6 +4,7 @@ using Cysharp.Threading.Tasks;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
@@ -26,7 +27,7 @@ namespace Assets.Scripts
         [SerializeField]
         private List<Button> _loginButtons = new List<Button>();
         [SerializeField]
-        private Text _loginResultText;
+        private TextMeshProUGUI _loginResultText;
 
         private void Awake()
         {
