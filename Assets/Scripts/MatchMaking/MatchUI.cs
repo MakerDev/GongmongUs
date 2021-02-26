@@ -3,6 +3,7 @@ using Assets.Scripts.Networking;
 using BattleCampusMatchServer.Models.DTOs;
 using Cysharp.Threading.Tasks;
 using System.Collections;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,11 +15,11 @@ namespace Assets.Scripts
         private MatchDTO _match;
 
         [SerializeField]
-        private Text _matchNameText;
+        private TextMeshProUGUI _matchNameText;
         [SerializeField]
-        private Text _currentPlayerInfoText;
+        private TextMeshProUGUI _currentPlayerInfoText;
         [SerializeField]
-        private Text _matchIDText;
+        private TextMeshProUGUI _matchIDText;
         [SerializeField]
         private Button _joinButton;
         [SerializeField]

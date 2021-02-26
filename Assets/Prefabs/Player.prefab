@@ -94,7 +94,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Hello
+  m_text: "\uC774\uB984\uC785\uB2C8\uB2E4"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 136d25e48fb3d7f4d89e56800832a9e9, type: 2}
   m_sharedMaterial: {fileID: -1769905657524465227, guid: 136d25e48fb3d7f4d89e56800832a9e9,

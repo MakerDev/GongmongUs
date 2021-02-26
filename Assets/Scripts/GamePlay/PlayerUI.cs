@@ -2,6 +2,7 @@
 using FirstGearGames.Utilities.Objects;
 using Mirror;
 using System.Collections;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -29,7 +30,7 @@ namespace Assets.Scripts
         private Sprite _studentStateSprite;
 
         [SerializeField]
-        private Text _leftMissionsText;
+        private TextMeshProUGUI _leftMissionsText;
         [SerializeField]
         private RectTransform _progressImage;
 

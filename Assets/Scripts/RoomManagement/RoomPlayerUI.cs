@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -16,7 +17,7 @@ namespace Assets.Scripts.RoomManagement
         [SerializeField]
         private Sprite _notReadySprite;
         [SerializeField]
-        private Text _playerName;
+        private TextMeshProUGUI _playerName;
         [SerializeField]
         private List<Sprite> _danbegSprites = new List<Sprite>();
         [SerializeField]
