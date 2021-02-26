@@ -36,7 +36,7 @@ namespace Assets.Scripts.Networking
         [SerializeField]
         private Canvas _createMatchCanvas;
         [SerializeField]
-        private InputField _newMatchNameInputField;
+        private TMP_InputField _newMatchNameInputField;
 
         [SerializeField]
         private Button _createMatchButton;

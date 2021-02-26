@@ -36,14 +36,14 @@ namespace Assets.Scripts
         [SerializeField]
         private GameObject _menuCanvas;
         [SerializeField]
-        private InputField _renameInputField;
+        private TMP_InputField _renameInputField;
 
         [SerializeField]
         private GameObject _chatPanel;
         [SerializeField]
         private GameObject _textObjectPrefab;
         [SerializeField]
-        private InputField _chatInputField;
+        private TMP_InputField _chatInputField;
         [SerializeField]
         private TextMeshProUGUI _matchNameText;
         [SerializeField]
