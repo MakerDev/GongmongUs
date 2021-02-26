@@ -61,6 +61,11 @@ public abstract class MiniGame : MonoBehaviour
         GameManager.Instance?.EnablePlayerControl();
     }
 
+    public static void ResetIsPlaying()
+    {
+        IsPlaying = false;
+    }
+
     public virtual void ResetGame() { }
 
     public void StartMiniGame()

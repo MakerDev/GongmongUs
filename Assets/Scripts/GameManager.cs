@@ -144,6 +144,8 @@ namespace Assets.Scripts
             _bgmToggle.isOn = SoundManager.Instance.IsPlayingBGM;
             _fullscreenToggle.isOn = Screen.fullScreenMode == FullScreenMode.FullScreenWindow;
 
+            MiniGame.ResetIsPlaying();
+
             //TODO : change this to another BGM.
             SoundManager.Instance.StopBGM();
         }
