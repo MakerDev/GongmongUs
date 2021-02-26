@@ -412,7 +412,7 @@ MonoBehaviour:
   _snapPosition: 0
   _synchronizeRotation: 0
   _snapRotation: 0
-  _synchronizeScale: 0
+  _synchronizeScale: 1
   _snapScale: 0
 --- !u!114 &-7803139116011980689
 MonoBehaviour:
