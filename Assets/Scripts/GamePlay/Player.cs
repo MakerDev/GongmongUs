@@ -364,6 +364,12 @@ namespace Assets.Scripts
         //that player character will not move.
         public void CaughtByAssistant()
         {
+            //To avoid Assistants and professor to be stunned.
+            if (State != PlayerState.Student)
+            {
+                return;
+            }
+
             CmdCaughtByAssistant();
         }
 
