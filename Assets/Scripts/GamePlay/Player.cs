@@ -291,7 +291,7 @@ namespace Assets.Scripts
 
             if (MissionsLeft == 0)
             {
-                MissionManager.Instance.NotifyPlayerCompleteMissions(PlayerId);
+                MissionManager.Instance.NotifyPlayerCompleteMissions(this);
 
                 if (isLocalPlayer)
                 {

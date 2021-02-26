@@ -211,13 +211,13 @@ namespace Assets.Scripts
         /// <summary>
         /// This is called by LocalPlayer
         /// </summary>
-        /// <param name="playerId"></param>
-        public void NotifyPlayerCompleteMissions(string playerId)
+        /// <param name="player"></param>
+        public void NotifyPlayerCompleteMissions(Player player)
         {
             //Check whether all missions are completed.
-            PlayerMissionsProgress[playerId] = true;
+            PlayerMissionsProgress[player.PlayerId] = true;
 
-            GameManager.Instance.PrintMessage($"Player {playerId} has done his jobs", "SYSTEM", ChatType.Info);
+            GameManager.Instance.PrintMessage($"Player {player.PlayerName} has done his jobs", "SYSTEM", ChatType.Info);
         }
 
         /// <summary>
