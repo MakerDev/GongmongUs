@@ -21,9 +21,9 @@ namespace Assets.Scripts
         public GameUser User { get; private set; } = new GuestUser();
 
         [SerializeField]
-        private InputField _idInputField;
+        private TMP_InputField _idInputField;
         [SerializeField]
-        private InputField _passwordInputField;
+        private TMP_InputField _passwordInputField;
         [SerializeField]
         private List<Button> _loginButtons = new List<Button>();
         [SerializeField]
