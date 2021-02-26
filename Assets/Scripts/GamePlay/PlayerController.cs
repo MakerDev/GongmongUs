@@ -14,6 +14,9 @@ namespace Assets.Scripts
 
         private const float WALK_SPEED = 5.0f;
         private const float RUN_SPEED = 10.0f;
+        private const float PROFESSOR_RUN_SPEED = 8.5f;
+
+        private float _runSpeed = RUN_SPEED;
 
         #region STATS
         [Header("Stats")]
@@ -93,6 +96,14 @@ namespace Assets.Scripts
             {
                 _bodyRenderer.material = _onCaughtMaterial;
                 _animator.Animator.Play("Stunned");
+            }
+        }
+
+        public void OnPlayerStateChange(PlayerState state)
+        {
+            if (state == PlayerState.Professor)
+            {
+                _runSpeed = PROFESSOR_RUN_SPEED;
             }
         }
 
