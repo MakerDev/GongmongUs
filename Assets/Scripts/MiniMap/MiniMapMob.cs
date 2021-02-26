@@ -4,13 +4,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class MiniMapMob : MonoBehaviour
 {
     [SerializeField]
-    private Text _infoText;
+    private TextMeshProUGUI _infoText;
 
     private Player _player;
     private int _currentFloor;
