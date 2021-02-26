@@ -1,5 +1,6 @@
 ﻿using FirstGearGames.Utilities.Objects;
 using System.Collections;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,7 +12,7 @@ namespace Assets.Scripts
     public class PlayerInfoUI : MonoBehaviour
     {
         [SerializeField]
-        private Text _playerNameText;
+        private TextMeshProUGUI _playerNameText;
 
         private Player _player;
 
