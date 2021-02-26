@@ -26,6 +26,10 @@ namespace Assets.Scripts.Networking
         private GameObject _matchUIPrefab;
         [SerializeField]
         private GameObject _matchUIPanel;
+        [SerializeField]
+        private Toggle _fullScreenToggle;
+        [SerializeField]
+        private Toggle _setBgmToggle;
 
         private List<GameObject> _matchUIInstances = new List<GameObject>();
 
@@ -60,7 +64,9 @@ namespace Assets.Scripts.Networking
 
             FetchRecursive();
 
-            Debug.Log("Bgm setting");
+            _setBgmToggle.isOn = SoundManager.Instance.IsPlayingBGM;
+            _fullScreenToggle.isOn = Screen.fullScreen;
+
             SoundManager.Instance.SetBGM("SweetCampusLobbyBGM");
         }
 
@@ -73,26 +79,12 @@ namespace Assets.Scripts.Networking
         #region MENU
         public void SetBGMOnOff(bool _)
         {
-            if (SoundManager.Instance.IsPlayingBGM == false)
-            {
-                SoundManager.Instance.PlayBGM();
-            }
-            else
-            {
-                SoundManager.Instance.MuteSound();
-            }
+            MenuManager.SetBgm(!SoundManager.Instance.IsPlayingBGM);
         }
 
         public void SetFullScreen(bool _)
         {
-            if (Screen.fullScreen)
-            {
-                Screen.fullScreenMode = FullScreenMode.Windowed;
-            }
-            else
-            {
-                Screen.fullScreenMode = FullScreenMode.FullScreenWindow;
-            }
+            MenuManager.SwitchFullScreen(!Screen.fullScreen);
         }
         #endregion
 
