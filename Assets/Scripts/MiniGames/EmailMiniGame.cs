@@ -10,6 +10,7 @@ public class EmailMiniGame : MiniGame
 
     public Image answer;
 
+    public Sprite step1;
     public Sprite step2;
     public Sprite step3;
     public Sprite step4;
@@ -24,6 +25,8 @@ public class EmailMiniGame : MiniGame
     {
         Fail_text.SetActive(false);
         Success_text.SetActive(false);
+
+        answer.sprite = step1;
 
         First.SetActive(true);
         Second.SetActive(false);

@@ -369,15 +369,15 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 2591182518626920639, guid: b4a7c1390e3026e46b31192f674eb5c7,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 2591182518825661678, guid: b4a7c1390e3026e46b31192f674eb5c7,
         type: 3}
       propertyPath: m_Name
       value: ElevatorSubMissionInteractable
+      objectReference: {fileID: 0}
+    - target: {fileID: 2591182518825661678, guid: b4a7c1390e3026e46b31192f674eb5c7,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2591182518825661682, guid: b4a7c1390e3026e46b31192f674eb5c7,
         type: 3}
