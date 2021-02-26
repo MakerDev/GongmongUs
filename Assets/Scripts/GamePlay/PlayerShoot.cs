@@ -82,11 +82,6 @@ namespace Assets.Scripts
                 return;
             }
 
-            if (Input.GetKeyDown(KeyCode.Z))
-            {
-                Player.LocalPlayer.CaughtByAssistant();
-            }
-
             var canExecute = _mainFireAction.CanExecute();
             PlayerSetup.PlayerUI.SetCrossHair(canExecute);
 
