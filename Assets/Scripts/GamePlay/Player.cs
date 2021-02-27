@@ -145,6 +145,7 @@ namespace Assets.Scripts
 
             BCNetworkManager.Instance.SendUser();
             CmdGetConnectionID(MatchManager.Instance.Match.MatchID);
+            RoomUIManager.Instance?.RefreshList(GameManager.Instance.Players.Values);
         }
 
         [Command]
@@ -227,9 +228,10 @@ namespace Assets.Scripts
             if (isLocalPlayer)
             {
                 GameManager.Instance.OnBecomeHost();
+                GameManager.Instance.PrintMessage("You are the host now.", "SYSTEM", ChatType.None);
             }
 
-            GameManager.Instance.RefreshPlayerList();
+            RoomUIManager.Instance.RefreshList(GameManager.Instance.Players.Values);
         }
 
         public void TryStartGame()
@@ -255,12 +257,11 @@ namespace Assets.Scripts
             }
         }
 
-        [TargetRpc]
+        [ClientRpc]
         private void RpcOnFailToStartGame()
         {
             GameManager.Instance.PrintMessage("모든 플레이어가 레디해야 시작할 수 있습니다.", "SYSTEM", ChatType.None);
         }
-
 
         [Command]
         public async void CmdStartGame(string matchId)

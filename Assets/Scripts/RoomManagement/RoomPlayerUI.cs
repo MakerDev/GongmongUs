@@ -17,6 +17,8 @@ namespace Assets.Scripts.RoomManagement
         [SerializeField]
         private Sprite _notReadySprite;
         [SerializeField]
+        private Sprite _hostSprite;
+        [SerializeField]
         private TextMeshProUGUI _playerName;
         [SerializeField]
         private List<Sprite> _danbegSprites = new List<Sprite>();
@@ -24,6 +26,8 @@ namespace Assets.Scripts.RoomManagement
         private Image _isReadyImage;
         [SerializeField]
         private Image _danbegImage;
+        [SerializeField]
+        private GameObject _hostBackground;
         [SerializeField]
         private Button _kickButton;
 
@@ -33,13 +37,26 @@ namespace Assets.Scripts.RoomManagement
         {
             _player = player;
 
-            if (player.IsReady || player.IsHost)
+            if (player.IsHost)
+            {
+                _isReadyImage.sprite = _hostSprite;
+            }
+            else if (player.IsReady)
             {
                 _isReadyImage.sprite = _readySprite;
             }
             else
             {
                 _isReadyImage.sprite = _notReadySprite;
+            }
+
+            if (player.IsHost)
+            {
+                _hostBackground.SetActive(true);
+            }
+            else
+            {
+                _hostBackground.SetActive(false);
             }
 
             var danbegSpriteIndex = UnityEngine.Random.Range(0, _danbegSprites.Count);
