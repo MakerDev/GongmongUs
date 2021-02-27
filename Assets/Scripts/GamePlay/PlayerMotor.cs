@@ -32,8 +32,6 @@ public class PlayerMotor : NetworkBehaviour
     private float _speed = 9f;
     public float Speed { get { return _speed; } }
 
-
-    private bool _isPlayingMiniGame = false;
     private Vector3 _velocity;
     private Vector3 _rotation;
     private float _cameraRotationX;
@@ -43,14 +41,6 @@ public class PlayerMotor : NetworkBehaviour
     private void Start()
     {
         _controller = GetComponent<CharacterController>();
-        MiniGame.OnStartMiniGame += () =>
-        {
-            _isPlayingMiniGame = true;
-        };
-        MiniGame.OnTurnOffMiniGame += (result) =>
-        {
-            _isPlayingMiniGame = false;
-        };
     }
 
     public void Move(Vector3 velocity)
@@ -80,7 +70,7 @@ public class PlayerMotor : NetworkBehaviour
 
     private void FixedUpdate()
     {
-        if (GameManager.Instance.DisableControl || (!isLocalPlayer && !gameObject.activeSelf) || _isPlayingMiniGame)
+        if (GameManager.Instance.DisableControl || (!isLocalPlayer && !gameObject.activeSelf) || MiniGame.IsPlaying)
         {
             return;
         }

@@ -102,16 +102,24 @@ namespace Assets.Scripts
             _animator.Animator.Play("Transform");
         }
 
-        public void SetOnCaughtByAssistant(bool isReleased)
+        public void SetOnCaughtByAssistant(bool isReleased, bool changeMaterial = false)
         {
             if (isReleased)
             {
-                _bodyRenderer.material = _studentMaterial;
+                if (changeMaterial)
+                {
+                    _bodyRenderer.material = _studentMaterial;
+                }
+
                 _animator.SetBoolLocal("IsStunned", false);
             }
             else
             {
-                _bodyRenderer.material = _onCaughtMaterial;
+                if (changeMaterial)
+                {
+                    _bodyRenderer.material = _onCaughtMaterial;
+                }
+
                 _animator.Animator.Play("Stunned");
             }
         }
@@ -148,8 +156,9 @@ namespace Assets.Scripts
             Vector3 velocity = (movHorizontal + movVertical) * _speed * Time.fixedDeltaTime;
 
             var isWalking = zMov != 0 || xMov != 0;
+            var forwardVelocity = zMov == 0 ? xMov : zMov;
 
-            _animator.PlayWalkOrRun(isWalking, zMov, _motor.Speed);
+            _animator.PlayWalkOrRun(isWalking, forwardVelocity, _motor.Speed);
 
             _motor.Move(velocity);
 

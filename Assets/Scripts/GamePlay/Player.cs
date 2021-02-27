@@ -389,7 +389,7 @@ namespace Assets.Scripts
                 return;
             }
 
-            _playerController.SetOnCaughtByAssistant(false);
+            _playerController.SetOnCaughtByAssistant(false, true);
 
             if (isLocalPlayer)
             {
@@ -405,7 +405,17 @@ namespace Assets.Scripts
                 IsStunning = false;
             }
 
-            _playerController.SetOnCaughtByAssistant(true);
+
+            //Assistant에게 잡혀서 스턴에 걸린 와중에 교수가 와서 잡으면, await 3초후에 얘가 다시 Mat을 학생으로 돌려버리는 버그가 있어서
+            //이렇게 해결함.
+            if (State != PlayerState.Student)
+            {
+                _playerController.SetOnCaughtByAssistant(true, false);               
+            }
+            else
+            {
+                _playerController.SetOnCaughtByAssistant(true, true);
+            }
         }
 
         #endregion
