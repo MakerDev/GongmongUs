@@ -59,7 +59,7 @@ namespace Assets.Scripts
         //TODO : 이거 없애고 적절한 이벤트로 처리
         private void Update()
         {
-            if (_lastState == Player.LocalPlayer.State)
+            if (Player.LocalPlayer == null || _lastState == Player.LocalPlayer.State)
             {
                 return;
             }

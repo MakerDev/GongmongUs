@@ -24,10 +24,16 @@ namespace Assets.Scripts.RoomManagement
         private Image _isReadyImage;
         [SerializeField]
         private Image _danbegImage;
+        [SerializeField]
+        private Button _kickButton;
+
+        private Player _player;
 
         public void SetPlayer(Player player)
         {
-            if (player.IsReady)
+            _player = player;
+
+            if (player.IsReady || player.IsHost)
             {
                 _isReadyImage.sprite = _readySprite;
             }
@@ -39,6 +45,27 @@ namespace Assets.Scripts.RoomManagement
             var danbegSpriteIndex = UnityEngine.Random.Range(0, _danbegSprites.Count);
             _danbegImage.sprite = _danbegSprites[danbegSpriteIndex];
             _playerName.text = player.PlayerName;
+
+            //TODO : Display something if he is the host.
+            if (Player.LocalPlayer != null && Player.LocalPlayer.IsHost)
+            {
+                if (player.IsHost == false)
+                {
+                    _kickButton.gameObject.SetActive(true);
+                }
+            }
+            else
+            {
+                _kickButton.gameObject.SetActive(false);
+            }
+        }
+
+        public void KickPlayer()
+        {
+            if (Player.LocalPlayer.IsHost)
+            {
+                Player.LocalPlayer.KickPlayer(_player.PlayerId);
+            }
         }
     }
 }

@@ -18,9 +18,7 @@ namespace Assets.Scripts
 
         public void SetPlayer(Player player)
         {
-            Debug.Log("Set player is called on Player" + player.PlayerName);
             _player = player;
-
             _playerNameText.text = player.PlayerName;
         }
     }

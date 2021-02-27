@@ -60,14 +60,17 @@ namespace Assets.Scripts
         private GameObject _startGameUI;
 
         [SerializeField]
+        private Button _readyButton;
+        [SerializeField]
+        private Button _unreadyButton;
+        [SerializeField]
+        private Button _startGameButton;
+
+        [SerializeField]
         private MiniMap _minimapOnTab;
         [SerializeField]
         private MiniMap _staticMinimap;
         #endregion
-        [SerializeField]
-        private Button _readyButton;
-        [SerializeField]
-        private Button _unreadyButton;
         [SerializeField]
         private Toggle _bgmToggle;
         [SerializeField]
@@ -254,7 +257,20 @@ namespace Assets.Scripts
             _unreadyButton.gameObject.SetActive(false);
         }
 
-        private bool ServerCanStartGame(string matchId)
+        public void StartGame()
+        {
+            Player.LocalPlayer.TryStartGame();
+        }
+
+        [Client]
+        public void OnBecomeHost()
+        {
+            _unreadyButton.gameObject.SetActive(false);
+            _readyButton.gameObject.SetActive(false);
+            _startGameButton.gameObject.SetActive(true);
+        }
+
+        public bool ServerCanStartGame(string matchId)
         {
             var hasMatch = ServerPlayersOfMatch.TryGetValue(matchId, out var matchInfo);
 
@@ -277,6 +293,11 @@ namespace Assets.Scripts
 
             foreach (var player in matchInfo.Players)
             {
+                if (player.IsHost)
+                {
+                    continue;
+                }
+
                 if (player.IsReady == false)
                 {
                     return false;
@@ -326,6 +347,18 @@ namespace Assets.Scripts
         }
 
         [Server]
+        public void ServerKickPlayer(string playerId)
+        {
+            var player = GetPlayer(playerId);
+
+            if (player != null)
+            {
+                Debug.Log($"Player {playerId} is kicked out.");
+                player.connectionToClient.Disconnect();
+            }
+        }
+
+        [Server]
         public bool ServerOnPlayerConnect(string matchID, string playerId)
         {
             ServerMatchInfo serverMatchInfo;
@@ -351,6 +384,12 @@ namespace Assets.Scripts
             }
 
             serverMatchInfo.Players.Add(player);
+
+            if (serverMatchInfo.Players.Count == 1)
+            {
+                Debug.Log($"{player.PlayerName} is now host!");
+                player.MakeHost();
+            }
 
             BCNetworkManager.Instance.SpawnChatHubIfNotExists(matchID);
 
@@ -510,19 +549,19 @@ namespace Assets.Scripts
             }
             else
             {
-
                 if (!_chatInputField.isFocused && enterDown)
                 {
                     _chatInputField.ActivateInputField();
                 }
             }
 
-            if (_chatInputField.isFocused && enterDown)
+            if (_chatInputField.isFocused && enterDown && _chatInputField.text == "")
             {
+                _chatInputField.text = "";
                 _chatInputField.DeactivateInputField();
             }
 
-            //만약 isFocus인데 아무것도 입력안하면? -> Deactivate
+            //TODO : 만약 isFocus인데 아무것도 입력안하면? -> Deactivate
         }
 
         [Client]
@@ -604,9 +643,11 @@ namespace Assets.Scripts
         #region PLAYER TRACKING
         public const string PLAYER_ID_PREFIX = "Player";
 
+        
         /// <summary>
-        /// Key : PlayerId == transform.name
+        /// Register player to GameManager.
         /// </summary>
+        /// <param name="player"></param>
         public void RegisterPlayer(Player player)
         {
             string playerId = player.PlayerId;
@@ -622,7 +663,7 @@ namespace Assets.Scripts
             Debug.Log($"Client : {playerId} is registered. Now {Players.Count} players");
         }
 
-        public async void UnRegisterPlayer(string playerId)
+        public void UnRegisterPlayer(string playerId)
         {
             if (playerId == null)
             {
@@ -676,12 +717,17 @@ namespace Assets.Scripts
                 ServerPlayersOfMatch.Remove(player.MatchID);
                 BCNetworkManager.Instance.TryRemoveChatHub(player.MatchID);
             }
-
-            if (ServerCanStartGame(player.MatchID))
+            else if (player.IsHost)
             {
-                await matchInfo.Players[0].StartGameByServerAsync(player.MatchID);
-                Debug.Log("Start by exiting.");
+                //If host exits, choose new one for the new host.
+                matchInfo.Players[0].MakeHost();
             }
+
+            //if (ServerCanStartGame(player.MatchID))
+            //{
+            //    await matchInfo.Players[0].StartGameByServerAsync(player.MatchID);
+            //    Debug.Log("Start by exiting.");
+            //}
         }
 
         public void RefreshPlayerList()

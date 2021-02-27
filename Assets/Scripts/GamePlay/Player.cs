@@ -28,7 +28,7 @@ namespace Assets.Scripts
         private bool[] _wasEnabled;
 
         [SerializeField]
-        private GameObject _deatchEffect;
+        private GameObject _deathEffect;
         [SerializeField]
         private GameObject _spawnEffect;
 
@@ -55,7 +55,16 @@ namespace Assets.Scripts
 
         public bool IsStunning { get; private set; } = false;
 
+        [SyncVar]
+        private bool _isHost = false;
+        public bool IsHost
+        {
+            get { return _isHost; }
+            set { _isHost = value; }
+        }
+
         public bool HasExited { get; private set; } = false;
+        public bool CanStart { get; private set; } = false;
 
         [SyncVar]
         private bool _isReady = false;
@@ -179,6 +188,95 @@ namespace Assets.Scripts
         #endregion
 
         #region GAME SETUP
+        [Client]
+        public void KickPlayer(string playerId)
+        {
+            if (IsHost == false)
+            {
+                return;
+            }
+
+            CmdKickPlayer(playerId);
+        }
+
+        [Command]
+        public void CmdKickPlayer(string playerId)
+        {
+            GameManager.Instance.ServerKickPlayer(playerId);
+            RpcOnClientKick();
+        }
+
+        [ClientRpc]
+        public void RpcOnClientKick()
+        {
+            GameManager.Instance.RefreshPlayerList();
+        }
+
+        [Server]
+        public void MakeHost()
+        {
+            IsHost = true;
+            RpcBecomeHost();
+        }
+
+        [ClientRpc]
+        public void RpcBecomeHost()
+        {
+            IsHost = true;
+
+            if (isLocalPlayer)
+            {
+                GameManager.Instance.OnBecomeHost();
+            }
+
+            GameManager.Instance.RefreshPlayerList();
+        }
+
+        public void TryStartGame()
+        {
+            if (IsHost == false)
+            {
+                return;
+            }
+
+            CmdTryStartGame(MatchID);
+        }
+
+        [Command]
+        private async void CmdTryStartGame(string matchID)
+        {
+            if (GameManager.Instance.ServerCanStartGame(matchID))
+            {
+                await StartGameByServerAsync(matchID);
+            }
+            else
+            {
+                RpcOnFailToStartGame();
+            }
+        }
+
+        [TargetRpc]
+        private void RpcOnFailToStartGame()
+        {
+            GameManager.Instance.PrintMessage("모든 플레이어가 레디해야 시작할 수 있습니다.", "SYSTEM", ChatType.None);
+        }
+
+
+        [Command]
+        public async void CmdStartGame(string matchId)
+        {
+            await StartGameByServerAsync(matchId);
+        }
+
+        [Server]
+        public async UniTask StartGameByServerAsync(string matchID)
+        {
+            var professorID = GameManager.Instance.GetRandomPlayerIdForMatch(matchID);
+            await GameManager.Instance.ServerStartMatchAsync(matchID, professorID);
+
+            RpcStartGame(professorID);
+        }
+
         [ClientRpc]
         public void RpcStartGame(string professorId)
         {
@@ -202,6 +300,7 @@ namespace Assets.Scripts
         public void RpcUnReady()
         {
             IsReady = false;
+            CanStart = false;
             RoomUIManager.Instance?.RefreshList(GameManager.Instance.Players.Values);
         }
 
@@ -212,37 +311,25 @@ namespace Assets.Scripts
         }
 
         [Command]
-        private async void CmdGetReady(string matchID)
+        private void CmdGetReady(string matchID)
         {
             //Store match id for retrieving proper MissionManager on server.
             MatchID = matchID;
             //Hook이 순서대로 불려서 넣어야함
             IsReady = true;
 
-            var toStartGame = GameManager.Instance.OnPlayerReady(matchID, this);
+            var canStartGame = GameManager.Instance.OnPlayerReady(matchID, this);
 
-            RpcGetReady();
-
-            if (toStartGame)
-            {
-                await StartGameByServerAsync(matchID);
-            }
-        }
-
-        [Server]
-        public async UniTask StartGameByServerAsync(string matchID)
-        {
-            var professorID = GameManager.Instance.GetRandomPlayerIdForMatch(matchID);
-            await GameManager.Instance.ServerStartMatchAsync(matchID, professorID);
-
-            RpcStartGame(professorID);
+            RpcGetReady(canStartGame);
         }
 
         [ClientRpc]
-        public void RpcGetReady()
+        public void RpcGetReady(bool canStart)
         {
             MatchID = MatchManager.Instance.Match.MatchID;
             IsReady = true;
+            CanStart = canStart;
+            Debug.Log("CanStart : " + CanStart);
 
             RoomUIManager.Instance?.RefreshList(GameManager.Instance.Players.Values);
         }
@@ -343,7 +430,7 @@ namespace Assets.Scripts
             if (isLocalPlayer)
             {
                 PlayerSetup.PlayerUI?.OnCaughtByProfessor();
-                
+
                 GameManager.Instance.DisablePlayerControl();
                 PlayTransitionEffect();
                 GameManager.Instance.EnablePlayerControl();
@@ -410,7 +497,7 @@ namespace Assets.Scripts
             //이렇게 해결함.
             if (State != PlayerState.Student)
             {
-                _playerController.SetOnCaughtByAssistant(true, false);               
+                _playerController.SetOnCaughtByAssistant(true, false);
             }
             else
             {
@@ -422,7 +509,7 @@ namespace Assets.Scripts
 
         private void PlayTransitionEffect()
         {
-            GameObject effectObject = Instantiate(_deatchEffect, transform.position, Quaternion.identity);
+            GameObject effectObject = Instantiate(_deathEffect, transform.position, Quaternion.identity);
             Destroy(effectObject, 1.5f);
             _playerController?.TransformToAssistant();
         }
@@ -519,7 +606,7 @@ namespace Assets.Scripts
                 controller.enabled = false;
             }
 
-            GameObject effectObject = Instantiate(_deatchEffect, transform.position, Quaternion.identity);
+            GameObject effectObject = Instantiate(_deathEffect, transform.position, Quaternion.identity);
             Destroy(effectObject, 1.5f);
 
             if (isLocalPlayer)
