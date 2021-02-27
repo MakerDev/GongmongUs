@@ -48,10 +48,28 @@ namespace Assets.Scripts
         [SerializeField]
         private Material _onCaughtMaterial;
 
+        private PlayerState _lastState = PlayerState.Student;
+
         private void Start()
         {
             _motor = GetComponent<PlayerMotor>();
             _animator = GetComponent<CustomNetworkAnimator>();
+        }
+
+        //TODO : 이거 없애고 적절한 이벤트로 처리
+        private void Update()
+        {
+            if (_lastState == Player.LocalPlayer.State)
+            {
+                return;
+            }
+
+            _lastState = Player.LocalPlayer.State;
+
+            if (_lastState == PlayerState.Assistant)
+            {
+                SetStateMaterial(PlayerState.Assistant);
+            }
         }
 
         public float GetThrusterFuelAmount()
@@ -82,7 +100,6 @@ namespace Assets.Scripts
         public void TransformToAssistant()
         {
             _animator.Animator.Play("Transform");
-            SetStateMaterial(PlayerState.Assistant);
         }
 
         public void SetOnCaughtByAssistant(bool isReleased)
@@ -109,7 +126,7 @@ namespace Assets.Scripts
 
         private void FixedUpdate()
         {
-            if (GameManager.Instance.DisableControl)
+            if (GameManager.Instance.DisableControl || Player.LocalPlayer.IsStunning)
             {
                 return;
             }

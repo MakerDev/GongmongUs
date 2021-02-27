@@ -53,6 +53,8 @@ namespace Assets.Scripts
         private PlayerShoot _playerShootComponent;
         private PlayerController _playerController; //For animations
 
+        public bool IsStunning { get; private set; } = false;
+
         public bool HasExited { get; private set; } = false;
 
         [SyncVar]
@@ -69,7 +71,7 @@ namespace Assets.Scripts
         [Client]
         private void NotifyStateChanged(PlayerState newState)
         {
-            GameManager.Instance.NofityPlayerStateChanged(this);
+            GameManager.Instance.NofityPlayerStateChanged(this); //얘는 확실히 불린다는 거고.
             _playerShootComponent.NotifyStateChanged(newState);
             _playerController.SetStateMaterial(newState);
 
@@ -341,7 +343,7 @@ namespace Assets.Scripts
             if (isLocalPlayer)
             {
                 PlayerSetup.PlayerUI?.OnCaughtByProfessor();
-
+                
                 GameManager.Instance.DisablePlayerControl();
                 PlayTransitionEffect();
                 GameManager.Instance.EnablePlayerControl();
@@ -382,11 +384,17 @@ namespace Assets.Scripts
         [ClientRpc]
         private async void RpcCaughtByAssistant()
         {
+            if (State != PlayerState.Student)
+            {
+                return;
+            }
+
             _playerController.SetOnCaughtByAssistant(false);
 
             if (isLocalPlayer)
             {
                 GameManager.Instance.DisableMove();
+                IsStunning = true;
             }
 
             await UniTask.Delay(PlayerController.STUN_AMOUNT_SEC * 1000);
@@ -394,6 +402,7 @@ namespace Assets.Scripts
             if (isLocalPlayer)
             {
                 GameManager.Instance.EnableMove();
+                IsStunning = false;
             }
 
             _playerController.SetOnCaughtByAssistant(true);
