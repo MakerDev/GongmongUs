@@ -495,7 +495,7 @@ MonoBehaviour:
   syncInterval: 0.1
   _disableOnExit: []
   _disableGameObjectsOnExit: []
-  _deatchEffect: {fileID: 8355751096981040032, guid: a11a7d923f0d79445aa1b36aa3f10d4c,
+  _deathEffect: {fileID: 8355751096981040032, guid: a11a7d923f0d79445aa1b36aa3f10d4c,
     type: 3}
   _spawnEffect: {fileID: 7782183243299101248, guid: 19b720091595d114a86bd698045c5508,
     type: 3}
