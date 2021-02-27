@@ -71,6 +71,10 @@ public class SoundManager : MonoBehaviour
         {
             _backgroundMusic.Play();
         }
+        else
+        {
+            _backgroundMusic.Stop();
+        }
     }
 
     public void PlayBGM()

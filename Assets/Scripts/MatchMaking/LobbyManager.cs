@@ -64,8 +64,7 @@ namespace Assets.Scripts.Networking
 
             FetchRecursive();
 
-            _setBgmToggle.isOn = SoundManager.Instance.IsPlayingBGM;
-            _fullScreenToggle.isOn = Screen.fullScreen;
+            MenuManager.RegisterToggles(_setBgmToggle, _fullScreenToggle);
 
             SoundManager.Instance.SetBGM("SweetCampusLobbyBGM");
         }
@@ -75,18 +74,6 @@ namespace Assets.Scripts.Networking
         {
             _fetchRecursively = false;
         }
-
-        #region MENU
-        public void SetBGMOnOff(bool _)
-        {
-            MenuManager.SetBgm(!SoundManager.Instance.IsPlayingBGM);
-        }
-
-        public void SetFullScreen(bool _)
-        {
-            MenuManager.SwitchFullScreen(!Screen.fullScreen);
-        }
-        #endregion
 
         private void Update()
         {

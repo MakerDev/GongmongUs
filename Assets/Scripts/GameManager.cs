@@ -144,8 +144,7 @@ namespace Assets.Scripts
 
             _readyButton.gameObject.SetActive(true);
 
-            _bgmToggle.isOn = SoundManager.Instance.IsPlayingBGM;
-            _fullscreenToggle.isOn = Screen.fullScreenMode == FullScreenMode.FullScreenWindow;
+            MenuManager.RegisterToggles(_bgmToggle, _fullscreenToggle);
 
             MiniGame.ResetIsPlaying();
 
@@ -204,11 +203,6 @@ namespace Assets.Scripts
 
             HandleChat();
 
-            if (GameStarted == false)
-            {
-                return;
-            }
-
             if (Input.GetKeyDown(MENU_KEY))
             {
                 if (_menuCanvas.activeSelf)
@@ -220,6 +214,11 @@ namespace Assets.Scripts
                     OpenMenu();
                 }
 
+                return;
+            }
+
+            if (GameStarted == false)
+            {
                 return;
             }
 
@@ -235,7 +234,7 @@ namespace Assets.Scripts
                 }
             }
         }
-
+        #region GAME LOBBY
         public void ReadyGame()
         {
             Player.LocalPlayer.GetReady();
@@ -395,6 +394,7 @@ namespace Assets.Scripts
 
             return true;
         }
+        #endregion
 
         [Client]
         public void ConfigureGameOnStart(string professorId)
@@ -462,17 +462,6 @@ namespace Assets.Scripts
             }
         }
 
-        public void SetBGMOnOff(bool _)
-        {
-            MenuManager.SetBgm(!SoundManager.Instance.IsPlayingBGM);
-        }
-
-        public void SetFullScreen(bool _)
-        {
-            MenuManager.SwitchFullScreen(!Screen.fullScreen);
-        }
-
-        #endregion
         public void Resume()
         {
             if (_menuCanvas != null)
@@ -492,6 +481,7 @@ namespace Assets.Scripts
                 EnablePlayerControl();
             }
         }
+        #endregion
 
         private void OpenMiniMap()
         {
@@ -643,7 +633,7 @@ namespace Assets.Scripts
         #region PLAYER TRACKING
         public const string PLAYER_ID_PREFIX = "Player";
 
-        
+
         /// <summary>
         /// Register player to GameManager.
         /// </summary>
