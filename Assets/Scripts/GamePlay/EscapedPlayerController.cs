@@ -58,5 +58,10 @@ public class EscapedPlayerController : MonoBehaviour
 
         // 캐릭터 움직임.
         _controller.Move(_moveDir * Time.deltaTime);
+
+        if (transform.position.y <= 0)
+        {
+            transform.position = new Vector3(transform.position.x, 0, transform.position.z);
+        }
     }
 }
