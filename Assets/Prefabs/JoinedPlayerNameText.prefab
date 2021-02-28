@@ -64,7 +64,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Player Name
+  m_text: "\uBBF8\u314F\u3147\uB7EC\u3163\u3141\uB0AD\uB9C1\u3134\uB77C\uB9AC\u314F\u3147\uB9AC\u314F\uB7EC\u3163\u314F\uC5B4\uB9AC"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8cc095c5f6c81f94aa0c8d30ad53418f, type: 2}
   m_sharedMaterial: {fileID: -4347314225137074449, guid: 8cc095c5f6c81f94aa0c8d30ad53418f,
