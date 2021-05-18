@@ -1,3 +1,14 @@
+2021/03/14
+    - FlexNetworkTransform (Experimental)
+        + Added Smoothing Loop option. Smoothing can now optionally be performed in LateUpdate.
+        + Massive performance update. FlexNetworkTransform now has virtually no impact from it's operations. These changes resulted in roughly a 15% performance boost while under load and a 200-300% boost under normal conditions. More refactoring is expected but nothing that would risk stability or need testing.
+
+2021/02/26
+    - FlexNetworkAnimator
+        + Zero garbage collection release! FlexNetworkAnimator is roughly 2X faster than NetworkAnimator now.
+        + Bandwidth usage improvements; now uses about 4.5% the bandwidth of NetworkAnimator.
+        + Better client authoritative animations, and protections. Like NetworkAnimator, previously animations from clients could be missed if the client sent too many animations too quickly. FlexNetworkAnimator now has protection against excessive animations from clients and ensures proper replication, so long as client isn't abusing the network.
+
 2021/02/05
 	- FlexNetworkTransform
 		+ Zero garbage collection release! Performances improved by a minimum of 17%.

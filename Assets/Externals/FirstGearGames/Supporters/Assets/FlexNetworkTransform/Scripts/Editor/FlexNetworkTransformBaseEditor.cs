@@ -16,6 +16,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms.Editors
         private SerializedProperty _reliable;
         private SerializedProperty _resendUnreliable;
 
+        private SerializedProperty _smoothingLoop;
         private SerializedProperty _interpolationFallbehind;
         private SerializedProperty _extrapolationSpan;
 
@@ -46,6 +47,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms.Editors
             _reliable = serializedObject.FindProperty("_reliable");
             _resendUnreliable = serializedObject.FindProperty("_resendUnreliable");
 
+            _smoothingLoop = serializedObject.FindProperty("_smoothingLoop");
             _interpolationFallbehind = serializedObject.FindProperty("_interpolationFallbehind");
             _extrapolationSpan = serializedObject.FindProperty("_extrapolationSpan");
 
@@ -58,8 +60,10 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms.Editors
 
             _synchronizePosition = serializedObject.FindProperty("_synchronizePosition");
             _snapPosition = serializedObject.FindProperty("_snapPosition");
+
             _synchronizeRotation = serializedObject.FindProperty("_synchronizeRotation");
             _snapRotation = serializedObject.FindProperty("_snapRotation");
+
             _synchronizeScale = serializedObject.FindProperty("_synchronizeScale");
             _snapScale = serializedObject.FindProperty("_snapScale");
         }
@@ -116,6 +120,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms.Editors
                 EditorGUI.indentLevel--;
             }
 
+            EditorGUILayout.PropertyField(_smoothingLoop, new GUIContent("Smoothing Loop", "When to move towards latest values received from the server."));
             EditorGUILayout.PropertyField(_interpolationFallbehind, new GUIContent("Interpolation Fallbehind", "How far in the past objects should be for interpolation. Higher values will result in smoother movement with network fluctuations but lower values will result in objects being closer to their actual position. Lower values can generally be used for longer synchronization intervalls."));
             EditorGUILayout.PropertyField(_extrapolationSpan, new GUIContent("Extrapolation Span", "How long to extrapolate when data is expected but does not arrive. Smaller values are best for fast synchronization intervals. For precision or fast reaction games you may want to use no extrapolation or only one or two synchronization intervals worth. Extrapolation is client-side only."));
 
@@ -170,9 +175,9 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms.Editors
 
             if (EditorGUI.EndChangeCheck())
             {
-                data.SetSnapPosition((SnappingAxes)_snapPosition.intValue);
-                data.SetSnapRotation((SnappingAxes)_snapRotation.intValue);
-                data.SetSnapScale((SnappingAxes)_snapScale.intValue);
+                data.SetSnapPosition((Vector3Axes)_snapPosition.intValue);
+                data.SetSnapRotation((Vector3Axes)_snapRotation.intValue);
+                data.SetSnapScale((Vector3Axes)_snapScale.intValue);
             }
 
             serializedObject.ApplyModifiedProperties();

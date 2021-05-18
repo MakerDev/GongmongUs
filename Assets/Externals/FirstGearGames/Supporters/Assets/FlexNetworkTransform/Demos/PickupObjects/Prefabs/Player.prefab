@@ -130,6 +130,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   sceneId: 0
   serverOnly: 0
+  visible: 0
   m_AssetId: 
   hasSpawned: 0
 --- !u!114 &3331250267447188313
@@ -151,15 +152,17 @@ MonoBehaviour:
   _synchronizeInterval: 0.1
   _reliable: 0
   _resendUnreliable: 0
+  _smoothingLoop: 1
   _interpolationFallbehind: 0.06
-  _extrapolationSpan: 0.1
+  _extrapolationSpan: 0
   _teleportThreshold: 0
   _clientAuthoritative: 1
   _synchronizeToOwner: 1
-  _compressSmall: 1
+  _compressSmall: 0
   _synchronizePosition: 0
   _snapPosition: 0
   _synchronizeRotation: 0
+  _rotationAxes: 7
   _snapRotation: 0
   _synchronizeScale: 0
   _snapScale: 0

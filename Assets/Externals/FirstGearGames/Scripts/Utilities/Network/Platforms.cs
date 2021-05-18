@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
-#if MIRRORNG || MirrorNg
+#if MIRAGE
 using NetworkConnection = Mirror.INetworkConnection;
 #endif
 
@@ -22,7 +22,7 @@ namespace FirstGearGames.Utilities.Networks
         {
 #if MIRROR
             return ni.netId;
-#elif MIRRORNG || MirrorNg
+#elif MIRAGE
             return ni.NetId;
 #endif
         }
@@ -35,13 +35,13 @@ namespace FirstGearGames.Utilities.Networks
         /// <param name="channel"></param>
 #if MIRROR
         public static void ClientSend<T>(NetworkManager nm, T msg, int channel) where T : struct, NetworkMessage
-#elif MIRRORNG || MirrorNg
+#elif MIRAGE
         public static void ClientSend<T>(NetworkManager nm, T msg, int channel)
 #endif
         {
 #if MIRROR
             NetworkClient.Send(msg, channel);
-#elif MIRRORNG || MirrorNg
+#elif MIRAGE
             nm.Client.Send(msg, channel);
 #endif
         }
@@ -55,14 +55,14 @@ namespace FirstGearGames.Utilities.Networks
         /// <param name="channel"></param>
 #if MIRROR
         public static void ServerSendToAll<T>(NetworkManager nm, T msg, int channel) where T : struct, NetworkMessage
-#elif MIRRORNG || MirrorNg
+#elif MIRAGE
         public static void ServerSendToAll<T>(NetworkManager nm, T msg, int channel)
 #endif
         {
 #if MIRROR
-            NetworkServer.SendToAll(msg, channel);
-#elif MIRRORNG || MirrorNg
-            nm.Server.SendToAll(msg, channel);
+            NetworkServer.SendToAll(msg, channel, true);
+#elif MIRAGE
+            nm.Server.SendToAll(msg, channel, true);
 #endif
         }
 
@@ -75,7 +75,7 @@ namespace FirstGearGames.Utilities.Networks
         {
 #if MIRROR
             return (nb.connectionToClient != null);
-#elif MIRRORNG || MirrorNg
+#elif MIRAGE
             return (nb.ConnectionToClient != null);
 #endif
         }
@@ -89,7 +89,7 @@ namespace FirstGearGames.Utilities.Networks
         {
 #if MIRROR
             return nb.netIdentity.netId;
-#elif MIRRORNG || MirrorNg
+#elif MIRAGE
             return nb.NetIdentity.NetId;
 #endif
         }
@@ -102,7 +102,7 @@ namespace FirstGearGames.Utilities.Networks
         {
 #if MIRROR
             return nb.connectionToClient;
-#elif MIRRORNG || MirrorNg
+#elif MIRAGE
             return nb.ConnectionToClient;
 #endif
         }
@@ -116,7 +116,7 @@ namespace FirstGearGames.Utilities.Networks
         {
 #if MIRROR
             return nb.hasAuthority;
-#elif MIRRORNG || MirrorNg
+#elif MIRAGE
             return nb.HasAuthority;
 #endif
         }
@@ -129,7 +129,7 @@ namespace FirstGearGames.Utilities.Networks
         {
 #if MIRROR
             return nb.isServer;
-#elif MIRRORNG || MirrorNg
+#elif MIRAGE
             return nb.IsServer;
 #endif
         }
@@ -142,7 +142,7 @@ namespace FirstGearGames.Utilities.Networks
         {
 #if MIRROR
             return nb.isServerOnly;
-#elif MIRRORNG || MirrorNg
+#elif MIRAGE
             return nb.IsServerOnly;
 #endif
         }
@@ -155,7 +155,7 @@ namespace FirstGearGames.Utilities.Networks
         {
 #if MIRROR
             return nb.isClient;
-#elif MIRRORNG || MirrorNg
+#elif MIRAGE
             return nb.IsClient;
 #endif
         }
@@ -169,7 +169,7 @@ namespace FirstGearGames.Utilities.Networks
         {
 #if MIRROR
             return NetworkServer.active;
-#elif MIRRORNG
+#elif MIRAGE
             if (nm != null && nm.Server != null)
                 return (nm.Server.Active);
             else
@@ -185,7 +185,7 @@ namespace FirstGearGames.Utilities.Networks
         {
 #if MIRROR
             return NetworkClient.active;
-#elif MIRRORNG
+#elif MIRAGE
             if (nm != null && nm.Client != null)
                 return (nm.Client.Connection != null);
             else
@@ -203,7 +203,7 @@ namespace FirstGearGames.Utilities.Networks
         {
 #if MIRROR
             return nc.isReady;
-#elif MIRRORNG
+#elif MIRAGE
             return nc.IsReady;
 #endif
         }
@@ -217,7 +217,7 @@ namespace FirstGearGames.Utilities.Networks
         {
 #if MIRROR
             return NetworkIdentity.spawned;
-#elif MIRRORNG
+#elif MIRAGE
             if (ReturnServerActive(nm))
                 return nm.Server.Spawned;
             else if (ReturnClientActive(nm))

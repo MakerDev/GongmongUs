@@ -2,12 +2,13 @@
 using FirstGearGames.Utilities.Editors;
 using FirstGearGames.Utilities.Maths;
 using FirstGearGames.Utilities.Objects;
-using Mirror;
 using System;
-using System.Collections.Generic;
 using UnityEngine;
-#if MIRRORNG || MirrorNg
+#if MIRAGE
+using Mirage;
 using NetworkConnection = Mirror.INetworkConnection;
+#elif MIRROR
+using Mirror;
 #endif
 
 namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
@@ -17,56 +18,24 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
     public abstract class FlexNetworkTransformBase : NetworkBehaviour
     {
         #region Types.
-        /// <summary>
-        /// Space types to use when getting or setting attached data.
-        /// </summary>
-        private enum AttachedSpaces
-        {
-            Disabled = 0,
-            Local = 1,
-            World = 2
-        }
-        /// <summary>
-        /// Attached object data.
-        /// </summary>
-        public class AttachedSyncData
-        {
-            /// <summary>
-            /// Attached object's Networkidentity.
-            /// </summary>
-            public NetworkIdentity Identity = null;
-            /// <summary>
-            /// ComponentIndex to attach to. Will be null if using NetworkIdentity object.
-            /// </summary>
-            public sbyte ComponentIndex = -1;
-            /// <summary>
-            /// For spectators this is the transform to move towards. For owner this is where their transform is in localspace to the attached object.
-            /// </summary>
-            public Transform Target = null;
-        }
+
         /// <summary>
         /// Extrapolation for the most recent received data.
         /// </summary>
-        protected class ExtrapolationData
+        protected struct ExtrapolationData
         {
             public float Remaining;
             public Vector3 Position;
+            public bool IsSet;
 
-            public ExtrapolationData(Vector3 position, float remaining)
+            public void UpdateValues(Vector3 position, float remaining, bool isSet)
             {
                 Remaining = remaining;
                 Position = position;
-            }
-
-            /// <summary>
-            /// Adds onto remaining.
-            /// </summary>
-            /// <param name="value"></param>
-            public void AddRemaining(float value)
-            {
-                Remaining += value;
+                IsSet = isSet;
             }
         }
+
         /// <summary>
         /// Move rates for the most recent received data.
         /// </summary>
@@ -80,19 +49,20 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// <summary>
         /// Data used to manage moving towards a target.
         /// </summary>
-        protected class TargetSyncData
+        protected struct TargetData
         {
-            public void UpdateValues(TransformSyncData goalData, MoveRateData moveRates, ExtrapolationData extrapolationData)
+            public void UpdateValues(TransformData goalData, MoveRateData moveRates, ExtrapolationData extrapolationData, bool isSet)
             {
                 GoalData = goalData;
                 MoveRates = moveRates;
                 Extrapolation = extrapolationData;
+                IsSet = isSet;
             }
 
             /// <summary>
             /// Transform goal data for this update.
             /// </summary>
-            public TransformSyncData GoalData;
+            public TransformData GoalData;
             /// <summary>
             /// How quickly to move towards each transform property.
             /// </summary>
@@ -100,7 +70,11 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             /// <summary>
             /// How much extrapolation time remains.
             /// </summary>
-            public ExtrapolationData Extrapolation = null;
+            public ExtrapolationData Extrapolation;
+            /// <summary>
+            /// True if values are set.
+            /// </summary>
+            public bool IsSet;
         }
         /// <summary>
         /// Ways to synchronize datas.
@@ -134,7 +108,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// <summary>
         /// AttachedData for what this object is attached to.
         /// </summary>
-        public AttachedSyncData Attached { get; private set; } = new AttachedSyncData();
+        public AttachedTargetData Attached { get; private set; } = new AttachedTargetData();
         /// <summary>
         /// Sets which object this transform is attached to.
         /// </summary>
@@ -195,6 +169,16 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         [SerializeField]
         private bool _resendUnreliable = false;
         /// <summary>
+        /// 
+        /// </summary>
+        [Tooltip("When to move towards latest values received from the server.")]
+        [SerializeField]
+        private SmoothingLoops _smoothingLoop = SmoothingLoops.Update;
+        /// <summary>
+        /// When to move towards latest values received from the server.
+        /// </summary>
+        public SmoothingLoops SmoothingLoop { get { return _smoothingLoop; } }
+        /// <summary>
         /// How far in the past objects should be for interpolation. Higher values will result in smoother movement with network fluctuations but lower values will result in objects being closer to their actual position. Lower values can generally be used for longer synchronization intervalls.
         /// </summary>
         [Tooltip("How far in the past objects should be for interpolation. Higher values will result in smoother movement with network fluctuations but lower values will result in objects being closer to their actual position. Lower values can generally be used for longer synchronization intervals.")]
@@ -243,13 +227,13 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         [Tooltip("Euler axes on the rotation to snap into place rather than move towards over time.")]
         [SerializeField]
-        [BitMask(typeof(SnappingAxes))]
-        private SnappingAxes _snapPosition = (SnappingAxes)0;
+        [BitMask(typeof(Vector3Axes))]
+        private Vector3Axes _snapPosition = (Vector3Axes)0;
         /// <summary>
         /// Sets SnapPosition value. For internal use only. Must be public for editor script.
         /// </summary>
         /// <param name="value"></param>
-        public void SetSnapPosition(SnappingAxes value) { _snapPosition = value; }
+        public void SetSnapPosition(Vector3Axes value) { _snapPosition = value; }
         /// <summary>
         /// Synchronize states for rotation.
         /// </summary>
@@ -261,13 +245,13 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         [Tooltip("Euler axes on the rotation to snap into place rather than move towards over time.")]
         [SerializeField]
-        [BitMask(typeof(SnappingAxes))]
-        private SnappingAxes _snapRotation = (SnappingAxes)0;
+        [BitMask(typeof(Vector3Axes))]
+        private Vector3Axes _snapRotation = (Vector3Axes)0;
         /// <summary>
         /// Sets SnapRotation value. For internal use only. Must be public for editor script.
         /// </summary>
         /// <param name="value"></param>
-        public void SetSnapRotation(SnappingAxes value) { _snapRotation = value; }
+        public void SetSnapRotation(Vector3Axes value) { _snapRotation = value; }
         /// <summary>
         /// Synchronize states for scale.
         /// </summary>
@@ -279,28 +263,67 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         [Tooltip("Euler axes on the scale to snap into place rather than move towards over time.")]
         [SerializeField]
-        [BitMask(typeof(SnappingAxes))]
-        private SnappingAxes _snapScale = (SnappingAxes)0;
+        [BitMask(typeof(Vector3Axes))]
+        private Vector3Axes _snapScale = (Vector3Axes)0;
         /// <summary>
         /// Sets SnapScale value. For internal use only. Must be public for editor script.
         /// </summary>
         /// <param name="value"></param>
-        public void SetSnapScale(SnappingAxes value) { _snapScale = value; }
+        public void SetSnapScale(Vector3Axes value) { _snapScale = value; }
         #endregion
 
         #region Private.
+        #region Cached network information.
         /// <summary>
-        /// Last SyncData sent by client.
+        /// True if is server.
         /// </summary>
-        private TransformSyncData _clientSyncData;
+        private bool _isServer = false;
         /// <summary>
-        /// Last SyncData sent by server.
+        /// True if is server only.
         /// </summary>
-        private TransformSyncData _serverSyncData;
+        private bool _isServerOnly { get { return (_isServer && !_isClient); } }
         /// <summary>
-        /// TargetSyncData to move between.
+        /// True if is client.
         /// </summary>
-        private TargetSyncData _targetData = null;
+        private bool _isClient = false;
+        /// <summary>
+        /// True if has an owner.
+        /// </summary>
+        private bool _hasOwner { get { return (_owner != null); } }
+        /// <summary>
+        /// Current owner.
+        /// </summary>
+        private NetworkConnection _owner = null;
+        /// <summary>
+        /// True if has authority.
+        /// </summary>
+        private bool _hasAuthority = false;
+        /// <summary>
+        /// True if attachedValid.
+        /// </summary>
+        private bool _attachedValid = false;
+        /// <summary>
+        /// netId for this NetworkBehaviour.
+        /// </summary>
+        private uint _netId = 0;
+        #endregion
+        /// <summary>
+        /// TransformData which was received OnDeserialize. This is a work-around for Mirror not having
+        /// all NetworkIdentities spawned before pushing through initialization data.
+        /// </summary>
+        private TransformData _deserializedTransformData;
+        /// <summary>
+        /// Last TransformData sent by client.
+        /// </summary>
+        private TransformData _clientTransformData;
+        /// <summary>
+        /// Last TransformData sent by server.
+        /// </summary>
+        private TransformData _serverTransformData;
+        /// <summary>
+        /// TargetData to move between.
+        /// </summary>
+        private TargetData _targetData;
         /// <summary>
         /// Next time client may send data.
         /// </summary>
@@ -341,7 +364,11 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// <summary>
         /// Last authoritative client for this object.
         /// </summary>
-        private NetworkConnection _lastAuthoritativeClient = null;
+        private NetworkConnection _lastOwner = null;
+        /// <summary>
+        /// Time when MoveTowards should be completed based on sync interval and fallbehind.
+        /// </summary>
+        private float _moveTowardsEndTime = -1f;
         /// <summary>
         /// 
         /// </summary>
@@ -377,20 +404,24 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         protected virtual void Awake()
         {
             SetTeleportThresholdSquared();
-#if MIRRORNG || MirrorNg
+#if MIRAGE
             base.NetIdentity.OnStartServer.AddListener(StartServer);
+            base.NetIdentity.OnStopServer.AddListener(StopServer);
             base.NetIdentity.OnStartClient.AddListener(StartClient);
+            base.NetIdentity.OnStopClient.AddListener(StopClient);
             base.NetIdentity.OnStartAuthority.AddListener(StartAuthority);
             base.NetIdentity.OnStopAuthority.AddListener(StopAuthority);
 #endif
         }
         protected virtual void OnDestroy()
         {
-            if (Attached.Target != null)
-                Destroy(Attached.Target.gameObject);
-#if MIRRORNG || MirrorNg
-            base.NetIdentity.OnStopServer.RemoveListener(StartServer);
+            if (Attached.MovingTarget != null)
+                Destroy(Attached.MovingTarget.gameObject);
+#if MIRAGE
+            base.NetIdentity.OnStartServer.RemoveListener(StartServer);
+            base.NetIdentity.OnStopServer.RemoveListener(StopServer);
             base.NetIdentity.OnStartClient.RemoveListener(StartClient);
+            base.NetIdentity.OnStopClient.RemoveListener(StopClient);
             base.NetIdentity.OnStartAuthority.RemoveListener(StartAuthority);
             base.NetIdentity.OnStopAuthority.RemoveListener(StopAuthority);
 #endif            
@@ -409,15 +440,37 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         {
             if (initialState)
             {
-                bool attachedValid = AttachedValid();
-                writer.WriteBoolean(attachedValid);
-                /* Set flags. */
-                if (attachedValid)
+                /* Serialization will already include pos/rot/scale if not a child object.
+                 * Can use TargetTransformIsChild to check if child. Also must send no matter what if attached is valid
+                 * as that feature uses it's own space system, and in addition must send attached data. */
+                bool sendData = (_attachedValid || TargetTransformIsChild());
+                writer.WriteBoolean(sendData);
+                if (sendData)
                 {
-                    Serialization.WriteAttached(writer, CreateAttachedData().Value);
-                    //Last Pos/rot for attached target.
-                    writer.WriteVector3(Attached.Target.localPosition);
-                    writer.WriteQuaternion(Attached.Target.localRotation);
+                    //TransformData which will be populated.
+                    TransformData td = new TransformData();
+
+                    //By default send all configured properties.
+                    SyncProperties sp = ReturnConfiguredProperties();
+                    //Apply any special properties, such as Attached.
+                    ApplySpecialProperties(ref sp, true);
+                    //If targetdata is already set then get the values from target data.
+                    bool usingTargetData = _targetData.IsSet;
+
+                    /* Since only updated values are sent to receivers
+                    * the syncproperties on the included targetData will only
+                    * have those changed properties. Because of this I must
+                    * override the targetData syncproperties with all configured
+                    * properties. Even though SyncProperties might be missing the
+                    * transform properties are not as they are filled with
+                    * last received values upon targetData creation. */
+                    if (usingTargetData)
+                        UpdateTransformData(ref td, sp, ref _targetData);
+                    //Not using target data.
+                    else
+                        UpdateTransformData(ref td, sp);
+
+                    Serialization.SerializeTransformData(writer, td);
                 }
             }
 
@@ -428,38 +481,26 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         {
             if (initialState)
             {
-                bool attachedValid = reader.ReadBoolean();
-                //If attached.
-                if (attachedValid)
+                bool dataSent = reader.ReadBoolean();
+                if (dataSent)
                 {
-                    int unused = 0;
-                    AttachedData ad = Serialization.ReadAttached(ref unused, reader);
-                    UpdateAttached(ad);
-                    //Attached pos/Rot.
-                    Vector3 pos = reader.ReadVector3();
-                    Quaternion rot = reader.ReadQuaternion();
-                    Attached.Target.localPosition = pos;
-                    Attached.Target.localRotation = rot;
-                    /* If not authoritative client with client auth, and attached
-                     * exist then make a new target data based on transforms offsets
-                     * to attached with instant move rates. This is so the transform 
-                     * sticks to the attached until new data comes in. */
-                    if (!this.ReturnHasAuthority())
-                    {
-                        //If TargetData exist then re-use goal data from it to save on GC. Otherwise make a new goal data.
-                        TransformSyncData goalData = (_targetData == null) ? new TransformSyncData() : _targetData.GoalData;
-                        //Update goalData values. This is the last received sync data.
-                        SetTransformSyncData(
-                            ref goalData, (SyncProperties)goalData.SyncProperties,
-                            pos, rot, TargetTransform.GetScale(),
-                            CreateAttachedData()
-                            );
-                        //Update target data to move towards.
-                        SetTargetSyncData(ref _targetData, goalData, SetInstantMoveRates(), null);
-                        /* Force a move towards target. This is because server data can come often come in before
-                         * Update runs, resulting in a new target data with improper move rates. */
-                        MoveTowardsTargetSyncData();
-                    }
+                    //Create a new TransformData and read it right from the stream.
+                    TransformData td = new TransformData();
+                    /* At the time of this release Mirror deserializer is showing 5 more bytes
+                     * than what's being sent. Because of this I cannot properly fetch the appropriate amount
+                     * of data to be deserialized for the transform update. As a work around I will
+                     * store read position, grab all of the data, reset the read position, and then run it through
+                     * my serializer which will bump the read position up the appropriate amount. FishNet needs to happen. */
+                    int initialReadPosition = reader.Position;
+                    int readLength = (reader.Length - reader.Position);
+                    //Get all remaining data.
+                    ArraySegment<byte> data = reader.ReadBytesSegment(readLength);
+                    reader.Position = initialReadPosition;
+                    //Deserialize using remaining data.
+                    Serialization.DeserializeTransformData(reader, ref initialReadPosition, ref data, ref td);
+                    //If not server then set deserialized transform data.
+                    if (!_isServer)
+                        _deserializedTransformData = td;
                 }
             }
 
@@ -473,11 +514,21 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             base.OnStartServer();
             StartServer();
         }
-
+        public override void OnStopServer()
+        {
+            base.OnStopServer();
+            StopServer();
+        }
 #endif
         private void StartServer()
         {
+            _netId = base.netId;
+            _isServer = true;
             _networkVisibility = transform.root.GetComponent<NetworkVisibility>();
+        }
+        private void StopServer()
+        {
+            _isServer = false;
         }
 
 #if MIRROR
@@ -486,10 +537,21 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             base.OnStartClient();
             StartClient();
         }
+        public override void OnStopClient()
+        {
+            base.OnStopClient();
+            StopClient();
+        }
 #endif
         private void StartClient()
         {
+            _netId = base.netId;
+            _isClient = true;
             CheckCreateTransformTargetData();
+        }
+        private void StopClient()
+        {
+            _isClient = false;
         }
 
 
@@ -502,10 +564,11 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
 #endif
         private void StartAuthority()
         {
+            _hasAuthority = true;
             /* If have authority and client authoritative then there is
             * no reason to have a targe data. */
             if (_clientAuthoritative)
-                _targetData = null;
+                _targetData.IsSet = false;
         }
 
 #if MIRROR
@@ -518,16 +581,51 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
 
         private void StopAuthority()
         {
+            _hasAuthority = false;
             CheckCreateTransformTargetData();
         }
 
         public void ManualUpdate(bool fixedUpdate)
         {
+            /* This is a hack to fix attached not working via OnDeserialize
+             * because Mirror doesn't ensure all objects are spawned before
+             * OnDeserialize comes through, resulting in null lookups
+             * for attached network identities. */
+            if (_deserializedTransformData.IsSet)
+            {
+                ServerDataReceived(ref _deserializedTransformData);
+                _deserializedTransformData.IsSet = false;
+            }
+
+            /* These values must be set every frame because there's no
+             * no way to know when they've changed. */
+            _attachedValid = AttachedValid();
+
+            if (_isServer)
+                _owner = base.connectionToClient;
+
+            //todo client auth movement isnt working on server, maybe not relaying to other clients too.
             CheckResetSequenceIds();
-            SnapToAttached();
             CheckSendToServer(fixedUpdate);
             CheckSendToClients(fixedUpdate);
-            MoveTowardsTargetSyncData();
+
+            bool moveTowardsTarget = (SmoothingLoop == SmoothingLoops.Update) ||
+                (fixedUpdate && SmoothingLoop == SmoothingLoops.FixedUpdate);
+            if (moveTowardsTarget)
+                MoveTowardsTarget();
+
+            /* Attached target is moved smoothly on clients and the actual
+             * transform snaps to the target. */
+            SnapToAttached();
+        }
+
+        public void ManualLateUpdate()
+        {
+            /* As of now ManualLateUpdate is only called
+             * when smoothingLoop is set to LateUpdate. But to be
+             * thorough check smoothingLoop anyway. */
+            if (SmoothingLoop == SmoothingLoops.LateUpdate)
+                MoveTowardsTarget();
         }
 
         /// <summary>
@@ -553,7 +651,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
              * If not server, since server is boss and shouldn't be blocked.
              * If client does not have authority or 
              * have authority but not client authoritative. */
-            if (_targetData == null && !this.ReturnIsServer() && (!this.ReturnHasAuthority() || (this.ReturnHasAuthority() && !_clientAuthoritative)))
+            if (!_targetData.IsSet && !_isServer && (!_hasAuthority || (_hasAuthority && !_clientAuthoritative)))
                 CreateTransformTargetData();
         }
 
@@ -562,15 +660,18 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         protected void CreateTransformTargetData()
         {
-            TransformSyncData tsd = new TransformSyncData();
-            SetTransformSyncData(
-                ref tsd, 0,
+            TransformData td = new TransformData();
+            UpdateTransformData(
+                ref td, 0,
                 TargetTransform.GetPosition(UseLocalSpace), TargetTransform.GetRotation(UseLocalSpace), TargetTransform.GetScale(),
-                null
+                new AttachedData()
                 );
 
             //Create new target data without extrpaolation.
-            SetTargetSyncData(ref _targetData, tsd, SetInstantMoveRates(), null);
+            ExtrapolationData extrapolation = new ExtrapolationData();
+            MoveRateData moveRates = new MoveRateData();
+            SetInstantMoveRates(ref moveRates);
+            UpdateTargetData(ref _targetData, ref td, ref moveRates, ref extrapolation);
         }
         #endregion
 
@@ -580,6 +681,9 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         private void CheckSendToServer(bool fixedUpdate)
         {
+            if (!_clientAuthoritative || !_isClient || !_hasAuthority)
+                return;
+
             //Timed interval.
             if (_intervalType == IntervalTypes.Timed)
             {
@@ -593,66 +697,45 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                     return;
             }
 
-            //Not using client auth movement.
-            if (!_clientAuthoritative)
-                return;
-            //Only send to server if client.
-            if (!this.ReturnIsClient())
-                return;
-            //Not authoritative client.
-            if (!this.ReturnHasAuthority())
-                return;
+            /* Teleport attached goal as if attached is valid this is what
+            * will be chacked against. */
+            SnapAttachedTargetToOwner();
 
-            bool attachedValid = AttachedValid();
-            //If owner of target then move target to this transforms position.
-            if (attachedValid && IsAttachedOwner())
-            {
-
-                Attached.Target.SetPosition(false, TargetTransform.GetPosition(false));
-                Attached.Target.SetRotation(false, TargetTransform.GetRotation(false));
-            }
-
-            SyncProperties sp = ReturnDifferentTransformProperties(ref _clientSyncData, attachedValid);
-
+            SyncProperties sp = SyncProperties.None;
+            //True if transform has changed, and those changes are put into sync properties.
+            bool changed = TransformChanged(ref sp, ref _clientTransformData);
+            //Default for using reliable.
             bool useReliable = _reliable;
-            if (!CanSendProperties(ref sp, ref _clientSettleSent, ref useReliable))
+
+            /* If not using reliable.
+             * If settled was set then override useReliable to true. */
+            if (!_reliable && SetSettled(changed, ref sp, ref _clientSettleSent))
+                useReliable = true;
+
+            //Nothing to send.
+            if (sp == SyncProperties.None)
                 return;
 
-            /* This only applies if using interval but
-            * add anyway since the math operation is fast. 
-            *
-            * No reason to favor performance for a single client
-            * as the performance differences will only be noticeable
-            * from fent, since it will be potentially
-            * updating a lot of clients vs one client updating server. */
-            _nextClientSendTime = Time.time + _synchronizeInterval;
+            //If using timed then reset next send time.
+            if (_intervalType == IntervalTypes.Timed)
+                _nextClientSendTime = Time.time + _synchronizeInterval;
+
             //Add additional sync properties.
-            ApplyRequiredSyncProperties(ref sp, false, attachedValid);
+            ApplySpecialProperties(ref sp, false);
 
-            AttachedSpaces attachedSpace = (attachedValid) ? AttachedSpaces.Local : AttachedSpaces.Disabled;
-            Vector3 position = GetTransformPosition(attachedSpace);
-            Quaternion rotation = GetTransformRotation(attachedSpace);
-            Vector3 scale = TargetTransform.GetScale();
-            SetUseCompression(ref sp, ref position, ref scale);
-            SetTransformSyncData(
-                ref _clientSyncData, sp,
-                position, rotation, scale,
-                CreateAttachedData()
-                );
-
-            //send to clients.
-            if (useReliable)
-                FlexNetworkTransformManager.SendToServer(ref _clientSyncData, true);
-            else
-                FlexNetworkTransformManager.SendToServer(ref _clientSyncData, false);
+            UpdateTransformData(ref _clientTransformData, sp);
+            //Send to server.
+            FlexNetworkTransformManager.SendToServer(ref _clientTransformData, useReliable);
         }
-
 
         /// <summary>
         /// Checks if server needs to send data to clients.
         /// </summary>
         private void CheckSendToClients(bool fixedUpdate)
         {
+            if (!_isServer)
+                return;
+
             //Timed interval.
             if (_intervalType == IntervalTypes.Timed)
             {
@@ -666,96 +749,88 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                     return;
             }
 
-            //Only send to clients if server.
-            if (!this.ReturnIsServer())
-                return;
-
-            bool attachedValid = AttachedValid();
-            //If owner of target then move target to this transforms position.
-            if (attachedValid && IsAttachedOwner())
-            {
-
-                Attached.Target.SetPosition(false, TargetTransform.GetPosition(false));
-                Attached.Target.SetRotation(false, TargetTransform.GetRotation(false));
-            }
-
+            /* Teleport attached goal as if attached is valid this is what
+             * will be chacked against. */
+            SnapAttachedTargetToOwner();
 
             /* TargetData is generated when there is a goal to move towards.
-             * While null it's safe to assume the transform was snapped or is being controlled
+             * While not set it's safe to assume the transform was snapped or is being controlled
              * as a client host, so data is up to date. So with that in mind,
-             * if null we can use current transform values. */
-            bool transformAtGoal = (_targetData == null);
-            SyncProperties sp;
-            /* If at goal then compare transform values
-             * against the last sent values, _serverSyncData. */
-            if (transformAtGoal)
-                sp = ReturnDifferentTransformProperties(ref _serverSyncData, attachedValid);
-            /* If not at goal then compare the last received
-             * values, _targetData, against the last sent
-             * values, _serverSyncData. */
-            else
-                sp = ReturnDifferentTargetDataProperties(ref _serverSyncData, _targetData);
+             * if not set we can compare against current transform values.
+             * 
+             * However, if set, we must compare against the TargetData as it
+             * will contain the most up to date values. This is because the transform may be
+             * moving towards the target data, but not yet arrived. Therefor, using the transform
+             * would always provide results that are behind. */
+            bool usingTargetData = _targetData.IsSet;
 
+            SyncProperties sp = SyncProperties.None;
+            //True if transform has changed, and those changes are put into sync properties.
+            bool changed = (usingTargetData) ?
+                TargetDataChanged(ref sp, ref _serverTransformData, ref _targetData) :
+                TransformChanged(ref sp, ref _serverTransformData); ;
+            //Default for using reliable.
             bool useReliable = _reliable;
-            if (!CanSendProperties(ref sp, ref _serverSettleSent, ref useReliable))
+
+            /* If not using reliable.
+            * If settled was set then override useReliable to true. */
+            if (!_reliable && SetSettled(changed, ref sp, ref _clientSettleSent))
+                useReliable = true;
+
+            //Nothing to send.
+            if (sp == SyncProperties.None)
             {
-                //Slightly reset next send time to improve performance by reducing checks.
-                _nextServerSendTime = Time.time + Mathf.Min((_synchronizeInterval / 2f), _interpolationFallbehind);
+                /* If cannot send then slightly reset send time to improve performance. This will
+                * result in data not being sent as quickly as it could be but the delay shouldn't be noticeable.
+                * This currently is only done on server as server would be performing these checks per object
+                * while client would only need to check on it's owned objects. */
+                if (_intervalType == IntervalTypes.Timed)
+                    _nextServerSendTime = Time.time + Mathf.Min((_synchronizeInterval / 2f), _interpolationFallbehind);
+
                 return;
             }
+            //Data to send, reset send interval.
             else
             {
-                //Reset next send time since a send is going to occur.
                 _nextServerSendTime = Time.time + _synchronizeInterval;
             }
 
             //Add additional sync properties.
-            ApplyRequiredSyncProperties(ref sp, false, attachedValid);
-
-            /* If not using server sync data then we are using
-             * targetdata. This is when running as a client host, and
-             * the data is what was received from a spectator. */
-            if (!transformAtGoal)
-            {
-                SetUseCompression(ref sp, ref _targetData.GoalData.Position, ref _targetData.GoalData.Scale);
-                /* Have to use just calculated sync properties because the sync properties
-                 * from server to client can vary from what they were client to server when
-                 * using client authority. */
-                SetTransformSyncData(
-                    ref _serverSyncData, sp,
-                    _targetData.GoalData.Position, _targetData.GoalData.Rotation, _targetData.GoalData.Scale,
-                   _targetData.GoalData.Attached
-                   );
-            }
-            /* If using server data then transform was snapped into position
-             * or has authority and is client host.
-             * So there is no need to read from targetdata. */
+            ApplySpecialProperties(ref sp, false);
+            if (transform.name.Contains("ServerAuth"))
+                Debug.Log(EnumContains.SyncPropertiesContains(sp, SyncProperties.Attached));
+            //Not using target data, update from transform.
+            if (!usingTargetData)
+                UpdateTransformData(ref _serverTransformData, sp);
+            //Using targetData, just resend it.
             else
-            {
-                AttachedSpaces attachedSpace = (attachedValid) ? AttachedSpaces.Local : AttachedSpaces.Disabled;
-                Vector3 position = GetTransformPosition(attachedSpace);
-                Quaternion rotation = GetTransformRotation(attachedSpace);
-                Vector3 scale = TargetTransform.GetScale();
-                SetUseCompression(ref sp, ref position, ref scale);
-                SetTransformSyncData(
-                    ref _serverSyncData, sp,
-                    position, rotation, scale,
-                    CreateAttachedData()
-                    );
-            }
-
+                UpdateTransformData(ref _serverTransformData, sp, ref _targetData);
+            //Send to clients.
             if (_networkVisibility == null)
             {
-                FlexNetworkTransformManager.SendToAll(ref _serverSyncData, useReliable);
+                FlexNetworkTransformManager.SendToAll(ref _serverTransformData, useReliable);
             }
             else
             {
 #if MIRROR
                 foreach (NetworkConnection item in _networkVisibility.netIdentity.observers.Values)
-#elif MIRRORNG
+#elif MIRAGE
                 foreach (INetworkConnection item in _networkVisibility.NetIdentity.observers)
 #endif
-                    FlexNetworkTransformManager.SendToObserver(item, ref _serverSyncData, useReliable);
+                    FlexNetworkTransformManager.SendToObserver(item, ref _serverTransformData, useReliable);
+            }
+        }
+
+        /// <summary>
+        /// Snaps the Attached MovingTarget to it's owner.
+        /// </summary>
+        private void SnapAttachedTargetToOwner()
+        {
+            //If owner of target then move target to this transforms position.
+            if (_attachedValid && IsAttachedOwner())
+            {
+                Attached.MovingTarget.SetPosition(false, TargetTransform.GetPosition(false));
+                Attached.MovingTarget.SetRotation(false, TargetTransform.GetRotation(false));
             }
         }
 
@@ -763,12 +838,15 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// Creates attached data using current Attached.
         /// </summary>
         /// <returns></returns>
-        private AttachedData? CreateAttachedData()
+        private AttachedData CreateAttachedData()
         {
+            AttachedData result = new AttachedData();
             if (Attached.Identity == null)
-                return null;
+                result.IsSet = false;
             else
-                return new AttachedData() { NetId = Attached.Identity.ReturnNetworkId(), ComponentIndex = Attached.ComponentIndex };
+                result.SetData(Attached.Identity.ReturnNetworkId(), Attached.AttachedTargetIndex);
+
+            return result;
         }
         #endregion
 
@@ -777,11 +855,9 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         private void CheckResetSequenceIds()
         {
-            
-
-            if (this.ReturnOwner() == _lastAuthoritativeClient)
+            if (_owner == _lastOwner)
                 return;
-            _lastAuthoritativeClient = this.ReturnOwner();
+            _lastOwner = _owner;
 
             LastClientSequenceId = 0;
         }
@@ -789,70 +865,73 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// <summary>
         /// Updates the attached cache and returns true if attached exist.
         /// </summary>
-        private bool UpdateAttached(AttachedData? attached)
+        private void UpdateAttached(AttachedData attached)
         {
-            if (attached == null)
-                return UpdateAttached(0, -1);
+            if (!attached.IsSet)
+                UpdateAttached(0, -1);
             else
-                return UpdateAttached(attached.Value.NetId, attached.Value.ComponentIndex);
+                UpdateAttached(attached.NetId, attached.AttachedTargetIndex);
         }
-        public static byte ATC = 0;
+
         /// <summary>
         /// Updates the attached cache and returns true if attached exist.
         /// </summary>
-        private bool UpdateAttached(uint netId, sbyte componentIndex)
+        private void UpdateAttached(uint netId, sbyte componentIndex)
         {
             NetworkIdentity currentAttachedIdentity = Attached.Identity;
             //If net id is 0 then attached cannot be looked up.
             if (netId == 0)
             {
-                Attached.Identity = null;
-                if (Attached.Target != null)
-                    Destroy(Attached.Target.gameObject);
+                if (Attached.MovingTarget != null)
+                    Destroy(Attached.MovingTarget.gameObject);
+
+                Attached.Reset();
+                _attachedValid = false;
             }
             else
             {
-                /* True if the update should be blocked. This is to save performance.
-                 * 
-                 * True if current attached exist, and it's netId matches passed in Id. */
-                bool blockUpdate = (Attached.Target != null && Attached.ComponentIndex == componentIndex && currentAttachedIdentity != null && currentAttachedIdentity.ReturnNetworkId() == netId);
+                /* True if current attached exist, and it's netId matches passed in Id. 
+                * In other words, attached values have not changed so there is no reason
+                * to update. */
+                bool blockUpdate = (Attached.MovingTarget != null && Attached.AttachedTargetIndex == componentIndex && currentAttachedIdentity != null && currentAttachedIdentity.ReturnNetworkId() == netId);
                 if (!blockUpdate)
                 {
                     //Create Attached target if not present.
-                    if (Attached.Target == null)
+                    if (Attached.MovingTarget == null)
                     {
-                        Attached.Target = new GameObject().transform;
-                        NameAttachedTarget(Attached.Target);
+                        Attached.MovingTarget = new GameObject().transform;
+                        NameAttachedTarget(Attached.MovingTarget);
                     }
 
                     if (Platforms.ReturnSpawned(_manager.CurrentNetworkManager).TryGetValue(netId, out NetworkIdentity ni))
                     {
                         Attached.Identity = ni;
-                        Attached.ComponentIndex = componentIndex;
+                        Attached.AttachedTargetIndex = componentIndex;
                     }
                     else
                     {
-                        Attached.Identity = null;
-                        Attached.ComponentIndex = -1;
+                        Attached.Reset();
                     }
 
+                    //Set new value of attached valid. Expected to be true but may not be if identity wasn't found.
+                    _attachedValid = AttachedValid();
                     //Child target to new attached object.
                     Transform attachTarget = null;
-                    if (AttachedValid())
+                    if (_attachedValid)
                     {
                         //If using a component to attach to.
-                        if (Attached.ComponentIndex >= 0)
+                        if (Attached.AttachedTargetIndex >= 0)
                         {
                             if (Attached.Identity.GetComponent<FlexAttachTargets>() is FlexAttachTargets foa)
                             {
-                                GameObject go = foa.ReturnTarget(Attached.ComponentIndex);
+                                GameObject go = foa.ReturnTarget(Attached.AttachedTargetIndex);
                                 if (go != null)
                                     attachTarget = go.transform;
                             }
                             //Object attacher not found.
                             else
                             {
-                                Debug.LogWarning("FlexObjectAttacher is not found on identity " + Attached.Identity.gameObject + ".");
+                                Debug.LogWarning("FlexAttachTargets was not found on identity " + Attached.Identity.gameObject + ".");
                             }
                         }
                         //Attaching to root.
@@ -861,16 +940,15 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                             attachTarget = Attached.Identity.transform;
                         }
 
-                        Attached.Target.SetParent(attachTarget);
+                        //Set target to local space.
+                        Attached.MovingTarget.SetParent(attachTarget);
                         /* Set attached to transform position so that it doesn't interfer
                          * with smoothing between space change. */
-                        Attached.Target.position = TargetTransform.GetPosition(false);
-                        Attached.Target.rotation = TargetTransform.GetRotation(false);
+                        Attached.MovingTarget.position = TargetTransform.GetPosition(false);
+                        Attached.MovingTarget.rotation = TargetTransform.GetRotation(false);
                     }
                 }
             }
-
-            return AttachedValid();
         }
 
         /// <summary>
@@ -898,15 +976,15 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             if (_clientAuthoritative)
             {
                 //Server with no owner.
-                if (this.ReturnIsServer() && !this.ReturnHasOwner())
+                if (_isServer && !_hasOwner)
                     return true;
                 //Client and is owner.
-                if (this.ReturnIsClient())
-                    return this.ReturnHasAuthority();
+                if (_isClient)
+                    return _hasAuthority;
             }
             else
             {
-                return this.ReturnIsServer();
+                return _isServer;
             }
 
             //Fall through.
@@ -924,11 +1002,11 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// <summary>
         /// Gets the position of the attached if one is used, otherwise uses transform values.
         /// </summary>
-        private Vector3 GetTransformPosition(AttachedSpaces attachedSpace)
+        private Vector3 GetTransformPosition(bool attachedSpace)
         {
             //Attached exist.
-            if (attachedSpace != AttachedSpaces.Disabled)
-                return (attachedSpace == AttachedSpaces.Local) ? Attached.Target.localPosition : Attached.Target.position;
+            if (attachedSpace)
+                return Attached.MovingTarget.GetPosition(true);
             //No attached.
             else
                 return TargetTransform.GetPosition(UseLocalSpace);
@@ -937,11 +1015,11 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// <summary>
         /// Gets the rotation of the attached if one is used, otherwise uses transform values.
         /// </summary>
-        private Quaternion GetTransformRotation(AttachedSpaces attachedSpace)
+        private Quaternion GetTransformRotation(bool attachedSpace)
         {
             //Attached exist.
-            if (attachedSpace != AttachedSpaces.Disabled)
-                return (attachedSpace == AttachedSpaces.Local) ? Attached.Target.localRotation : Attached.Target.rotation;
+            if (attachedSpace)
+                return Attached.MovingTarget.GetRotation(true);
             //No attached.
             else
                 return TargetTransform.GetRotation(UseLocalSpace);
@@ -959,8 +1037,8 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                 return;
 
             //If position or scale can compress then add compress small.
-            if (EnumContains.SyncPropertiesContains(sp, SyncProperties.Position) && Serialization.CanCompressVector3(ref pos) ||
-                EnumContains.SyncPropertiesContains(sp, SyncProperties.Scale) && Serialization.CanCompressVector3(ref scale)
+            if (EnumContains.SyncPropertiesContains(sp, SyncProperties.Position) && Compressions.CanCompressVector3(ref pos) ||
+                EnumContains.SyncPropertiesContains(sp, SyncProperties.Scale) && Compressions.CanCompressVector3(ref scale)
                 )
                 sp |= SyncProperties.CompressSmall;
         }
@@ -968,38 +1046,43 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// Applies SyncProperties which are required based on settings.
         /// </summary>
         /// <param name="sp"></param>
-        private void ApplyRequiredSyncProperties(ref SyncProperties sp, bool forceAll, bool attachedValid)
+        private void ApplySpecialProperties(ref SyncProperties sp, bool forceAll)
         {
+            //Add in compression values for NetId.
+            if (_netId <= 255)
+                sp |= SyncProperties.Id1;
+            else if (_netId <= 65535)
+                sp |= SyncProperties.Id2;
+
             /* //FEATURE Attached is always sent when it exist.
              * In the future I'd like to only send if changed but this
              * won't be possible for UDP. */
-            if (forceAll || attachedValid)
+            if (forceAll || _attachedValid)
                 sp |= SyncProperties.Attached;
 
             //If to force all.
             if (forceAll)
             {
-                sp |= ReturnConfiguredSynchronizedProperties();
+                sp |= ReturnConfiguredProperties();
             }
             //If has settled then must include all transform values to ensure a perfect match.
             else if (EnumContains.SyncPropertiesContains(sp, SyncProperties.Settled))
             {
-                sp |= ReturnConfiguredSynchronizedProperties();
+                sp |= ReturnConfiguredProperties();
             }
             //If not reliable must send everything that is generally synchronized.
             else if (!_reliable)
             {
                 if (_resendUnreliable)
-                    sp |= ReturnConfiguredSynchronizedProperties();
+                    sp |= ReturnConfiguredProperties();
             }
-
         }
 
         /// <summary>
-        /// Returns properties which are configured to be synchronized. This does not mean all of these properties will send. These only send if using unreliable or if settled to force a synchronization.
+        /// Returns properties which are configured to be synchronized.
         /// </summary>
         /// <returns></returns>
-        private SyncProperties ReturnConfiguredSynchronizedProperties()
+        private SyncProperties ReturnConfiguredProperties()
         {
             SyncProperties sp = SyncProperties.None;
 
@@ -1014,14 +1097,13 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         }
 
         /// <summary>
-        /// Returns if data updates should send based on SyncProperties, Reliable, and send history.
+        /// Returns if was able to set as settled.
         /// </summary>
-        /// <param name=""></param>
         /// <returns></returns>
-        private bool CanSendProperties(ref SyncProperties sp, ref bool settleSent, ref bool useReliable)
+        private bool SetSettled(bool transformChanged, ref SyncProperties sp, ref bool settleSent)
         {
             //If nothing has changed.
-            if (sp == SyncProperties.None)
+            if (!transformChanged)
             {
                 /* If reliable is default and there's no extrapolation
                  * then there is no reason to send a settle packet.
@@ -1052,7 +1134,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                     {
                         float idleRequirement;
                         //If no owner then allow to be idle for a quarter of the interpolation before sending a packet.
-                        if (!this.ReturnHasOwner())
+                        if (!_hasOwner)
                             idleRequirement = _interpolationFallbehind * 0.25f;
                         else
                             //If has an owner allow to be idle for half of the interpolation.
@@ -1062,7 +1144,6 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                         if ((Time.time - _transformIdleStart) >= idleRequirement)
                         {
                             settleSent = true;
-                            useReliable = true;
                             sp |= SyncProperties.Settled;
                             return true;
                         }
@@ -1083,81 +1164,113 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                 _transformIdleStart = -1f;
                 return true;
             }
-
         }
 
         /// <summary>
-        /// Returns which properties need to be sent to maintain synchronization with the transforms current properties.
+        /// Returns SyncProperties which must be applied due to the transform changing.
         /// </summary>
         /// <returns></returns>
-        private SyncProperties ReturnDifferentTransformProperties(ref TransformSyncData data, bool attachedValid)
+        private bool TransformChanged(ref SyncProperties sp, ref TransformData previouslySentData)
         {
-            SyncProperties sp = SyncProperties.None;
+            //Becomes true if changed.
+            bool changed = false;
 
-            //Data is null, so it's definitely not a match.
-            if (!data.Set)
+            //When data isn't set then each sync property is applied unconditionally.
+            if (!previouslySentData.IsSet)
             {
-                ApplyRequiredSyncProperties(ref sp, true, attachedValid);
-                return sp;
+                sp |= ReturnConfiguredProperties();
+                changed = true;
+            }
+            //Previous data is set, see if anything has changed.
+            else
+            {
+                //Position.
+                if (_synchronizePosition == SynchronizeTypes.Normal)
+                {
+                    bool positionMatches = (_attachedValid) ? AttachedPositionMatches(ref previouslySentData) : TransformPositionMatches(ref previouslySentData);
+                    if (!positionMatches)
+                    {
+                        changed = true;
+                        sp |= SyncProperties.Position;
+                    }
+                }
+                //Rotation.
+                if (_synchronizeRotation == SynchronizeTypes.Normal)
+                {
+                    bool rotationMatches = (_attachedValid) ? AttachedRotationMatches(ref previouslySentData) : TransformRotationMatches(ref previouslySentData);
+                    if (!rotationMatches)
+                    {
+                        changed = true;
+                        sp |= SyncProperties.Rotation;
+                    }
+                }
+                //Scale.
+                if (_synchronizeScale == SynchronizeTypes.Normal)
+                {
+                    //Attached don't support scale, so if attached is valid then scale always matches.
+                    bool scaleMatches = (_attachedValid) ? true : TransformScaleMatches(ref previouslySentData);
+                    if (!scaleMatches)
+                    {
+                        changed = true;
+                        sp |= SyncProperties.Scale;
+                    }
+                }
             }
 
-            //Position.
-            if (_synchronizePosition == SynchronizeTypes.Normal)
-            {
-                bool positionMatches = (attachedValid) ? AttachedPositionMatches(ref data) : TransformPositionMatches(ref data);
-                if (!positionMatches)
-                    sp |= SyncProperties.Position;
-            }
-            //Rotation.
-            if (_synchronizeRotation == SynchronizeTypes.Normal)
-            {
-                bool rotationMatches = (attachedValid) ? AttachedRotationMatches(ref data) : TransformRotationMatches(ref data);
-                if (!rotationMatches)
-                    sp |= SyncProperties.Rotation;
-            }
-            //Scale.
-            if (_synchronizeScale == SynchronizeTypes.Normal)
-            {
-                //Attached don't support scale, so if attached is valid then scale always matches.
-                bool scaleMatches = (attachedValid) ? true : TransformScaleMatches(ref data);
-                if (!scaleMatches)
-                    sp |= SyncProperties.Scale;
-            }
-
-            return sp;
+            return changed;
         }
         /// <summary>
-        /// Returns which properties need to be sent to maintain synchronization with targetData properties.
+        /// Returns if any properties have changed between data and targetData.
         /// </summary>
+        /// <param name="sp">SyncProperties to modify with changed properties.</param>
+        /// <param name="data"></param>
         /// <param name="targetData">When specified data is compared against targetData. Otherwise, data is compared against the transform.</param>
         /// <returns></returns>
-        private SyncProperties ReturnDifferentTargetDataProperties(ref TransformSyncData data, TargetSyncData targetData)
+        private bool TargetDataChanged(ref SyncProperties sp, ref TransformData data, ref TargetData targetData)
         {
+            //Becomes true if anything has changed.
+            bool changed = false;
+
             //Cannot compare if either data is null.
-            if (!data.Set || targetData == null)
-                return (SyncProperties.Position | SyncProperties.Rotation | SyncProperties.Scale | SyncProperties.Attached);
+            if (!data.IsSet || !targetData.IsSet)
+            {
+                sp |= ReturnConfiguredProperties();
+                changed = true;
+            }
+            //Both datas exist.
+            else
+            {
 
-            SyncProperties sp = SyncProperties.None;
-            //Position.
-            if (_synchronizePosition == SynchronizeTypes.Normal)
-            {
-                if (!TargetDataPositionMatches(ref data, targetData))
-                    sp |= SyncProperties.Position;
-            }
-            //Rotation.
-            if (_synchronizeRotation == SynchronizeTypes.Normal)
-            {
-                if (!TargetDataRotationMatches(ref data, targetData))
-                    sp |= SyncProperties.Rotation;
-            }
-            //Scale.
-            if (_synchronizeScale == SynchronizeTypes.Normal)
-            {
-                if (!TargetDataScaleMatches(ref data, targetData))
-                    sp |= SyncProperties.Scale;
+                //Position.
+                if (_synchronizePosition == SynchronizeTypes.Normal)
+                {
+                    if (!TargetDataPositionMatches(ref data, ref targetData))
+                    {
+                        changed = true;
+                        sp |= SyncProperties.Position;
+                    }
+                }
+                //Rotation.
+                if (_synchronizeRotation == SynchronizeTypes.Normal)
+                {
+                    if (!TargetDataRotationMatches(ref data, ref targetData))
+                    {
+                        changed = true;
+                        sp |= SyncProperties.Rotation;
+                    }
+                }
+                //Scale.
+                if (_synchronizeScale == SynchronizeTypes.Normal)
+                {
+                    if (!TargetDataScaleMatches(ref data, ref targetData))
+                    {
+                        changed = true;
+                        sp |= SyncProperties.Scale;
+                    }
+                }
             }
 
-            return sp;
+            return changed;
         }
 
         /// <summary>
@@ -1165,64 +1278,69 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         private void SnapToAttached()
         {
-            ///* Only used to keep transform on the server when
-            // * as server only. This ensures proper position updates
-            // * will be sent to clients as needed, and that the object
-            // * will not slide around on the server. */
-            //if (!NetworkIsServerOnly())
-            //    return;
-            //if (!AttachedValid()) //todo recomment
-            //    return;
-            if (!AttachedValid())
+            /* Transforms are snapped to attached, and the attached
+             * target is moved smoothly. */
+            if (!_attachedValid)
                 return;
             if (IsAttachedOwner())
                 return;
 
             if (_synchronizePosition != SynchronizeTypes.NoSynchronization)
-                TargetTransform.SetPosition(false, Attached.Target.position);
-            if (_synchronizeRotation != SynchronizeTypes.NoSynchronization)
-                TargetTransform.SetRotation(false, Attached.Target.rotation);
+                TargetTransform.SetPosition(false, Attached.MovingTarget.position);
+            if (_synchronizeRotation == SynchronizeTypes.Normal)
+                TargetTransform.SetRotation(false, Attached.MovingTarget.rotation);
             //Attached support doesn't require scale syncing.
         }
 
-
         /// <summary>
-        /// Moves towards TargetSyncData.
+        /// Moves towards Target data.
         /// </summary>
-        private void MoveTowardsTargetSyncData()
+        private void MoveTowardsTarget()
         {
-            //No SyncData to check against.
-            if (_targetData == null)
+            //No data to check against.
+            if (!_targetData.IsSet)
                 return;
+
             /* Client authority but there is no owner.
              * Can happen when client authority is ticked but
             * the server takes away authority. */
-            if (this.ReturnIsServer() && _clientAuthoritative && !this.ReturnHasOwner() && _targetData != null)
+            if (_isServer && _clientAuthoritative && !_hasOwner && _targetData.IsSet)
             {
                 /* Remove sync data so server no longer tries to sync up to last data received from client.
                  * Object may be moved around on server at this point. */
-                _targetData = null;
+                _targetData.IsSet = false;
                 return;
             }
+
             //Client authority, don't need to synchronize with self.
-            if (this.ReturnHasAuthority() && _clientAuthoritative)
+            if (_hasAuthority && _clientAuthoritative)
                 return;
             //Not client authority but also not synchronize to owner.
-            if (this.ReturnHasAuthority() && !_clientAuthoritative && !_synchronizeToOwner)
+            if (_hasAuthority && !_clientAuthoritative && !_synchronizeToOwner)
                 return;
 
-            bool attachedValid = AttachedValid();
-            bool extrapolate = (_targetData.Extrapolation != null && _targetData.Extrapolation.Remaining > 0f);
+            bool attachedValid = _attachedValid;
+            bool extrapolate = (_targetData.Extrapolation.IsSet && _targetData.Extrapolation.Remaining > 0f);
+
+            ///* Enough time has passed to potentially be at goal.
+            // * Reset time a little to skip some checks for performance. */
+            //float timeOverEndTime = (Time.time - _moveTowardsEndTime);
+            ///* If object has been at target for more than sync
+            // * interval then reset end time for a new check. */
+            //if (timeOverEndTime > ReturnSyncInterval())
+            //    _moveTowardsEndTime = Time.time;
+
+            //Not enough time has passed to be at goal.
+            if (!extrapolate && (_moveTowardsEndTime != -1f && Time.time > _moveTowardsEndTime))
+                return;
+            //If was set to snap then reset.
+            if (_moveTowardsEndTime == -1f)
+                _moveTowardsEndTime = 0f;
 
             /* Move attached target towards goal. */
             if (attachedValid)
                 TryMoveAttachedTarget();
 
-            /* Check if transform is at goal.
-             * If Transform is at goal and there
-             * is no extrapolation left then exit method. */
-            if (TransformAtSyncData(ref _targetData.GoalData, attachedValid) && !extrapolate)
-                return;
             /* Only move using localspace if configured to local space
              * and if not using a attached. Attached offsets arrive in local space
              * but the transform must move in world space to the attached
@@ -1232,7 +1350,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             //Position
             if (_synchronizePosition != SynchronizeTypes.NoSynchronization)
             {
-                Vector3 positionGoal = (attachedValid) ? Attached.Target.position : _targetData.GoalData.Position;
+                Vector3 positionGoal = (attachedValid) ? Attached.MovingTarget.position : _targetData.GoalData.Position;
 
                 /* If attached is valid then use instant move rates. This
                  * is because the attached target is already smooth so
@@ -1256,9 +1374,9 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                 }
             }
             //Rotation.
-            if (_synchronizeRotation != SynchronizeTypes.NoSynchronization)
+            if (_synchronizeRotation == SynchronizeTypes.Normal)
             {
-                Quaternion rotationGoal = (attachedValid) ? Attached.Target.rotation : _targetData.GoalData.Rotation;
+                Quaternion rotationGoal = (attachedValid) ? Attached.MovingTarget.rotation : _targetData.GoalData.Rotation;
                 /* If attached is valid then use instant move rates. This
                 * is because the attached target is already smooth so
                 * we can snap the transform. */
@@ -1296,7 +1414,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
 
             //Remove from remaining extrapolation time.
             if (extrapolate)
-                _targetData.Extrapolation.AddRemaining(-Time.deltaTime);
+                _targetData.Extrapolation.Remaining -= Time.deltaTime;
         }
 
         /// <summary>
@@ -1312,31 +1430,31 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                 //Instant.
                 if (_targetData.MoveRates.Position == -1f)
                 {
-                    Attached.Target.SetPosition(useLocalSpace, _targetData.GoalData.Position);
+                    Attached.MovingTarget.SetPosition(useLocalSpace, _targetData.GoalData.Position);
                 }
                 //Over time.
                 else
                 {
                     //Move target to goal.
-                    Attached.Target.SetPosition(useLocalSpace,
-                        Vector3.MoveTowards(Attached.Target.GetPosition(useLocalSpace), _targetData.GoalData.Position, _targetData.MoveRates.Position * Time.deltaTime)
+                    Attached.MovingTarget.SetPosition(useLocalSpace,
+                        Vector3.MoveTowards(Attached.MovingTarget.GetPosition(useLocalSpace), _targetData.GoalData.Position, _targetData.MoveRates.Position * Time.deltaTime)
                         );
                 }
             }
             //Rotation.
-            if (_synchronizeRotation != SynchronizeTypes.NoSynchronization)
+            if (_synchronizeRotation == SynchronizeTypes.Normal)
             {
                 //Instant.
                 if (_targetData.MoveRates.Rotation == -1f)
                 {
-                    Attached.Target.SetRotation(useLocalSpace, _targetData.GoalData.Rotation);
+                    Attached.MovingTarget.SetRotation(useLocalSpace, _targetData.GoalData.Rotation);
                 }
                 //Over time.
                 else
                 {
                     //Move target to goal.
-                    Attached.Target.SetRotation(useLocalSpace,
-                        Quaternion.RotateTowards(Attached.Target.GetRotation(useLocalSpace), _targetData.GoalData.Rotation, _targetData.MoveRates.Rotation * Time.deltaTime)
+                    Attached.MovingTarget.SetRotation(useLocalSpace,
+                        Quaternion.RotateTowards(Attached.MovingTarget.GetRotation(useLocalSpace), _targetData.GoalData.Rotation, _targetData.MoveRates.Rotation * Time.deltaTime)
                         );
                 }
             }
@@ -1349,25 +1467,9 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         /// <param name="axes"></param>
         /// <returns></returns>
-        private bool SnapAll(SnappingAxes axes)
+        private bool SnapAll(Vector3Axes axes)
         {
-            return (axes == (SnappingAxes.X | SnappingAxes.Y | SnappingAxes.Z));
-        }
-
-        /// <summary>
-        /// Returns true if the TargetTransform is aligned with data.
-        /// </summary>
-        /// <param name="data"></param>
-        /// <returns></returns>
-        private bool TransformAtSyncData(ref TransformSyncData data, bool attachedValid)
-        {
-            if (!data.Set)
-                return false;
-
-            bool positionMatches = (attachedValid) ? TransformPositionMatchesAttached() : TransformPositionMatches(ref data);
-            bool rotationMatches = (attachedValid) ? TransformRotationMatchesAttached() : TransformRotationMatches(ref data);
-            bool scaleMatches = TransformScaleMatches(ref data);
-            return (positionMatches && rotationMatches && scaleMatches);
+            return (axes == (Vector3Axes.X | Vector3Axes.Y | Vector3Axes.Z));
         }
 
         #region Position Matches.
@@ -1378,19 +1480,19 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// <returns></returns>
         private bool TransformPositionMatchesAttached()
         {
-            return Attached.Target.position == TargetTransform.GetPosition(false);
+            return Attached.MovingTarget.position == TargetTransform.GetPosition(false);
         }
         /// <summary>
         /// Returns if this Attached.Target position matches data.
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        private bool AttachedPositionMatches(ref TransformSyncData data)
+        private bool AttachedPositionMatches(ref TransformData data)
         {
-            if (!data.Set)
+            if (!data.IsSet)
                 return false;
 
-            return Attached.Target.localPosition == data.Position;
+            return Attached.MovingTarget.localPosition == data.Position;
         }
 
         /// <summary>
@@ -1398,9 +1500,9 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        private bool TransformPositionMatches(ref TransformSyncData data)
+        private bool TransformPositionMatches(ref TransformData data)
         {
-            if (!data.Set)
+            if (!data.IsSet)
                 return false;
 
             return TargetTransform.GetPosition(UseLocalSpace) == data.Position;
@@ -1410,9 +1512,9 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        private bool TargetDataPositionMatches(ref TransformSyncData data, TargetSyncData targetData)
+        private bool TargetDataPositionMatches(ref TransformData data, ref TargetData targetData)
         {
-            if (!data.Set || targetData == null)
+            if (!data.IsSet || !targetData.IsSet)
                 return false;
 
             return targetData.GoalData.Position == data.Position;
@@ -1427,28 +1529,28 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// <returns></returns>
         private bool TransformRotationMatchesAttached()
         {
-            return Attached.Target.rotation == TargetTransform.GetRotation(false);
+            return Attached.MovingTarget.rotation == TargetTransform.GetRotation(false);
         }
         /// <summary>
         /// Returns if this transform rotation matches data.
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        private bool AttachedRotationMatches(ref TransformSyncData data)
+        private bool AttachedRotationMatches(ref TransformData data)
         {
-            if (!data.Set)
+            if (!data.IsSet)
                 return false;
 
-            return Attached.Target.localRotation == data.Rotation;
+            return Attached.MovingTarget.localRotation == data.Rotation;
         }
         /// <summary>
         /// Returns if this transform rotation matches data.
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        private bool TransformRotationMatches(ref TransformSyncData data)
+        private bool TransformRotationMatches(ref TransformData data)
         {
-            if (!data.Set)
+            if (!data.IsSet)
                 return false;
 
             return TargetTransform.GetRotation(UseLocalSpace) == data.Rotation;
@@ -1458,9 +1560,9 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        private bool TargetDataRotationMatches(ref TransformSyncData data, TargetSyncData targetData)
+        private bool TargetDataRotationMatches(ref TransformData data, ref TargetData targetData)
         {
-            if (!data.Set || targetData == null)
+            if (!data.IsSet || !targetData.IsSet)
                 return false;
 
             return targetData.GoalData.Rotation == data.Rotation;
@@ -1473,9 +1575,9 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        private bool TransformScaleMatches(ref TransformSyncData data)
+        private bool TransformScaleMatches(ref TransformData data)
         {
-            if (!data.Set)
+            if (!data.IsSet)
                 return false;
 
             return TargetTransform.GetScale() == data.Scale;
@@ -1485,9 +1587,9 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        private bool TargetDataScaleMatches(ref TransformSyncData data, TargetSyncData targetData)
+        private bool TargetDataScaleMatches(ref TransformData data, ref TargetData targetData)
         {
-            if (!data.Set || targetData == null)
+            if (!data.IsSet || !targetData.IsSet)
                 return false;
 
             return targetData.GoalData.Scale == data.Scale;
@@ -1499,14 +1601,15 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// Called on clients when server data is received.
         /// </summary>
         /// <param name="data"></param>
-        public void ServerDataReceived(TransformSyncData data)
+        [Client]
+        public void ServerDataReceived(ref TransformData data)
         {
             //If client host exit method.
-            if (this.ReturnIsServer())
+            if (_isServer)
                 return;
 
             //If owner of object.
-            if (this.ReturnHasAuthority())
+            if (_hasAuthority)
             {
                 //Client authoritative, already in sync.
                 if (_clientAuthoritative)
@@ -1517,29 +1620,37 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             }
 
             //Fill in missing data for properties that werent included in send.
-            FillMissingData(ref data, _targetData);
-
+            FillMissingData(ref data, ref _targetData);
             /* If attached is valid then set the target transform
             * to values received from the client. */
-            bool attachedValid = UpdateAttached(data.Attached);
-
-            ExtrapolationData extrapolation = null;
-            MoveRateData moveRates;
+            UpdateAttached(data.Attached);
+            //TODO attached isnt being sent every frame?
+            ExtrapolationData extrapolation = new ExtrapolationData();
+            MoveRateData moveRates = new MoveRateData();
 
             //If teleporting set move rates to be instantaneous.
-            if (ShouldTeleport(ref data, attachedValid))
+            if (ShouldTeleport(ref data, ref _targetData))
             {
-                moveRates = SetInstantMoveRates();
+                Snap(ref data, true);
+                /* If I want to lock objects into their last properties
+                 * I must set instant rates and UpdateTargetData here. */
             }
             //If not teleporting calculate extrapolation and move rates.
             else
             {
-                extrapolation = SetExtrapolation(ref data, _targetData, attachedValid);
-                moveRates = SetMoveRates(ref data, attachedValid);
+                extrapolation = SetExtrapolation(ref data, ref _targetData);
+                moveRates = SetMoveRates(ref data);
+                Snap(ref data, false);
+                //Update move towards end time.
+                _moveTowardsEndTime = Time.time + ReturnSyncInterval() + _interpolationFallbehind;
             }
 
-            ApplyTransformSnapping(ref data, false, attachedValid);
-            SetTargetSyncData(ref _targetData, data, moveRates, extrapolation);
+            //Target data has to be updated regardless so that FillMissingData will work properly.
+            UpdateTargetData(ref _targetData, ref data, ref moveRates, ref extrapolation);
+
+            //If deserialized data exist then unset it since we have new data.
+            if (_deserializedTransformData.IsSet)
+                _deserializedTransformData.IsSet = false;
         }
 
 
@@ -1547,18 +1658,18 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// Called on clients when server data is received.
         /// </summary>
         /// <param name="data"></param>
-        public void ClientDataReceived(TransformSyncData data)
+        [Server]
+        public void ClientDataReceived(ref TransformData data)
         {
-            //Sent to self.
-            if (this.ReturnHasAuthority())
+            //Sent to self or no authoritative client.
+            if (_hasAuthority || !_hasOwner)
                 return;
 
             //Fill in missing data for properties that werent included in send.
-            FillMissingData(ref data, _targetData);
-
+            FillMissingData(ref data, ref _targetData);
             /* If attached is valid then set the target transform
             * to values received from the client. */
-            bool attachedValid = UpdateAttached(data.Attached);
+            UpdateAttached(data.Attached);
 
             //Only build for event if there are listeners.
             if (OnClientDataReceived != null)
@@ -1567,92 +1678,124 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                 OnClientDataReceived.Invoke(rcd);
 
                 //If data was nullified then do nothing.
-                if (!rcd.Data.Set || !data.Set)
+                if (!rcd.Data.IsSet || !data.IsSet)
                     return;
             }
 
+            ExtrapolationData extrapolation = new ExtrapolationData();
+            MoveRateData moveRates = new MoveRateData();
             /* If server only then snap to target position. 
              * Should I ever add extrapolation on server only
              * then I would need to move smoothly instead and
              * perform extrapolation
              * calculations. */
-            if (this.ReturnIsServerOnly())
+            if (_isServerOnly)
             {
-                ApplyTransformSnapping(ref data, true, attachedValid);
+                Snap(ref data, true);
                 /* If there is an attached then target data must
                  * be set to keep object on attached. Otherwise
                  * targetdata can be nullified. */
-                if (attachedValid)
-                    SetTargetSyncData(ref _targetData, data, SetInstantMoveRates(), null);
+                if (_attachedValid)
+                {
+                    //SetInstantMoveRates(ref moveRates);
+                    UpdateTargetData(ref _targetData, ref data, ref moveRates, ref extrapolation);
+                }
                 else
-                    _targetData = null;
+                {
+                    _targetData.IsSet = false;
+                }
+                //Sets to move no matter what.
+                _moveTowardsEndTime = -1f;
             }
             /* If not server only, so if client host, then set data
              * normally for smoothing. */
             else
             {
-                ExtrapolationData extrapolation = null;
-                MoveRateData moveRates;
                 //If teleporting set move rates to be instantaneous.
-                if (ShouldTeleport(ref data, attachedValid))
+                if (ShouldTeleport(ref data, ref _targetData))
                 {
-                    moveRates = SetInstantMoveRates();
-                    ApplyTransformSnapping(ref data, true, attachedValid);
+                    Snap(ref data, true);
                 }
                 //If not teleporting calculate extrapolation and move rates.
                 else
                 {
-                    extrapolation = SetExtrapolation(ref data, _targetData, attachedValid);
-                    moveRates = SetMoveRates(ref data, attachedValid);
-                    ApplyTransformSnapping(ref data, false, attachedValid);
+                    extrapolation = SetExtrapolation(ref data, ref _targetData);
+                    moveRates = SetMoveRates(ref data);
+                    Snap(ref data, false);
+                    UpdateTargetData(ref _targetData, ref data, ref moveRates, ref extrapolation);
+                    //Update move towards end time. Only needs to be done when not teleporting.
+                    _moveTowardsEndTime = Time.time + ReturnSyncInterval() + _interpolationFallbehind;
                 }
-
-                SetTargetSyncData(ref _targetData, data, moveRates, extrapolation);
             }
+
+
         }
         #endregion
 
         #region Misc.
         /// <summary>
-        /// Sets or updates a TransformSyncData.
+        /// Returns if the TargetTransform is a child object.
+        /// </summary>
+        /// <returns></returns>
+        private bool TargetTransformIsChild()
+        {
+            return (transform.parent != null || TargetTransform != transform);
+        }
+
+        /// <summary>
+        /// Updates a TransformData using transform.
+        /// </summary>
+        /// <param name="data"></param>
+        private void UpdateTransformData(ref TransformData data, SyncProperties sp)
+        {
+            Vector3 position = GetTransformPosition(_attachedValid);
+            Quaternion rotation = GetTransformRotation(_attachedValid);
+            Vector3 scale = TargetTransform.GetScale();
+            SetUseCompression(ref sp, ref position, ref scale);
+
+            AttachedData ad = CreateAttachedData();
+            UpdateTransformData(
+                ref data, sp,
+                position, rotation, scale,
+                ad
+                );
+        }
+        /// <summary>
+        /// Updates a TransformData using TargetData.
+        /// </summary>
+        /// <param name="data"></param>
+        private void UpdateTransformData(ref TransformData data, SyncProperties sp, ref TargetData td)
+        {
+            UpdateTransformData(
+                ref data, sp,
+                td.GoalData.Position, td.GoalData.Rotation, td.GoalData.Scale,
+               td.GoalData.Attached
+               );
+        }
+
+        /// <summary>
+        /// Updates a TransformData with passed in values.
         /// </summary>
         /// <param name="data"></param>
         /// <param name="sp"></param>
-        /// <param name="lastSequenceId"></param>
         /// <param name="position"></param>
         /// <param name="rotation"></param>
         /// <param name="scale"></param>
-        /// <param name="attachedNetId"></param>
-        private void SetTransformSyncData(ref TransformSyncData data, SyncProperties sp, Vector3 position, Quaternion rotation, Vector3 scale, AttachedData? attached)
+        private void UpdateTransformData(ref TransformData data, SyncProperties sp, Vector3 position, Quaternion rotation, Vector3 scale, AttachedData attached)
         {
-            //NetworkIdentity is always included so may as well put it in here.
-            //Compress network identity.
-            uint networkidentity = this.ReturnNetId();
-            if (networkidentity <= 255)
-                sp |= SyncProperties.Id1;
-            else if (networkidentity <= 65535)
-                sp |= SyncProperties.Id2;
-
             //Mirror stores the component index as an int but they serialize it as a byte.
-            data.UpdateValues((byte)sp, networkidentity, CachedComponentIndex,
+            data.UpdateValues((byte)sp, _netId, CachedComponentIndex,
                 position, rotation, scale,
                 attached
                 );
         }
 
         /// <summary>
-        /// Sets or updates a TargetSyncData.
+        /// Updates a TargetDta.
         /// </summary>
-        /// <param name="data"></param>
-        /// <param name="goalData"></param>
-        /// <param name="moveRates"></param>
-        /// <param name="extrapolationData"></param>
-        private void SetTargetSyncData(ref TargetSyncData data, TransformSyncData goalData, MoveRateData moveRates, ExtrapolationData extrapolationData)
+        private void UpdateTargetData(ref TargetData data, ref TransformData goalData, ref MoveRateData moveRates, ref ExtrapolationData extrapolationData)
         {
-            if (data == null)
-                data = new TargetSyncData();
-
-            data.UpdateValues(goalData, moveRates, extrapolationData);
+            data.UpdateValues(goalData, moveRates, extrapolationData, true);
         }
 
         /// <summary>
@@ -1669,13 +1812,17 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        private bool ShouldTeleport(ref TransformSyncData data, bool attachedValid)
+        private bool ShouldTeleport(ref TransformData data, ref TargetData targetData)
         {
+            /* No previous target data to go off from.
+             * This may be initial data, so teleport will be true
+             * to snap to data rather than moving smoothly. */
+            if (!targetData.IsSet)
+                return true;
             if (_teleportThresholdSquared <= 0f)
                 return false;
 
-            Vector3 position = (attachedValid) ? GetTransformPosition(AttachedSpaces.Local) : GetTransformPosition(AttachedSpaces.Disabled);
-
+            Vector3 position = GetTransformPosition(_attachedValid);
             float dist = Vectors.FastSqrMagnitude(position - data.Position);
             return dist >= _teleportThresholdSquared;
         }
@@ -1685,33 +1832,29 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// Sets MoveRates to move instantly.
         /// </summary>
         /// <returns></returns>
-        private MoveRateData SetInstantMoveRates()
+        private void SetInstantMoveRates(ref MoveRateData moveRates)
         {
-            return new MoveRateData()
-            {
-                Position = -1f,
-                Rotation = -1f,
-                Scale = -1f
-            };
+            moveRates.Position = -1f;
+            moveRates.Rotation = -1f;
+            moveRates.Scale = -1f;
         }
 
         /// <summary>
         /// Sets MoveRates based on data, transform position, and synchronization interval.
         /// </summary>
         /// <param name="data"></param>
-        private MoveRateData SetMoveRates(ref TransformSyncData data, bool attachedValid)
+        private MoveRateData SetMoveRates(ref TransformData data)
         {
-            float past = ReturnSyncInterval() + _interpolationFallbehind;
-            AttachedSpaces attachedSpace = (attachedValid) ? AttachedSpaces.Local : AttachedSpaces.Disabled;
-
             MoveRateData moveRates = new MoveRateData();
+            float past = ReturnSyncInterval() + _interpolationFallbehind;
+            
             float distance;
             /* Position. */
-            Vector3 position = GetTransformPosition(attachedSpace);
+            Vector3 position = GetTransformPosition(_attachedValid);
             distance = Vector3.Distance(position, data.Position);
             moveRates.Position = distance / past;
             /* Rotation. */
-            Quaternion rotation = GetTransformRotation(attachedSpace);
+            Quaternion rotation = GetTransformRotation(_attachedValid);
             distance = Quaternion.Angle(rotation, data.Rotation);
             moveRates.Rotation = distance / past;
             /* Scale. */
@@ -1723,28 +1866,31 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
 
 
         /// <summary>
-        /// Sets ExtrapolationExtra using TransformSyncData.
+        /// Sets ExtrapolationExtra using TransformData.
         /// </summary>
-        private ExtrapolationData SetExtrapolation(ref TransformSyncData data, TargetSyncData previousTargetSyncData, bool attachedValid)
+        private ExtrapolationData SetExtrapolation(ref TransformData data, ref TargetData previousTargetData)
         {
+            ExtrapolationData extrapolation = new ExtrapolationData();
+            //Will become true if set at the end.
+            extrapolation.IsSet = false;
             //Feature: cannot extrapolate on attached currently.
-            if (attachedValid)
-                return null;
+            if (_attachedValid)
+                return extrapolation;
             /* If attached Id changed. 
              * Cannot extrapolate when attached Ids change because
              * the space used is changed. */
-            if (previousTargetSyncData != null && !AttachedData.Matches(ref previousTargetSyncData.GoalData.Attached, ref data.Attached))
-                return null;
+            if (previousTargetData.IsSet && !AttachedData.Matches(previousTargetData.GoalData.Attached, data.Attached))
+                return extrapolation;
             //No extrapolation.
-            if (_extrapolationSpan == 0f || previousTargetSyncData == null)
-                return null;
+            if (_extrapolationSpan == 0f || !previousTargetData.IsSet)
+                return extrapolation;
             //Settled packet.
             if (EnumContains.SyncPropertiesContains((SyncProperties)data.SyncProperties, SyncProperties.Settled))
-                return null;
+                return extrapolation;
 
-            Vector3 positionDirection = (data.Position - previousTargetSyncData.GoalData.Position);
+            Vector3 positionDirection = (data.Position - previousTargetData.GoalData.Position);
             //Feature: need to use proper attached spaces if supporting extrapolation on attached.
-            Vector3 position = GetTransformPosition(AttachedSpaces.Disabled);
+            Vector3 position = GetTransformPosition(false);
             Vector3 goalDirectionNormalzied = (data.Position - position).normalized;
             /* If direction to goal is different from extrapolation direction
              * then do not extrapolate. This can occur when the extrapolation
@@ -1752,33 +1898,32 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
              * it would likely overshoot more and more, becoming extremely
              * offset. */
             if (goalDirectionNormalzied != positionDirection.normalized)
-                return null;
+                return extrapolation;
 
             float multiplier = _extrapolationSpan / ReturnSyncInterval();
+            extrapolation.UpdateValues(data.Position + (positionDirection * multiplier),
+                _extrapolationSpan + ReturnSyncInterval(), true);
 
-            return new ExtrapolationData(
-                data.Position + (positionDirection * multiplier),
-                _extrapolationSpan + ReturnSyncInterval()
-            );
+            return extrapolation;
         }
 
         /// <summary>
-        /// Snaps transforms to data where snapping is applicable.
+        /// Snaps transforms, including attahed transforms, when applicable.
         /// </summary>
         /// <param name="data"></param>
         /// <param name="snapAll"></param>
-        private void ApplyTransformSnapping(ref TransformSyncData data, bool snapAll, bool attachedValid)
+        private void Snap(ref TransformData data, bool snapAll)
         {
             //Snap attached, then snap transform to attached.
-            if (attachedValid)
+            if (_attachedValid)
             {
-                ApplyTransformSnapping(Attached.Target, ref data, snapAll, true);
-                ApplyTransformSnapping(TargetTransform, (SyncProperties)data.SyncProperties, Attached.Target.position, Attached.Target.rotation, data.Scale, snapAll, false);
+                SnapTransform(Attached.MovingTarget, ref data, snapAll, true);
+                SnapTransform(TargetTransform, (SyncProperties)data.SyncProperties, Attached.MovingTarget.position, Attached.MovingTarget.rotation, data.Scale, snapAll, false);
             }
             //Just snap transform to data.
             else
             {
-                ApplyTransformSnapping(TargetTransform, ref data, snapAll, attachedValid);
+                SnapTransform(TargetTransform, ref data, snapAll, _attachedValid);
             }
         }
         /// <summary>
@@ -1787,15 +1932,15 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// /// <param name="t"></param>
         /// <param name="data"></param>
         /// <param name="snapAll"></param>
-        private void ApplyTransformSnapping(Transform t, ref TransformSyncData data, bool snapAll, bool snappingAttached)
+        private void SnapTransform(Transform t, ref TransformData data, bool snapAll, bool snappingAttached)
         {
-            ApplyTransformSnapping(t, (SyncProperties)data.SyncProperties, data.Position, data.Rotation, data.Scale, snapAll, snappingAttached);
+            SnapTransform(t, (SyncProperties)data.SyncProperties, data.Position, data.Rotation, data.Scale, snapAll, snappingAttached);
         }
         /// <summary>
         /// Snaps the transform to data where snapping is applicable.
         /// </summary>
         /// <param name="targetData">Data to snap from.</param>
-        private void ApplyTransformSnapping(Transform t, SyncProperties sp, Vector3 position, Quaternion rotation, Vector3 scale, bool snapAll, bool snappingAttached)
+        private void SnapTransform(Transform t, SyncProperties sp, Vector3 position, Quaternion rotation, Vector3 scale, bool snapAll, bool snappingAttached)
         {
             if (t == null)
                 return;
@@ -1813,13 +1958,13 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                 else
                 {
                     //Snap X.
-                    if (EnumContains.AxesContains(_snapPosition, SnappingAxes.X))
+                    if (EnumContains.Vector3AxesContains(_snapPosition, Vector3Axes.X))
                         t.SetPosition(useLocalSpace, new Vector3(position.x, t.GetPosition(useLocalSpace).y, t.GetPosition(useLocalSpace).z));
                     //Snap Y.
-                    if (EnumContains.AxesContains(_snapPosition, SnappingAxes.Y))
+                    if (EnumContains.Vector3AxesContains(_snapPosition, Vector3Axes.Y))
                         t.SetPosition(useLocalSpace, new Vector3(t.GetPosition(useLocalSpace).x, position.y, t.GetPosition(useLocalSpace).z));
                     //Snap Z.
-                    if (EnumContains.AxesContains(_snapPosition, SnappingAxes.Z))
+                    if (EnumContains.Vector3AxesContains(_snapPosition, Vector3Axes.Z))
                         t.SetPosition(useLocalSpace, new Vector3(t.GetPosition(useLocalSpace).x, t.GetPosition(useLocalSpace).y, position.z));
                 }
             }
@@ -1844,13 +1989,13 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                         Vector3 startEuler = t.GetRotation(UseLocalSpace).eulerAngles;
                         Vector3 targetEuler = rotation.eulerAngles;
                         //Snap X.
-                        if (EnumContains.AxesContains(_snapRotation, SnappingAxes.X))
+                        if (EnumContains.Vector3AxesContains(_snapRotation, Vector3Axes.X))
                             startEuler.x = targetEuler.x;
                         //Snap Y.
-                        if (EnumContains.AxesContains(_snapRotation, SnappingAxes.Y))
+                        if (EnumContains.Vector3AxesContains(_snapRotation, Vector3Axes.Y))
                             startEuler.y = targetEuler.y;
                         //Snap Z.
-                        if (EnumContains.AxesContains(_snapRotation, SnappingAxes.Z))
+                        if (EnumContains.Vector3AxesContains(_snapRotation, Vector3Axes.Z))
                             startEuler.z = targetEuler.z;
 
                         //Rebuild into quaternion.
@@ -1862,7 +2007,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             /* Scale.
              * Only snap scale if not Attached Target
              * as Attached Target doesn't need scale. */
-            if (t != Attached.Target && snapAll || EnumContains.SyncPropertiesContains(sp, SyncProperties.Scale))
+            if (t != Attached.MovingTarget && snapAll || EnumContains.SyncPropertiesContains(sp, SyncProperties.Scale))
             {
                 //If to snap all.
                 if (snapAll || SnapAll(_snapScale))
@@ -1873,13 +2018,13 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                 else
                 {
                     //Snap X.
-                    if (EnumContains.AxesContains(_snapScale, SnappingAxes.X))
+                    if (EnumContains.Vector3AxesContains(_snapScale, Vector3Axes.X))
                         t.SetScale(new Vector3(scale.x, t.GetScale().y, t.GetScale().z));
                     //Snap Y.
-                    if (EnumContains.AxesContains(_snapScale, SnappingAxes.Y))
+                    if (EnumContains.Vector3AxesContains(_snapScale, Vector3Axes.Y))
                         t.SetPosition(UseLocalSpace, new Vector3(t.GetScale().x, scale.y, t.GetScale().z));
                     //Snap Z.
-                    if (EnumContains.AxesContains(_snapScale, SnappingAxes.Z))
+                    if (EnumContains.Vector3AxesContains(_snapScale, Vector3Axes.Z))
                         t.SetPosition(UseLocalSpace, new Vector3(t.GetScale().x, t.GetScale().y, scale.z));
                 }
             }
@@ -1889,7 +2034,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// Modifies values within goalData based on what data was included in the packet.
         /// For example, if rotation was not included in the packet then the last datas rotation will be used, or transforms current rotation if there is no previous packet.
         /// </summary>
-        private void FillMissingData(ref TransformSyncData data, TargetSyncData targetSyncData)
+        private void FillMissingData(ref TransformData data, ref TargetData targetData)
         {
             SyncProperties sp = (SyncProperties)data.SyncProperties;
             /* Begin by setting goal data using what has been serialized
@@ -1897,26 +2042,26 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             //Position wasn't included.
             if (!EnumContains.SyncPropertiesContains(sp, SyncProperties.Position))
             {
-                if (targetSyncData == null)
+                if (!targetData.IsSet)
                     data.Position = TargetTransform.GetPosition(UseLocalSpace);
                 else
-                    data.Position = targetSyncData.GoalData.Position;
+                    data.Position = targetData.GoalData.Position;
             }
             //Rotation wasn't included.
             if (!EnumContains.SyncPropertiesContains(sp, SyncProperties.Rotation))
             {
-                if (targetSyncData == null)
+                if (!targetData.IsSet)
                     data.Rotation = TargetTransform.GetRotation(UseLocalSpace);
                 else
-                    data.Rotation = targetSyncData.GoalData.Rotation;
-            }
+                    data.Rotation = targetData.GoalData.Rotation;
+            }            
             //Scale wasn't included.
             if (!EnumContains.SyncPropertiesContains(sp, SyncProperties.Scale))
             {
-                if (targetSyncData == null)
+                if (!targetData.IsSet)
                     data.Scale = TargetTransform.GetScale();
                 else
-                    data.Scale = targetSyncData.GoalData.Scale;
+                    data.Scale = targetData.GoalData.Scale;
             }
 
             /* Attached data will always be included every packet

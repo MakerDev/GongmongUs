@@ -1,14 +1,20 @@
 ##############################
-IMPORTANT: MirrorNG USERS ONLY
+IMPORTANT: Mirage USERS ONLY
 
 With the recent improvements you must now add the
 FlexNetworkTransformManager script to your scene and
 assign your NetworkManager reference within it.
+Additionally, add MIRAGE to your defines under player settings.
 
 Mirror users, do NOT perform this step.
 ##############################
 
 FlexNetworkTransform
+
+NOTES
+=====================================   
+    Using 'Compress Small' may cause inaccurate replication when working with fine decimals.
+    For example, if you need accuracy beyond the hundredth decimal place you should not use 'Compress Small'.
 
 API
 =====================================   
@@ -28,8 +34,8 @@ API
 
     OnClientDataReceived
         Dispatched when server receives data from a client while using client authoritative.
-            To reject data on the server you only have to nullify
-            the data. For example: obj.Data = null;
+            To reject data on the server you only have to call IgnoreData() on
+            the ReceivedClientData instance. For example, obj.IgnoreData();
 
             You may also modify the data instead.
             For example: obj.Data.Position = Vector3.zero;

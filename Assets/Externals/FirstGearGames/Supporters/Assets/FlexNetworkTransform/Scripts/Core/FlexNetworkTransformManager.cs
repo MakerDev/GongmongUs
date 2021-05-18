@@ -1,10 +1,12 @@
 ﻿using FirstGearGames.Utilities.Networks;
-using Mirror;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-#if MIRRORNG || MirrorNg
+#if MIRAGE
+using Mirage;
 using NetworkConnection = Mirror.INetworkConnection;
+#else
+using Mirror;
 #endif
 
 
@@ -12,9 +14,9 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
 {
     [System.Serializable]
 #if MIRROR
-    public struct TransformSyncDataMessage : NetworkMessage
-#elif MIRRORNG
-    public struct TransformSyncDataMessage
+    public struct TransformDataMessage : NetworkMessage
+#elif MIRAGE
+    public struct TransformDataMessage
 #endif
     {
         public ushort SequenceId;
@@ -23,12 +25,11 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
 
     public class FlexNetworkTransformManager : MonoBehaviour
     {
-
         #region Serialized
         /// <summary>
         /// 
         /// </summary>
-#if MIRRORNG || MirrorNg
+#if MIRAGE
         [Tooltip("Current NetworkManager.")]
         [SerializeField]
 #endif
@@ -40,7 +41,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// <summary>
         /// True to make this gameObject dont destroy on load. True is recommended if your NetworkManager is also dont destroy on load.
         /// </summary>
-#if MIRRORNG || MirrorNg
+#if MIRAGE
         [Tooltip("True to make this gameObject dont destroy on load. True is recommended if your NetworkManager is also dont destroy on load.")]
         [SerializeField]
 #endif
@@ -53,29 +54,33 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         private static List<FlexNetworkTransformBase> _activeFlexNetworkTransforms = new List<FlexNetworkTransformBase>();
         /// <summary>
-        /// Unreliable SyncDatas to send to all.
+        /// FlexNetworkTransforms which must be smoothed in LateUpdate.
         /// </summary>
-        private static List<TransformSyncData> _toAllUnreliableSyncData = new List<TransformSyncData>();
+        private static List<FlexNetworkTransformBase> _lateUpdateSmoothing = new List<FlexNetworkTransformBase>();
         /// <summary>
-        /// Reliable SyncDatas to send to all.
+        /// Unreliable datas to send to all.
         /// </summary>
-        private static List<TransformSyncData> _toAllReliableSyncData = new List<TransformSyncData>();
+        private static List<TransformData> _toAllUnreliableData = new List<TransformData>();
         /// <summary>
-        /// Unreliable SyncDatas to send to server.
+        /// Reliable datas to send to all.
         /// </summary>
-        private static List<TransformSyncData> _toServerUnreliableSyncData = new List<TransformSyncData>();
+        private static List<TransformData> _toAllReliableData = new List<TransformData>();
         /// <summary>
-        /// Reliable SyncDatas to send send to server.
+        /// Unreliable datas to send to server.
         /// </summary>
-        private static List<TransformSyncData> _toServerReliableSyncData = new List<TransformSyncData>();
+        private static List<TransformData> _toServerUnreliableData = new List<TransformData>();
         /// <summary>
-        /// Unreliable SyncDatas sent to specific observers.
+        /// Reliable datas to send send to server.
         /// </summary>
-        private static Dictionary<NetworkConnection, List<TransformSyncData>> _observerUnreliableSyncData = new Dictionary<NetworkConnection, List<TransformSyncData>>();
+        private static List<TransformData> _toServerReliableData = new List<TransformData>();
         /// <summary>
-        /// Reliable SyncDatas sent to specific observers.
+        /// Unreliable datas sent to specific observers.
         /// </summary>
-        private static Dictionary<NetworkConnection, List<TransformSyncData>> _observerReliableSyncData = new Dictionary<NetworkConnection, List<TransformSyncData>>();
+        private static Dictionary<NetworkConnection, List<TransformData>> _observerUnreliableData = new Dictionary<NetworkConnection, List<TransformData>>();
+        /// <summary>
+        /// Reliable datas sent to specific observers.
+        /// </summary>
+        private static Dictionary<NetworkConnection, List<TransformData>> _observerReliableData = new Dictionary<NetworkConnection, List<TransformData>>();
         /// <summary>
         /// True if a fixed frame.
         /// </summary>
@@ -156,7 +161,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         }
 
         /// <summary>
-        /// Initializes script. Only works for MirrorNG.
+        /// Initializes script.
         /// </summary>
         private void FirstInitialize()
         {
@@ -170,6 +175,12 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             _instance = this;
             if (_dontDestroyOnLoad)
                 DontDestroyOnLoad(gameObject);
+
+        //If Mirage then register handles on initialization.
+#if MIRAGE
+            NetworkReplaceHandlers(true);
+            NetworkReplaceHandlers(false);
+#endif
         }
 
         private void FixedUpdate()
@@ -188,8 +199,9 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
 
         private void Update()
         {
+#if MIRROR
             CheckRegisterHandlers();
-
+#endif
             //Run updates on FlexNetworkTransforms.
             for (int i = 0; i < _activeFlexNetworkTransforms.Count; i++)
                 _activeFlexNetworkTransforms[i].ManualUpdate(_fixedFrame);
@@ -197,6 +209,12 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             _fixedFrame = false;
             //Send any queued messages.
             SendMessages();
+        }
+
+        private void LateUpdate()
+        {
+            for (int i = 0; i < _lateUpdateSmoothing.Count; i++)
+                _lateUpdateSmoothing[i].ManualLateUpdate();
         }
 
 
@@ -226,6 +244,9 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         {
             _activeFlexNetworkTransforms.Add(fntBase);
             fntBase.SetManagerInternal(_instance);
+
+            if (fntBase.SmoothingLoop == SmoothingLoops.LateUpdate)
+                _lateUpdateSmoothing.Add(fntBase);
         }
         /// <summary>
         /// Removes from ActiveFlexNetworkTransforms.
@@ -234,6 +255,9 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         public static void RemoveFromActive(FlexNetworkTransformBase fntBase)
         {
             _activeFlexNetworkTransforms.Remove(fntBase);
+
+            if (fntBase.SmoothingLoop == SmoothingLoops.LateUpdate)
+                _lateUpdateSmoothing.Remove(fntBase);
         }
 
         /// <summary>
@@ -241,12 +265,14 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         /// <param name="data"></param>
         /// <param name="reliable"></param>
-        public static void SendToServer(ref TransformSyncData data, bool reliable)
+        public static void SendToServer(ref TransformData data, bool reliable)
         {
             /* Do not send as reference because a copy needs to be made to ensure
              * data is not replaced in the collection. */
-            List<TransformSyncData> list = (reliable) ? _toServerReliableSyncData : _toServerUnreliableSyncData;
-            list.Add(data);
+            if (reliable)
+                _toServerReliableData.Add(data);
+            else
+                _toServerUnreliableData.Add(data);
         }
 
         /// <summary>
@@ -254,12 +280,14 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         /// <param name="data"></param>
         /// <param name="reliable"></param>
-        public static void SendToAll(ref TransformSyncData data, bool reliable)
+        public static void SendToAll(ref TransformData data, bool reliable)
         {
             /* Do not send as reference because a copy needs to be made to ensure
             * data is not replaced in the collection. */
-            List<TransformSyncData> list = (reliable) ? _toAllReliableSyncData : _toAllUnreliableSyncData;
-            list.Add(data);
+            if (reliable)
+                _toAllReliableData.Add(data);
+            else
+                _toAllUnreliableData.Add(data);
         }
 
         /// <summary>
@@ -268,19 +296,19 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// <param name="conn"></param>
         /// <param name="data"></param>
         /// <param name="reliable"></param>
-        public static void SendToObserver(NetworkConnection conn, ref TransformSyncData data, bool reliable)
+        public static void SendToObserver(NetworkConnection conn, ref TransformData data, bool reliable)
         {
             /* Do not send as reference because a copy needs to be made to ensure
             * data is not replaced in the collection. */
             /* Actually, it should be okay to use ref because each sync data is going to be the most recent.
              * And since I'm not ACTUALLY using delta, this shouldn't cause any harm. */
-            Dictionary<NetworkConnection, List<TransformSyncData>> dict = (reliable) ? _observerReliableSyncData : _observerUnreliableSyncData;
+            Dictionary<NetworkConnection, List<TransformData>> dict = (reliable) ? _observerReliableData : _observerUnreliableData;
 
-            List<TransformSyncData> datas;
+            List<TransformData> datas;
             //If doesn't have datas for connection yet then make new datas.
             if (!dict.TryGetValue(conn, out datas))
             {
-                datas = new List<TransformSyncData>();
+                datas = new List<TransformData>();
                 dict[conn] = datas;
             }
 
@@ -304,26 +332,26 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                     _lastServerSentSequenceId = 0;
 
                 //Reliable to all.
-                SendTransformSyncDatas(_lastServerSentSequenceId, false, null, _toAllReliableSyncData, true);
+                SendTransformDatas(_lastServerSentSequenceId, false, null, _toAllReliableData, true);
                 //Unreliable to all.
-                SendTransformSyncDatas(_lastServerSentSequenceId, false, null, _toAllUnreliableSyncData, false);
+                SendTransformDatas(_lastServerSentSequenceId, false, null, _toAllUnreliableData, false);
                 //Reliable to observers.
-                foreach (KeyValuePair<NetworkConnection, List<TransformSyncData>> item in _observerReliableSyncData)
+                foreach (KeyValuePair<NetworkConnection, List<TransformData>> item in _observerReliableData)
                 {
                     //Null or unready network connection.
                     if (item.Key == null || !item.Key.IsReady())
                         continue;
 
-                    SendTransformSyncDatas(_lastServerSentSequenceId, false, item.Key, item.Value, true);
+                    SendTransformDatas(_lastServerSentSequenceId, false, item.Key, item.Value, true);
                 }
                 //Unreliable to observers.
-                foreach (KeyValuePair<NetworkConnection, List<TransformSyncData>> item in _observerUnreliableSyncData)
+                foreach (KeyValuePair<NetworkConnection, List<TransformData>> item in _observerUnreliableData)
                 {
                     //Null or unready network connection.
                     if (item.Key == null || !item.Key.IsReady())
                         continue;
 
-                    SendTransformSyncDatas(_lastServerSentSequenceId, false, item.Key, item.Value, false);
+                    SendTransformDatas(_lastServerSentSequenceId, false, item.Key, item.Value, false);
                 }
             }
             //Client.
@@ -334,17 +362,17 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                     _lastClientSentSequenceId = 0;
 
                 //Reliable to all.
-                SendTransformSyncDatas(_lastClientSentSequenceId, true, null, _toServerReliableSyncData, true);
+                SendTransformDatas(_lastClientSentSequenceId, true, null, _toServerReliableData, true);
                 //Unreliable to all.
-                SendTransformSyncDatas(_lastClientSentSequenceId, true, null, _toServerUnreliableSyncData, false);
+                SendTransformDatas(_lastClientSentSequenceId, true, null, _toServerUnreliableData, false);
             }
 
-            _toServerReliableSyncData.Clear();
-            _toServerUnreliableSyncData.Clear();
-            _toAllReliableSyncData.Clear();
-            _toAllUnreliableSyncData.Clear();
-            _observerReliableSyncData.Clear();
-            _observerUnreliableSyncData.Clear();
+            _toServerReliableData.Clear();
+            _toServerUnreliableData.Clear();
+            _toAllReliableData.Clear();
+            _toAllUnreliableData.Clear();
+            _observerReliableData.Clear();
+            _observerUnreliableData.Clear();
         }
 
         /// <summary>
@@ -354,13 +382,13 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// <param name="datas"></param>
         /// <param name="reliable"></param>
         /// <param name="maxCollectionSize"></param>
-        private void SendTransformSyncDatas(ushort sequenceId, bool toServer, NetworkConnection conn, List<TransformSyncData> datas, bool reliable)
+        private void SendTransformDatas(ushort sequenceId, bool toServer, NetworkConnection conn, List<TransformData> datas, bool reliable)
         {
             int index = 0;
             int channel = (reliable) ? 0 : 1;
             int mtu = (reliable) ? _reliableMTU : _unreliableMTU;
             //Subtract a set amount from mtu to account for headers and misc data.
-            mtu -= 100;
+            mtu -= 75;
 #if UNITY_EDITOR
             if (mtu < MINIMUM_MTU_REQUIREMENT)
                 Debug.LogWarning("MTU is dangerously low on channel " + channel + ". Data may not send properly.");
@@ -369,14 +397,24 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             while (index < datas.Count)
             {
                 int writerPosition = 0;
-                //Write until buffer is full or all indexes have been written.
+                //Write until break or all data is written.
                 while (writerPosition < mtu && index < datas.Count)
                 {
-                    Serialization.SerializeTransformSyncData(_writerBuffer, ref writerPosition, datas, index);
-                    index++;
+                    PooledNetworkWriter writer = Serialization.SerializeTransformData(datas, index);
+                    //If will fit into the packet.
+                    if (writer.Length + writerPosition <= mtu)
+                    {
+                        Array.Copy(writer.ToArraySegment().Array, 0, _writerBuffer, writerPosition, writer.Length);
+                        writerPosition += writer.Length;
+                        index++;
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
 
-                TransformSyncDataMessage msg = new TransformSyncDataMessage()
+                TransformDataMessage msg = new TransformDataMessage()
                 {
                     SequenceId = sequenceId,
                     Data = new ArraySegment<byte>(_writerBuffer, 0, writerPosition)
@@ -402,7 +440,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// Received on clients when server sends data.
         /// </summary>
         /// <param name="msg"></param>
-        private void OnServerTransformSyncData(TransformSyncDataMessage msg)
+        private void OnServerTransformData(TransformDataMessage msg)
         {
             //Old packet.
             if (IsOldPacket(_lastServerReceivedSequenceId, msg.SequenceId))
@@ -412,7 +450,8 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             int readPosition = 0;
             while (readPosition < msg.Data.Count)
             {
-                TransformSyncData tsd = Serialization.DeserializeTransformSyncData(ref readPosition, msg.Data);
+                TransformData tsd = new TransformData();
+                Serialization.DeserializeTransformData(ref readPosition, ref msg.Data, ref tsd);
                 /* Initially I tried caching the getcomponent calls but the performance difference
                  * couldn't be registered. At this time it's not worth creating the extra complexity
                  * for what might be a 1% fps difference. */
@@ -420,7 +459,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                 {
                     FlexNetworkTransformBase fntBase = ReturnFNTBaseOnNetworkIdentity(ni, tsd.ComponentIndex);
                     if (fntBase != null)
-                        fntBase.ServerDataReceived(tsd);
+                        fntBase.ServerDataReceived(ref tsd);
                 }
             }
 
@@ -430,21 +469,22 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// Received on server when client sends data.
         /// </summary>
         /// <param name="msg"></param>
-        private void OnClientTransformSyncData(TransformSyncDataMessage msg)
+        private void OnClientTransformData(TransformDataMessage msg)
         {
             //Have to check sequence id against the FNT sending.
 
             int readPosition = 0;
             while (readPosition < msg.Data.Count)
             {
-                TransformSyncData tsd = Serialization.DeserializeTransformSyncData(ref readPosition, msg.Data);
+                TransformData td = new TransformData();
+                Serialization.DeserializeTransformData(ref readPosition, ref msg.Data, ref td);
 
                 /* Initially I tried caching the getcomponent calls but the performance difference
                 * couldn't be registered. At this time it's not worth creating the extra complexity
                 * for what might be a 1% fps difference. */
-                if (Platforms.ReturnSpawned(CurrentNetworkManager).TryGetValue(tsd.NetworkIdentity, out NetworkIdentity ni))
+                if (Platforms.ReturnSpawned(CurrentNetworkManager).TryGetValue(td.NetworkIdentity, out NetworkIdentity ni))
                 {
-                    FlexNetworkTransformBase fntBase = ReturnFNTBaseOnNetworkIdentity(ni, tsd.ComponentIndex);
+                    FlexNetworkTransformBase fntBase = ReturnFNTBaseOnNetworkIdentity(ni, td.ComponentIndex);
                     if (fntBase != null)
                     {
                         //Skip if old packet.
@@ -454,7 +494,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
                         /* SequenceId is set per FNT because clients will be sending
                          * different sequenceIds each. */
                         fntBase.SetLastClientSequenceIdInternal(msg.SequenceId);
-                        fntBase.ClientDataReceived(tsd);
+                        fntBase.ClientDataReceived(ref td);
                     }
                 }
             }
@@ -467,7 +507,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// <returns></returns>
         private FlexNetworkTransformBase ReturnFNTBaseOnNetworkIdentity(NetworkIdentity ni, byte componentIndex)
         {
-            NetworkBehaviour nb = Helpers.ReturnNetworkBehaviour(ni, componentIndex);
+            NetworkBehaviour nb = Lookups.ReturnNetworkBehaviour(ni, componentIndex);
             if (nb == null)
                 return null;
 
@@ -524,19 +564,21 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             if (client)
             {
 #if MIRROR
-                NetworkClient.ReplaceHandler<TransformSyncDataMessage>(OnServerTransformSyncData);
-#elif MIRRORNG
-                CurrentNetworkManager.Client.Connection?.RegisterHandler<TransformSyncDataMessage>(OnServerTransformSyncData);
+                NetworkClient.ReplaceHandler<TransformDataMessage>(OnServerTransformData);
+#elif MIRAGE
+                CurrentNetworkManager.Client.Authenticated.AddListener((conn) => {
+                    conn.RegisterHandler<TransformDataMessage>(OnServerTransformData);
+                });
 #endif
             }
             else
             {
 #if MIRROR
-                NetworkServer.ReplaceHandler<TransformSyncDataMessage>(OnClientTransformSyncData);
-#elif MIRRORNG
-                CurrentNetworkManager.Server.Connected.AddListener(delegate (INetworkConnection conn)
+                NetworkServer.ReplaceHandler<TransformDataMessage>(OnClientTransformData);
+#elif MIRAGE
+                CurrentNetworkManager.Server.Authenticated.AddListener(delegate (INetworkConnection conn)
                 {
-                    conn.RegisterHandler<TransformSyncDataMessage>(OnClientTransformSyncData);
+                    conn.RegisterHandler<TransformDataMessage>(OnClientTransformData);
                 });
 #endif
             }

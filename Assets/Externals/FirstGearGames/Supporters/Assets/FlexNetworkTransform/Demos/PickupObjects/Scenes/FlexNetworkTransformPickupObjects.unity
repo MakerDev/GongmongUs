@@ -286,6 +286,8 @@ MonoBehaviour:
   autoStartServerBuild: 1
   showDebugMessages: 0
   serverTickRate: 120
+  serverBatching: 0
+  serverBatchInterval: 0
   offlineScene: 
   onlineScene: 
   transport: {fileID: 213676508}
@@ -371,15 +373,17 @@ MonoBehaviour:
   _synchronizeInterval: 0.1
   _reliable: 0
   _resendUnreliable: 0
+  _smoothingLoop: 1
   _interpolationFallbehind: 0.06
   _extrapolationSpan: 0
   _teleportThreshold: 0.1
   _clientAuthoritative: 0
   _synchronizeToOwner: 0
-  _compressSmall: 1
+  _compressSmall: 0
   _synchronizePosition: 0
   _snapPosition: 0
   _synchronizeRotation: 0
+  _rotationAxes: 7
   _snapRotation: 0
   _synchronizeScale: 0
   _snapScale: 0
@@ -410,6 +414,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   sceneId: 1134288281
   serverOnly: 0
+  visible: 0
   m_AssetId: 
   hasSpawned: 0
 --- !u!23 &615563005
@@ -659,7 +664,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 758803445}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b3a1cfc4fa56c014d9f1121857b8a4ea, type: 3}
   m_Name: 
@@ -688,6 +693,7 @@ MonoBehaviour:
   _synchronizeInterval: 0.1
   _reliable: 0
   _resendUnreliable: 0
+  _smoothingLoop: 1
   _interpolationFallbehind: 0.06
   _extrapolationSpan: 0
   _teleportThreshold: 0
@@ -697,6 +703,7 @@ MonoBehaviour:
   _synchronizePosition: 0
   _snapPosition: 0
   _synchronizeRotation: 0
+  _rotationAxes: 7
   _snapRotation: 0
   _synchronizeScale: 0
   _snapScale: 0
@@ -714,6 +721,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   sceneId: 2024896781
   serverOnly: 0
+  visible: 0
   m_AssetId: 
   hasSpawned: 0
 --- !u!1 &1131289575
@@ -831,15 +839,17 @@ MonoBehaviour:
   _synchronizeInterval: 0.1
   _reliable: 0
   _resendUnreliable: 0
+  _smoothingLoop: 1
   _interpolationFallbehind: 0.06
   _extrapolationSpan: 0
   _teleportThreshold: 0.1
   _clientAuthoritative: 1
   _synchronizeToOwner: 0
-  _compressSmall: 1
+  _compressSmall: 0
   _synchronizePosition: 0
   _snapPosition: 0
   _synchronizeRotation: 0
+  _rotationAxes: 7
   _snapRotation: 0
   _synchronizeScale: 0
   _snapScale: 0
@@ -874,6 +884,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   sceneId: 1999559615
   serverOnly: 0
+  visible: 0
   m_AssetId: 
   hasSpawned: 0
 --- !u!4 &5496649057864157168
@@ -907,6 +918,8 @@ MonoBehaviour:
   autoStartServerBuild: 1
   showDebugMessages: 0
   serverTickRate: 30
+  serverBatching: 0
+  serverBatchInterval: 0
   offlineScene: 
   onlineScene: 
   transport: {fileID: 5496649057864157173}
@@ -953,10 +966,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   port: 7777
   NoDelay: 1
+  SendTimeout: 5000
+  ReceiveTimeout: 30000
   serverMaxMessageSize: 16384
   serverMaxReceivesPerTick: 10000
+  serverSendQueueLimitPerConnection: 10000
+  serverReceiveQueueLimitPerConnection: 10000
   clientMaxMessageSize: 16384
   clientMaxReceivesPerTick: 1000
+  clientSendQueueLimit: 10000
+  clientReceiveQueueLimit: 10000
 --- !u!114 &5496649057864157175
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -1,6 +1,10 @@
 ﻿using FirstGearGames.Utilities.Networks;
 using FirstGearGames.Utilities.Objects;
+#if MIRROR
 using Mirror;
+#elif MIRAGE
+using Mirage;
+#endif
 using System;
 using UnityEngine;
 
@@ -26,40 +30,41 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             base.OnDisable();
         }
 
-        public override bool OnSerialize(NetworkWriter writer, bool initialState)
-        {
-            if (initialState)
-            {
-                /* If root then no need to send transform data as that's already
-                * handled in the spawn message. */
-                if (transform.root == null)
-                    return base.OnSerialize(writer, initialState);
+        //TODO delete this if checks pass.
+        //public override bool OnSerialize(NetworkWriter writer, bool initialState)
+        //{
+        //    if (initialState)
+        //    {
+        //        /* If root then no need to send transform data as that's already
+        //        * handled in the spawn message. */
+        //        if (transform.root == null)
+        //            return base.OnSerialize(writer, initialState);
 
-                writer.WriteVector3(TargetTransform.GetPosition(base.UseLocalSpace));
-                writer.WriteUInt32(Quaternions.CompressQuaternion(TargetTransform.GetRotation(base.UseLocalSpace)));
-                writer.WriteVector3(TargetTransform.GetScale());
-            }
-            return base.OnSerialize(writer, initialState);
-        }
+        //        writer.WriteVector3(TargetTransform.GetPosition(base.UseLocalSpace));
+        //        writer.WriteUInt32(Quaternions.CompressQuaternion(TargetTransform.GetRotation(base.UseLocalSpace)));
+        //        writer.WriteVector3(TargetTransform.GetScale());
+        //    }
+        //    return base.OnSerialize(writer, initialState);
+        //}
 
-        public override void OnDeserialize(NetworkReader reader, bool initialState)
-        {
-            if (initialState)
-            {
-                /* If root then no need to read transform data as that's already
-                * handled in the spawn message. */
-                if (transform.root == null)
-                {
-                    base.OnDeserialize(reader, initialState);
-                    return;
-                }
+        //public override void OnDeserialize(NetworkReader reader, bool initialState)
+        //{
+        //    if (initialState)
+        //    {
+        //        /* If root then no need to read transform data as that's already
+        //        * handled in the spawn message. */
+        //        if (transform.root == null)
+        //        {
+        //            base.OnDeserialize(reader, initialState);
+        //            return;
+        //        }
 
-                TargetTransform.SetPosition(base.UseLocalSpace, reader.ReadVector3());
-                TargetTransform.SetRotation(base.UseLocalSpace, Quaternions.DecompressQuaternion(reader.ReadUInt32()));
-                TargetTransform.SetScale(reader.ReadVector3());
-            }
-            base.OnDeserialize(reader, initialState);
-        }
+        //        TargetTransform.SetPosition(base.UseLocalSpace, reader.ReadVector3());
+        //        TargetTransform.SetRotation(base.UseLocalSpace, Quaternions.DecompressQuaternion(reader.ReadUInt32()));
+        //        TargetTransform.SetScale(reader.ReadVector3());
+        //    }
+        //    base.OnDeserialize(reader, initialState);
+        //}
 
         /// <summary>
         /// Sets which object this transform is on.

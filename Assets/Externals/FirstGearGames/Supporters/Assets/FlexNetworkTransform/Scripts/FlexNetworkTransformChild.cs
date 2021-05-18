@@ -1,6 +1,10 @@
 ﻿using FirstGearGames.Utilities.Networks;
 using FirstGearGames.Utilities.Objects;
+#if MIRROR
 using Mirror;
+#elif MIRAGE
+using Mirage;
+#endif
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -14,21 +18,21 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
     /// </summary>
     public class FlexNetworkTransformChild : FlexNetworkTransformBase
     {
-        #region Serialized.
+#region Serialized.
         /// <summary>
         /// Transform to synchronize.
         /// </summary>
         [FormerlySerializedAs("Target")]
         [SerializeField]
         private Transform _target = null;
-        #endregion
+#endregion
 
-        #region Public.
+#region Public.
         /// <summary>
         /// Transform to synchronize.
         /// </summary>
         public override Transform TargetTransform => _target;
-        #endregion
+#endregion
 
         protected override void OnEnable()
         {
@@ -39,27 +43,27 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             base.OnDisable();
         }
 
-
-        public override bool OnSerialize(NetworkWriter writer, bool initialState)
-        {
-            if (initialState)
-            {
-                writer.WriteVector3(TargetTransform.GetPosition(base.UseLocalSpace));
-                writer.WriteUInt32(Quaternions.CompressQuaternion(TargetTransform.GetRotation(base.UseLocalSpace)));
-                writer.WriteVector3(TargetTransform.GetScale());
-            }
-            return base.OnSerialize(writer, initialState);
-        }
-        public override void OnDeserialize(NetworkReader reader, bool initialState)
-        {
-            if (initialState)
-            {
-                TargetTransform.SetPosition(base.UseLocalSpace, reader.ReadVector3());
-                TargetTransform.SetRotation(base.UseLocalSpace, Quaternions.DecompressQuaternion(reader.ReadUInt32()));
-                TargetTransform.SetScale(reader.ReadVector3());
-            }
-            base.OnDeserialize(reader, initialState);
-        }
+        //TODO Delete tis if checks pass.
+        //public override bool OnSerialize(NetworkWriter writer, bool initialState)
+        //{
+        //    if (initialState)
+        //    {
+        //        writer.WriteVector3(TargetTransform.GetPosition(base.UseLocalSpace));
+        //        writer.WriteUInt32(Quaternions.CompressQuaternion(TargetTransform.GetRotation(base.UseLocalSpace)));
+        //        writer.WriteVector3(TargetTransform.GetScale());
+        //    }
+        //    return base.OnSerialize(writer, initialState);
+        //}
+        //public override void OnDeserialize(NetworkReader reader, bool initialState)
+        //{
+        //    if (initialState)
+        //    {
+        //        TargetTransform.SetPosition(base.UseLocalSpace, reader.ReadVector3());
+        //        TargetTransform.SetRotation(base.UseLocalSpace, Quaternions.DecompressQuaternion(reader.ReadUInt32()));
+        //        TargetTransform.SetScale(reader.ReadVector3());
+        //    }
+        //    base.OnDeserialize(reader, initialState);
+        //}
 
 
     }

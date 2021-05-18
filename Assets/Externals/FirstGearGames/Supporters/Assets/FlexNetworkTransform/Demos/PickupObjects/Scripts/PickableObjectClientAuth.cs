@@ -64,11 +64,18 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms.Demos
             if (ni == null || fct == null)
                 return;
 
-            //Give authority to picking up client.
-            if (ni.connectionToClient != null)
-                base.netIdentity.RemoveClientAuthority();
-            base.netIdentity.AssignClientAuthority(ni.connectionToClient);
 
+            //If already has an owner.
+            if (ni.connectionToClient != null)
+            {
+                //Same owner.
+                if (ni.connectionToClient == base.connectionToClient)
+                    return;
+
+                base.netIdentity.RemoveClientAuthority();
+            }
+
+            base.netIdentity.AssignClientAuthority(ni.connectionToClient);
             TargetControlOn(ni, fct.ReturnTargetIndex(other.gameObject));
         }
 

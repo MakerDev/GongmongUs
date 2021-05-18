@@ -62,7 +62,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms.Demos
                 if (_resetClient)
                     TargetReset(_fnt.TargetTransform.position, _fnt.TargetTransform.rotation, _fnt.TargetTransform.localScale);
 
-                obj.Data.Set = false;
+                obj.Data.IsSet = false;
             }
         }
 

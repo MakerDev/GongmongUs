@@ -1,8 +1,4 @@
-﻿using Mirror;
-using FirstGearGames.Utilities.Networks;
-using UnityEngine;
-using System.Runtime.InteropServices;
-using System.Runtime.CompilerServices;
+﻿using UnityEngine;
 
 namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
 {
@@ -19,7 +15,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         }
         #endregion
         public ReceivedClientData() { }
-        public ReceivedClientData(DataTypes dataType, bool localSpace, ref TransformSyncData data)
+        public ReceivedClientData(DataTypes dataType, bool localSpace, ref TransformData data)
         {
             DataType = dataType;
             LocalSpace = localSpace;
@@ -28,34 +24,20 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
 
         public DataTypes DataType;
         public bool LocalSpace;
-        public TransformSyncData Data;
+        public TransformData Data;
     }
 
     /// <summary>
     /// Possible axes to snap.
     /// </summary>
     [System.Serializable, System.Flags]
-    public enum SnappingAxes : int
+    public enum Vector3Axes : int
     {
         X = 1,
         Y = 2,
         Z = 4
     }
 
-    /// <summary>
-    /// Indicates how each axes is compressed.
-    /// </summary>
-    [System.Flags]
-    public enum CompressedAxes : byte
-    {
-        None = 0,
-        XPositive = 1,
-        XNegative = 2,
-        YPositive = 4,
-        YNegative = 8,
-        ZPositive = 16,
-        ZNegative = 32
-    }
 
 
     /// <summary>
@@ -83,6 +65,15 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         Id2 = 128
     }
 
+    /// <summary>
+    /// Which loop to smooth within.
+    /// </summary>
+    public enum SmoothingLoops
+    {
+        FixedUpdate = 0,
+        Update = 1,
+        LateUpdate = 2
+    }
 
     /// <summary>
     /// Using strongly typed for performance.
@@ -116,7 +107,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// <param name="whole"></param>
         /// <param name="part"></param>
         /// <returns></returns>
-        public static bool AxesContains(SnappingAxes whole, SnappingAxes part)
+        public static bool Vector3AxesContains(Vector3Axes whole, Vector3Axes part)
         {
             return (whole & part) == part;
         }
@@ -132,9 +123,13 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// </summary>
         public uint NetId;
         /// <summary>
-        /// ComponentIndex for the attached. Byte.MaxValue represents no ComponentIndex.
+        /// Index within FlexAttachTargets to use. Will be -1 if using root on Identity.
         /// </summary>
-        public sbyte ComponentIndex;
+        public sbyte AttachedTargetIndex;
+        /// <summary>
+        /// True if set.
+        /// </summary>
+        public bool IsSet;
         /// <summary>
         /// Sets the ComponentIndex value.
         /// </summary>
@@ -142,7 +137,8 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         public void SetData(uint netId, sbyte componentIndex)
         {
             NetId = netId;
-            ComponentIndex = componentIndex;
+            AttachedTargetIndex = componentIndex;
+            IsSet = (NetId != 0);
         }
 
         /// <summary>
@@ -151,17 +147,13 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         /// <param name="a"></param>
         /// <param name="b"></param>
         /// <returns></returns>
-        public static bool Matches(ref AttachedData? a, ref AttachedData? b)
+        public static bool Matches(AttachedData a, AttachedData b)
         {
-            //Both are null, therefor equal.
-            if (a == null && b == null)
-                return true;
-            //One is null, other is not.
-            if ((a == null) != (b == null))
+            //Different isSet, so cannot be a match.
+            if (a.IsSet != b.IsSet)
                 return false;
 
-            /* If here neither is null. */
-            return (a.Value.NetId == b.Value.NetId && a.Value.ComponentIndex == b.Value.ComponentIndex);
+            return (a.NetId == b.NetId && a.AttachedTargetIndex == b.AttachedTargetIndex);
         }
     }
 
@@ -169,10 +161,9 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
     /// Container holding latest transform values.
     /// </summary>
     [System.Serializable]
-    //[StructLayout(LayoutKind.Auto)]
-    public struct TransformSyncData
+    public struct TransformData
     {
-        public void UpdateValues(byte syncProperties, uint networkIdentity, byte componentIndex, Vector3 position, Quaternion rotation, Vector3 scale, AttachedData? attached)
+        public void UpdateValues(byte syncProperties, uint networkIdentity, byte componentIndex, Vector3 position, Quaternion rotation, Vector3 scale, AttachedData attached)
         {
             SyncProperties = syncProperties;
             NetworkIdentity = networkIdentity;
@@ -181,7 +172,7 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
             Rotation = rotation;
             Scale = scale;
             Attached = attached;
-            Set = true;
+            IsSet = true;
         }
 
         public byte SyncProperties;
@@ -190,33 +181,9 @@ namespace FirstGearGames.Mirrors.Assets.FlexNetworkTransforms
         public Vector3 Position;
         public Quaternion Rotation;
         public Vector3 Scale;
-        public AttachedData? Attached;
+        public AttachedData Attached;
         [System.NonSerialized]
-        public bool Set;
+        public bool IsSet;
     }
-
-    public static class Helpers
-    {
-        /// <summary>
-        /// Returns the NetworkBehaviour for the specified NetworkIdentity and component index.
-        /// </summary>
-        /// <param name="componentIndex"></param>
-        /// <returns></returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static NetworkBehaviour ReturnNetworkBehaviour(NetworkIdentity netIdentity, byte componentIndex)
-        {
-            if (netIdentity == null)
-                return null;
-            /* Networkbehaviours within the collection are the same order as compenent indexes.
-            * I can save several iterations by simply grabbing the index from the networkbehaviours collection rather than iterating
-            * it. */
-            //A network behaviour was removed or added at runtime, component counts don't match up.
-            if (componentIndex >= netIdentity.NetworkBehaviours.Length)
-                return null;
-
-            return netIdentity.NetworkBehaviours[componentIndex];
-        }
-    }
-
 
 }
