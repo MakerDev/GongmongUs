@@ -24,6 +24,8 @@ namespace Assets.Scripts
         private Button _joinButton;
         [SerializeField]
         private Image _joinShield;
+        [SerializeField]
+        private TextMeshProUGUI _matchTypeText;
 
         public void UpdateInfo(MatchDTO match)
         {
@@ -36,6 +38,15 @@ namespace Assets.Scripts
             _joinButton.enabled = match.CanJoin;
             _joinButton.interactable = match.CanJoin;
             _joinShield.enabled = !match.CanJoin;
+
+            if (match.MatchType == MatchType.GameMode)
+            {
+                _matchTypeText.text = "G|";
+            }
+            else
+            {
+                _matchTypeText.text = "T|";
+            }
         }
 
         public async void JoinMatch()

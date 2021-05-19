@@ -71,10 +71,10 @@ namespace Assets.Scripts.MatchMaking
             return JsonConvert.DeserializeObject<List<MatchDTO>>(result.downloadHandler.text);
         }
 
-        public async UniTask<MatchCreationResultDTO> CreateMatchAsync(string name)
+        public async UniTask<MatchCreationResultDTO> CreateMatchAsync(string name, MatchType matchType)
         {
             var userJson = JsonConvert.SerializeObject(UserManager.Instance.User);
-            var request = UnityWebRequest.Post($"{BASE_ADDRESS}matches/create?name={name}", "");
+            var request = UnityWebRequest.Post($"{BASE_ADDRESS}matches/create?name={name}&matchType={matchType}", "");
             request.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(userJson));
             request.uploadHandler.contentType = "application/json";
             request.SetRequestHeader("Content-Type", "application/json");

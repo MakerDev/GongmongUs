@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Assets.Scripts.MatchMaking;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -12,5 +13,6 @@ namespace BattleCampusMatchServer.Models.DTOs
         public int MaxPlayers { get; set; } = 6;
         public int CurrentPlayersCount { get; set; }
         public bool CanJoin { get; set; } = false;
+        public MatchType MatchType { get; set; } = MatchType.GameMode;
     }
 }

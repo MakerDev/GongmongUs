@@ -1,4 +1,5 @@
-﻿using Mirror;
+﻿using Assets.Scripts.MatchMaking;
+using Mirror;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -14,6 +15,7 @@ namespace Assets.Scripts
 
         public string MatchID;
         public string Name;
+        public MatchType MatchType = MatchType.GameMode;
 
         [NonSerialized]
         private Guid _matchGuid = Guid.Empty;

@@ -1,0 +1,87 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3835569162284099703
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3835569162284099701}
+  - component: {fileID: 3835569162284099698}
+  - component: {fileID: 3835569162284099700}
+  m_Layer: 0
+  m_Name: TourGameManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3835569162284099701
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3835569162284099703}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3835569162284099698
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3835569162284099703}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sceneId: 0
+  serverOnly: 0
+  m_AssetId: 
+  hasSpawned: 0
+--- !u!114 &3835569162284099700
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3835569162284099703}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3badb85a55c431b429852c279bcecb1b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
+  _escapedLocalPlayer: {fileID: 0}
+  _menuCanvas: {fileID: 0}
+  _renameInputField: {fileID: 0}
+  _chatPanel: {fileID: 0}
+  _textObjectPrefab: {fileID: 5824021752382996390, guid: 00f4fd3ce0d51af44af60a476344179e,
+    type: 3}
+  _chatInputField: {fileID: 0}
+  _matchNameText: {fileID: 0}
+  _gameInfoMatchNameText: {fileID: 0}
+  _playerListPanel: {fileID: 0}
+  _playerListItemPrefab: {fileID: 6126794482529374542, guid: a3ddda5ab7b66a145b8ae041e87c9b29,
+    type: 3}
+  _minimapUI: {fileID: 0}
+  _startGameUI: {fileID: 0}
+  _readyButton: {fileID: 0}
+  _unreadyButton: {fileID: 0}
+  _startGameButton: {fileID: 0}
+  _minimapOnTab: {fileID: 0}
+  _staticMinimap: {fileID: 0}
+  _bgmToggle: {fileID: 0}
+  _fullscreenToggle: {fileID: 0}
+  _gameLobbyUI: {fileID: 0}
+  _exitDoorIndicator: {fileID: 0}

@@ -36,7 +36,11 @@ namespace Assets.Scripts.Networking
         [SerializeField]
         private Canvas _createMatchCanvas;
         [SerializeField]
+        private Canvas _createTourCanvas;
+        [SerializeField]
         private TMP_InputField _newMatchNameInputField;
+        [SerializeField]
+        private TMP_InputField _newTourNameInputField;
 
         [SerializeField]
         private Button _createMatchButton;
@@ -137,12 +141,27 @@ namespace Assets.Scripts.Networking
             }
         }
 
-        public async void CreateNewMatch()
+        public void CreateGameMatch()
+        {
+            CreateNewMatch(MatchType.GameMode);
+        }
+
+        public void CreateTourMatch()
+        {
+            CreateNewMatch(MatchType.TourMode);
+        }
+
+        public async void CreateNewMatch(MatchType matchType)
         {
             _loadingCanvas.enabled = true;
             _createMatchButton.enabled = false;
 
             var matchName = _newMatchNameInputField.text;
+
+            if (matchType == MatchType.TourMode)
+            {
+                matchName = _newTourNameInputField.text;
+            }
 
             if (string.IsNullOrEmpty(matchName))
             {
@@ -152,10 +171,11 @@ namespace Assets.Scripts.Networking
             }
 
             _newMatchNameInputField.text = "";
+            _newTourNameInputField.text = "";
 
             try
             {
-                await CreateNewMatchAsync(matchName);
+                await CreateNewMatchAsync(matchName, matchType);
             }
             catch (Exception)
             {
@@ -193,12 +213,21 @@ namespace Assets.Scripts.Networking
             //Configure MatchManager
             UserManager.Instance.User.MatchID = match.MatchID;
             MatchManager.Instance.ConfigureMatchInfo(match);
-            SceneManager.LoadScene("GameScene");
+
+            if (match.MatchType == MatchType.GameMode)
+            {
+                SceneManager.LoadScene("GameScene");
+
+            }
+            else
+            {
+                SceneManager.LoadScene("TourGameScene");
+            }
         }
 
-        public async UniTask CreateNewMatchAsync(string matchName)
+        public async UniTask CreateNewMatchAsync(string matchName, MatchType matchType)
         {
-            var result = await MatchServer.Instance.CreateMatchAsync(matchName);
+            var result = await MatchServer.Instance.CreateMatchAsync(matchName, matchType);
 
             if (result.IsCreationSuccess == false)
             {
@@ -217,11 +246,17 @@ namespace Assets.Scripts.Networking
             _createMatchCanvas.enabled = true;
         }
 
+        public void OpenCreateTourPrompt()
+        {
+            _createTourCanvas.enabled = true;
+        }
+
         public void CloseCreateMatchPrompt()
         {
             _createMatchButton.enabled = true;
             _loadingCanvas.enabled = false;
             _createMatchCanvas.enabled = false;
+            _createTourCanvas.enabled = false;
         }
 
         private void AddMatch(MatchDTO match)
