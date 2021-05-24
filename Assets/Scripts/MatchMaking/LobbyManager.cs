@@ -217,7 +217,6 @@ namespace Assets.Scripts.Networking
             if (match.MatchType == MatchType.GameMode)
             {
                 SceneManager.LoadScene("GameScene");
-
             }
             else
             {

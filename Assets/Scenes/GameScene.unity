@@ -4496,7 +4496,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &516960297
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4651,6 +4651,11 @@ PrefabInstance:
         type: 3}
       propertyPath: maxConnections
       value: 60
+      objectReference: {fileID: 0}
+    - target: {fileID: 5797143323073332327, guid: 49d598b7df45446438ebf76d045c404a,
+        type: 3}
+      propertyPath: spawnPrefabs.Array.size
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6198846753230582387, guid: 49d598b7df45446438ebf76d045c404a,
         type: 3}
@@ -5170,8 +5175,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 664230670}
   m_HandleRect: {fileID: 664230669}
   m_Direction: 0
-  m_Value: 0
-  m_Size: 0.77666664
+  m_Value: -0.00000022774323
+  m_Size: 0.77666676
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -8138,7 +8143,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1016764582}
   m_HandleRect: {fileID: 1016764581}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -13630,11 +13635,6 @@ PrefabInstance:
       objectReference: {fileID: 1221070898}
     - target: {fileID: 948663014488049729, guid: e02b28957ba740e49a2fe5f6acb466b4,
         type: 3}
-      propertyPath: _sceneCamera
-      value: 
-      objectReference: {fileID: 416212765}
-    - target: {fileID: 948663014488049729, guid: e02b28957ba740e49a2fe5f6acb466b4,
-        type: 3}
       propertyPath: _startGameUI
       value: 
       objectReference: {fileID: 2054600590}
@@ -13670,11 +13670,6 @@ PrefabInstance:
       objectReference: {fileID: 505072889}
     - target: {fileID: 948663014488049729, guid: e02b28957ba740e49a2fe5f6acb466b4,
         type: 3}
-      propertyPath: _readyButtonText
-      value: 
-      objectReference: {fileID: 0}
-    - target: {fileID: 948663014488049729, guid: e02b28957ba740e49a2fe5f6acb466b4,
-        type: 3}
       propertyPath: _startGameButton
       value: 
       objectReference: {fileID: 2143615966}
@@ -13708,15 +13703,15 @@ PrefabInstance:
       propertyPath: m_Name
       value: GameManager
       objectReference: {fileID: 0}
-    - target: {fileID: 948663014488049730, guid: e02b28957ba740e49a2fe5f6acb466b4,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 948663014488049735, guid: e02b28957ba740e49a2fe5f6acb466b4,
         type: 3}
       propertyPath: sceneId
       value: 3410803539
+      objectReference: {fileID: 0}
+    - target: {fileID: 948663014488049735, guid: e02b28957ba740e49a2fe5f6acb466b4,
+        type: 3}
+      propertyPath: m_AssetId
+      value: e02b28957ba740e49a2fe5f6acb466b4
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e02b28957ba740e49a2fe5f6acb466b4, type: 3}

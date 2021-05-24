@@ -17,9 +17,9 @@ using UnityEngine.Video;
 namespace Assets.Scripts
 {
 
-    public class GameManager : NetworkBehaviour
+    public class TourManager : NetworkBehaviour
     {
-        public static GameManager Instance;
+        public static TourManager Instance;
         public MatchSetting MatchSetting;
 
         private const int MAX_MESSAGES = 10;
@@ -119,7 +119,7 @@ namespace Assets.Scripts
             }
             else
             {
-            Instance = this;
+                Instance = this;
             }
         }
 
@@ -264,42 +264,6 @@ namespace Assets.Scripts
             _startGameButton.gameObject.SetActive(true);
         }
 
-        public bool ServerCanStartGame(string matchId)
-        {
-            var hasMatch = ServerPlayersOfMatch.TryGetValue(matchId, out var matchInfo);
-
-            if (hasMatch == false)
-            {
-                return false;
-            }
-
-            //Can not double start.
-            //This happens when late joiner is kicked out.
-            if (matchInfo.Started)
-            {
-                return false;
-            }
-
-            if (matchInfo.Players.Count < 3)
-            {
-                return false;
-            }
-
-            foreach (var player in matchInfo.Players)
-            {
-                if (player.IsHost)
-                {
-                    continue;
-                }
-
-                if (player.IsReady == false)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
 
         /// <summary>
         /// Notify when player is ready
@@ -322,6 +286,44 @@ namespace Assets.Scripts
 
             return ServerCanStartGame(matchID);
         }
+
+        public bool ServerCanStartGame(string matchId)
+        {
+            var hasMatch = ServerPlayersOfMatch.TryGetValue(matchId, out var matchInfo);
+
+            if (hasMatch == false)
+            {
+                return false;
+            }
+
+            //Can not double start.
+            //This happens when late joiner is kicked out.
+            if (matchInfo.Started)
+            {
+                return false;
+            }
+
+            if (matchInfo.Players.Count < 1)
+            {
+                return false;
+            }
+
+            foreach (var player in matchInfo.Players)
+            {
+                if (player.IsHost)
+                {
+                    continue;
+                }
+
+                if (player.IsReady == false)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
 
         [Server]
         public void ServerCompleteMatch(string matchId)

@@ -25,7 +25,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 948663014488049730}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -322.70755, y: -425.45547, z: 102.73012}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
@@ -62,13 +62,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   syncMode: 0
   syncInterval: 0.1
-  _sceneCamera: {fileID: 0}
+  _escapedLocalPlayer: {fileID: 0}
   _menuCanvas: {fileID: 0}
   _renameInputField: {fileID: 0}
   _chatPanel: {fileID: 0}
   _textObjectPrefab: {fileID: 5824021752382996390, guid: 00f4fd3ce0d51af44af60a476344179e,
     type: 3}
   _chatInputField: {fileID: 0}
+  _matchNameText: {fileID: 0}
+  _gameInfoMatchNameText: {fileID: 0}
   _playerListPanel: {fileID: 0}
   _playerListItemPrefab: {fileID: 6126794482529374542, guid: a3ddda5ab7b66a145b8ae041e87c9b29,
     type: 3}
+  _minimapUI: {fileID: 0}
+  _startGameUI: {fileID: 0}
+  _readyButton: {fileID: 0}
+  _unreadyButton: {fileID: 0}
+  _startGameButton: {fileID: 0}
+  _minimapOnTab: {fileID: 0}
+  _staticMinimap: {fileID: 0}
+  _bgmToggle: {fileID: 0}
+  _fullscreenToggle: {fileID: 0}
+  _gameLobbyUI: {fileID: 0}
+  _exitDoorIndicator: {fileID: 0}
