@@ -11,6 +11,9 @@ namespace Assets.Scripts.Networking
 {
     public class BCNetworkManager : NetworkManager
     {
+        [SerializeField]
+        private bool _isTourManager = false;
+
         public static BCNetworkManager Instance { get; private set; }
 
         public Dictionary<string, GameObject> MissionManagers { get; private set; } = new Dictionary<string, GameObject>();
@@ -73,6 +76,13 @@ namespace Assets.Scripts.Networking
 
             var name = _serverName == null ? $"Server:{serverIpPortInfo.IpAddress}" : _serverName;
             var maxMatches = maxConnections / 6;
+
+            if (_isTourManager)
+            {
+                serverIpPortInfo.DesktopPort = 7779;
+                serverIpPortInfo.WebsocketPort = 7780;
+            }
+
             var result = await MatchServer.Instance.RegisterServerAsync(name, serverIpPortInfo, maxMatches);
             //TODO : do proper error handling
             if (result == false)

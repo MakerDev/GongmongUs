@@ -16,7 +16,6 @@ using UnityEngine.Video;
 
 namespace Assets.Scripts
 {
-
     public class TourManager : NetworkBehaviour
     {
         public static TourManager Instance;

@@ -119,7 +119,7 @@ namespace Assets.Scripts
             }
             else
             {
-            Instance = this;
+                Instance = this;
             }
         }
 
@@ -280,7 +280,9 @@ namespace Assets.Scripts
                 return false;
             }
 
-            if (matchInfo.Players.Count < 3)
+            var leastPlayers = matchInfo.IsTour ? 1 : 3;
+
+            if (matchInfo.Players.Count < leastPlayers)
             {
                 return false;
             }
@@ -335,8 +337,11 @@ namespace Assets.Scripts
 
             serverInfo.Started = true;
 
+
             var serverMissionManager = BCNetworkManager.Instance.SpawnMissionManager(matchID);
             serverMissionManager.ConfigureForServer(matchID, professorID);
+
+
             await BCNetworkManager.Instance.NotifyStartGame(matchID);
         }
 
@@ -353,13 +358,14 @@ namespace Assets.Scripts
         }
 
         [Server]
-        public bool ServerOnPlayerConnect(string matchID, string playerId)
+        public bool ServerOnPlayerConnect(string matchID, bool isTour, string playerId)
         {
             ServerMatchInfo serverMatchInfo;
 
             if (ServerPlayersOfMatch.ContainsKey(matchID) == false)
             {
                 serverMatchInfo = new ServerMatchInfo();
+                serverMatchInfo.IsTour = isTour;
                 ServerPlayersOfMatch.Add(matchID, serverMatchInfo);
             }
             else
@@ -618,7 +624,14 @@ namespace Assets.Scripts
 
         public string GetRandomPlayerIdForMatch(string matchId)
         {
-            var players = ServerPlayersOfMatch[matchId].Players;
+            var serverMatchInfo = ServerPlayersOfMatch[matchId];
+
+            var players = serverMatchInfo.Players;
+
+            if (serverMatchInfo.IsTour)
+            {
+                return players[0].PlayerId;
+            }
 
             var index = UnityEngine.Random.Range(0, players.Count);
 

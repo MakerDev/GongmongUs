@@ -144,16 +144,17 @@ namespace Assets.Scripts
             base.OnStartLocalPlayer();
 
             BCNetworkManager.Instance.SendUser();
-            CmdGetConnectionID(MatchManager.Instance.Match.MatchID);
+            var isTour = MatchManager.Instance.Match.MatchType == MatchType.TourMode;
+            CmdGetConnectionID(MatchManager.Instance.Match.MatchID, isTour);
             RoomUIManager.Instance?.RefreshList(GameManager.Instance.Players.Values);
         }
 
         [Command]
-        private void CmdGetConnectionID(string matchID)
+        private void CmdGetConnectionID(string matchID, bool isTour)
         {
             //TODO : 이것도 BCNetworkManager의 OnClientNotifyUser로 옮기기.
             MatchID = matchID;
-            GameManager.Instance.ServerOnPlayerConnect(matchID, PlayerId);
+            GameManager.Instance.ServerOnPlayerConnect(matchID, isTour, PlayerId);
         }
 
         public override void OnStopServer()
